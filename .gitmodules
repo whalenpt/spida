@@ -1,0 +1,18 @@
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git
+[submodule "external/kissfft"]
+	path = external/kissfft
+	url = https://github.com/mborgerding/kissfft.git
+[submodule "external/ParamBin"]
+	path = external/ParamBin
+	url = https://github.com/whalenpt/ParamBin.git
+[submodule "external/googletest"]
+	path = external/googletest
+	url = https://github.com/google/googletest.git
+[submodule "external/pwutils"]
+	path = external/pwutils
+	url = https://github.com/whalenpt/pwutils.git
+[submodule "external/nayukidct"]
+	path = external/nayukidct
+	url = https://github.com/whalenpt/nayukidct.git
