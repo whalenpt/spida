@@ -43,12 +43,12 @@ if(NOT TARGET nayukidct)
     add_subdirectory(external/nayukidct)
 endif()
 
-set(JSON_DIR "external/json")
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-# If you only include this third party in PRIVATE source files, you do not
-# need to install it when your main project gets installed.
-# set(JSON_Install OFF CACHE INTERNAL "")
-add_subdirectory(${JSON_DIR})
+#set(JSON_DIR "external/json")
+#set(JSON_BuildTests OFF CACHE INTERNAL "")
+## If you only include this third party in PRIVATE source files, you do not
+## need to install it when your main project gets installed.
+## set(JSON_Install OFF CACHE INTERNAL "")
+#add_subdirectory(${JSON_DIR})
 
 #set(KISSFFT_PKGCONFIG OFF CACHE BOOL "Build pkg-config files")
 set(KISSFFT_TOOLS OFF CACHE BOOL "Build kissfft command-line tools")

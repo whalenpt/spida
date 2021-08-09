@@ -104,13 +104,13 @@ set_target_properties(spida PROPERTIES
 	SOVERSION 0
 )
 
-install(TARGETS nlohmann_json spida
+#install(TARGETS nlohmann_json spida
+install(TARGETS spida
 	EXPORT SpidaTargets
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	RUNTIME DESTINATION bin
 )
-
 
 #install(FILES ${SPIDA_INCLUDES}
 #	DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/spida"
