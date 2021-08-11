@@ -31,6 +31,7 @@ class ChebExtremaGridX : public ChebGridX
     public:
         // Dont allow implicit conversion from ChebTransformFFTWX(int nx) to ChebTransform(ChebExtremaGridX)
         explicit ChebExtremaGridX(int nx,double min=-1.0,double max=1.0);
+        ChebExtremaGridX() = delete;
         ~ChebExtremaGridX() {}; 
         const std::vector<double>& getX() const {return m_x;}
         const std::vector<double>& getSX() const {return m_sx;}
@@ -47,6 +48,8 @@ class ChebRootGridX : public ChebGridX
     public:
         // Dont allow implicit conversion from ChebTransformX(int nx) to ChebTransform(ChebRootGridX)
         explicit ChebRootGridX(int nx,double min=-1.0,double max=1.0);
+        ChebRootGridX() = delete;
+
         ~ChebRootGridX() {}; 
         const std::vector<double>& getX() const {return m_x;}
         const std::vector<double>& getSX() const {return m_sx;}
