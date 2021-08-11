@@ -87,7 +87,6 @@ target_link_libraries(spida
     PRIVATE pw::pwutils
     PUBLIC kissfft
     PUBLIC nayukidct
-    PUBLIC fftw3
 )
 
 set_target_properties(spida PROPERTIES
@@ -95,17 +94,12 @@ set_target_properties(spida PROPERTIES
 	SOVERSION 0
 )
 
-#install(TARGETS nlohmann_json spida
 install(TARGETS spida
 	EXPORT SpidaTargets
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	RUNTIME DESTINATION bin
 )
-
-#install(FILES ${SPIDA_INCLUDES}
-#	DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/spida"
-#)
 
 install(DIRECTORY ${INCL_DIR}
     DESTINATION include
