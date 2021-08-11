@@ -10,10 +10,10 @@ namespace spida{
 void setChebExtremaX(double a,double b,std::vector<double>& x)
 {
    if(a >= b){
-        std::string msg = "Error in setChebExtremaX: interval [a,b] -> a must be less than b.";
+        std::string msg = "Error in setChebExtremaX: interval [a,b] -> " + std::to_string(a) + \
+                           " must be less than " + std::to_string(b);
         throw std::invalid_argument(msg);
     }
-
 //    int N = x.size() - 1;
     auto nx = x.size();
     double dc = spida::PI/(nx-1);
@@ -31,10 +31,16 @@ void setChebExtremaSX(std::vector<double>& sx)
 
 void setChebRootX(double a,double b,std::vector<double>& x)
 {
+//   if(a >= b){
+//        std::string msg = "Error in setChebRootX: interval [a,b] -> a must be less than b.";
+//        throw std::invalid_argument(msg);
+//    }
    if(a >= b){
-        std::string msg = "Error in setChebRootX: interval [a,b] -> a must be less than b.";
+        std::string msg = "Error in setChebRootX: interval [a,b] -> " + std::to_string(a) + \
+                           " must be less than " + std::to_string(b);
         throw std::invalid_argument(msg);
     }
+
     auto nx = x.size();
     auto dc = spida::PI/static_cast<double>(nx);
     auto L = b - a;
