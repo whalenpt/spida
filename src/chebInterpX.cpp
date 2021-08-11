@@ -8,8 +8,8 @@
 
 namespace spida{
 
-  ChebInterpX::ChebInterpX(int ninterp,int minx,int maxx) :
-      m_chebx(new ChebX(ChebRootGridX(ninterp,minx,maxx))),
+  ChebInterpX::ChebInterpX(int ninterp,double minx,double maxx) :
+      m_chebx(new ChebX{ChebRootGridX{ninterp,minx,maxx}}),
       m_ycheb(ninterp),
       m_dycheb(ninterp)
   {

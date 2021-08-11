@@ -10,7 +10,7 @@ class ChebX;
 class ChebInterpX  
 {
     public:
-        ChebInterpX(int ninterp,int minx,int maxx); 
+        ChebInterpX(int ninterp,double minx,double maxx); 
         ChebInterpX() = delete;
         ~ChebInterpX();
         void dXInterp(const std::vector<double>& xin,const std::vector<double>& yin,
