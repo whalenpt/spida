@@ -19,9 +19,9 @@ set(SRC_FILES
 	solver/solverETDCS.cpp
 	spidaPeriodicT.cpp
     spidaChebX.cpp
-    spidaInterpX.cpp
     spidaFFTWX.cpp
-    spidaInterpFFTWX.cpp
+    chebInterpFFTWX.cpp
+    chebInterpX.cpp
 	transform/periodicT.cpp
 	transform/chebFFTWX.cpp
 	transform/chebX.cpp
@@ -51,9 +51,9 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/spidaT.h"
    "${INCL_DIR}/spidaX.h"
    "${INCL_DIR}/spidaChebX.h"
-   "${INCL_DIR}/spidaInterpX.h"
    "${INCL_DIR}/spidaFFTWX.h"
-   "${INCL_DIR}/spidaInterpFFTWX.h"
+   "${INCL_DIR}/chebInterpX.h"
+   "${INCL_DIR}/chebInterpFFTWX.h"
    "${INCL_DIR}/transform/transformT.h"
    "${INCL_DIR}/transform/transformX.h"
    "${INCL_DIR}/transform/periodicT.h"

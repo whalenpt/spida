@@ -1,6 +1,6 @@
 
-#ifndef SPIDAINTERPFFTW_X_H_
-#define SPIDAINTERPFFTW_X_H_
+#ifndef CHEBINTERPFFTW_X_H_
+#define CHEBINTERPFFTW_X_H_
 
 #include <vector>
 

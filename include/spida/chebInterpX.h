@@ -1,6 +1,6 @@
 
-#ifndef SPIDAINTERPX_H_
-#define SPIDAINTERPX_H_
+#ifndef CHEBINTERPX_H_
+#define CHEBINTERPX_H_
 
 #include <vector>
 

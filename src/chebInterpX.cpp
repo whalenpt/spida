@@ -1,12 +1,10 @@
 
 #include "spida/constants.h"
-#include "spida/spidaInterpX.h"
-#include "spida/spidaChebX.h"
+#include "spida/chebInterpX.h"
 #include "spida/grid/chebX.h"
+#include "spida/spidaChebX.h"
 #include "spida/interp.h"
 #include <vector>
-#include <memory>
-#include <iostream>
 
 namespace spida{
 
