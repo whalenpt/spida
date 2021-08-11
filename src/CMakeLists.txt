@@ -19,14 +19,9 @@ set(SRC_FILES
 	solver/solverETDCS.cpp
 	spidaPeriodicT.cpp
     spidaChebX.cpp
-    spidaFFTWX.cpp
-    chebInterpFFTWX.cpp
     chebInterpX.cpp
 	transform/periodicT.cpp
-	transform/chebFFTWX.cpp
 	transform/chebX.cpp
-    #	transform/fftwT.cpp
-    #	transform/transformX.cpp
 )
 
 set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
@@ -51,17 +46,11 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/spidaT.h"
    "${INCL_DIR}/spidaX.h"
    "${INCL_DIR}/spidaChebX.h"
-   "${INCL_DIR}/spidaFFTWX.h"
    "${INCL_DIR}/chebInterpX.h"
-   "${INCL_DIR}/chebInterpFFTWX.h"
    "${INCL_DIR}/transform/transformT.h"
    "${INCL_DIR}/transform/transformX.h"
    "${INCL_DIR}/transform/periodicT.h"
    "${INCL_DIR}/transform/chebX.h"
-   "${INCL_DIR}/transform/chebFFTWX.h"
-
-   #   "${INCL_DIR}/transform/fftwT.h"
-   #"${INCL_DIR}/transform/transformX.h"
 )
 
 set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")

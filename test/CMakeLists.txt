@@ -7,8 +7,6 @@ set(SRC_FILES
 	dct_tests.cpp
 	shape_tests.cpp
 	nayukidct_tests.cpp
-    fftw_tests.cpp
-	fdct_tests.cpp
 )
 
 message("Run tests on library spida")
