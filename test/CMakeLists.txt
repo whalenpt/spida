@@ -10,6 +10,11 @@ set(SRC_FILES
 	grid_tests.cpp
 )
 
+#set(BOOST_INCLUDES 
+#	"${BOOST_DIR}/boost/math/special_functions/airy.hpp"
+#	"${BOOST_DIR}/boost/math/special_functions/bessel.hpp"
+#)
+
 message("Run tests on library spida")
 
 add_executable(${THIS} ${SRC_FILES})
@@ -20,6 +25,9 @@ target_link_libraries(${THIS} PUBLIC
     pw::pwutils
     SPIDA::spida
 )
+
+set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")
+target_include_directories(${THIS} PRIVATE ${BOOST_DIR})
 
 add_test(
 	NAME ${THIS}

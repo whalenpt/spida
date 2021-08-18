@@ -23,6 +23,7 @@ set(SRC_FILES
     chebInterpX.cpp
 	transform/periodicT.cpp
 	transform/chebX.cpp
+	transform/hankelR.cpp
 )
 
 set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
@@ -51,9 +52,11 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/spidaChebX.h"
    "${INCL_DIR}/chebInterpX.h"
    "${INCL_DIR}/transform/transformT.h"
+   "${INCL_DIR}/transform/transformR.h"
    "${INCL_DIR}/transform/transformX.h"
    "${INCL_DIR}/transform/periodicT.h"
    "${INCL_DIR}/transform/chebX.h"
+   "${INCL_DIR}/transform/hankelR.h"
 )
 
 set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")
