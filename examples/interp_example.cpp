@@ -1,10 +1,10 @@
 /*------------------------------------------------------------------------------
  *   
- *    Author: Patrick Townsend Whalen   
- *    Email: pwhalen@email.arizona.edu
+ *    Author: Patrick Whalen   
+ *    Email: whalenpt@gmail.com
  *    Status: Development
- *    Date: (Enter Date, eg. 06/30/15)
- *    Description: (Enter Program Description, e.g. 
+ *    Date: 08/17/21
+ *    Description: Examples of using interpolation
  *
 ------------------------------------------------------------------------------*/
 
@@ -42,7 +42,6 @@ int main()
     spida::SplineInterp sinterp(x,y);
     std::vector<double> ysinterp = sinterp.eval(xinterp);
     dataio.writeFile("spline_interp_data.dat",xinterp,ysinterp);
-
 
     //Test tridisolve
     int n = 20;

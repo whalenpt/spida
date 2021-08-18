@@ -6,6 +6,7 @@ set(SRC_FILES
     grid/chebX.cpp
     grid/uniformX.cpp
 	grid/uniformT.cpp
+	grid/besselR.cpp
 	interp.cpp
 	model/modelT.cpp
 	propagator/propagatorRT_RC.cpp
@@ -31,6 +32,8 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/grid/gridX.h"
    "${INCL_DIR}/grid/chebX.h"
    "${INCL_DIR}/grid/uniformX.h"
+   "${INCL_DIR}/grid/gridR.h"
+   "${INCL_DIR}/grid/besselR.h"
    "${INCL_DIR}/interp.h"
    "${INCL_DIR}/model/model.h"
    "${INCL_DIR}/model/modelT.h"

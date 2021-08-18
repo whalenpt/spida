@@ -1,6 +1,6 @@
 
-#ifndef SPIDA_PERIODICT_H_
-#define SPIDA_PERIODICT_H_ 
+#ifndef SPIDA_TRANSFORMPERIODICT_H_
+#define SPIDA_TRANSFORMPERIODICT_H_ 
 
 #include <vector>
 #include "spida/constants.h"

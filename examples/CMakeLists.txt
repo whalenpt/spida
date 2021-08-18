@@ -1,11 +1,16 @@
 
 cmake_minimum_required(VERSION 3.19)
 
-add_executable(interp_example interp_example.cpp)
-target_link_libraries(interp_example PRIVATE 
+add_executable(interp_ex interp_example.cpp)
+add_executable(grid_ex grid_example.cpp)
+
+target_link_libraries(interp_ex PUBLIC
     SPIDA::spida
     pw::pwutils
     ParamBin::parambin
 )
+
+target_link_libraries(grid_ex PUBLIC SPIDA::spida)
+
 
 
