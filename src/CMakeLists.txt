@@ -93,6 +93,7 @@ target_link_libraries(spida
     PRIVATE pw::pwutils
     PUBLIC kissfft
     PUBLIC nayukidct
+    #    PUBLIC gsl
 )
 
 set_target_properties(spida PROPERTIES
