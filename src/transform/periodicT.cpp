@@ -45,12 +45,36 @@ PeriodicTransformT::~PeriodicTransformT()
 
 }
 
-void PeriodicTransformT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out)
+void PeriodicTransformT::execute_forward()
 {
-    std::reverse_copy(std::begin(in),std::end(in),std::begin(m_rFFTr));
     kiss_fftr(m_rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(m_rFFTs.data()));
+}
+
+void PeriodicTransformT::execute_backward()
+{
+    kiss_fftri(m_rcfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_rFFTs.data()),\
+                  reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()));
+}
+
+
+
+void PeriodicTransformT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out)
+{
+    // FFTW FORWARD - > +iwt transform def -> reverse time t -> -t
+    std::reverse_copy(std::begin(in),std::end(in),std::begin(m_rFFTr));
+    execute_forward();
     std::copy(std::begin(m_rFFTs)+m_minI,std::begin(m_rFFTs)+m_maxI+1,std::begin(out));
+}
+
+void PeriodicTransformT::T_To_ST(const double* in,dcmplx* out)
+{
+    // FFTW FORWARD - > +iwt transform def -> reverse time t -> -t
+    for (unsigned int j = 0; j < m_nt; j++) 
+        m_rFFTr[j] = in[m_nt-j-1]; 
+    execute_forward();
+    for(unsigned int j = m_minI; j<=m_maxI; j++)
+        out[j-m_minI] = m_rFFTs[j];
 }
 
 void PeriodicTransformT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out)
@@ -59,11 +83,26 @@ void PeriodicTransformT::ST_To_T(const std::vector<dcmplx>& in,std::vector<doubl
     for(auto j = m_minI; j <= m_maxI; j++)
         m_rFFTs[j] = in[j-m_minI]/static_cast<double>(m_nt); 
     std::fill(m_rFFTs.begin()+m_maxI+1,m_rFFTs.end(),dcmplx(0,0));
-
-    kiss_fftri(m_rcfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_rFFTs.data()),\
-                  reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()));
+    execute_backward();
     std::reverse_copy(std::begin(m_rFFTr),std::end(m_rFFTr),std::begin(out));
 }
+
+void PeriodicTransformT::ST_To_T(const dcmplx* in,double* out)
+{
+    // band limited minimum frequency 
+    for(unsigned int j = 0; j < m_minI; j++) 
+        m_rFFTs[j] = 0.0; 
+    for(unsigned int j = m_minI; j <= m_maxI; j++)
+        m_rFFTs[j] = in[j-m_minI]/static_cast<double>(m_nt); 
+    // band limited maximum frequency
+    for(unsigned int j = m_maxI+1; j < m_nt/2+1; j++)
+        m_rFFTs[j] = 0.0; 
+    execute_backward();
+    // FFTW BACKWARD - > -iwt transform def -> reverse time t -> -t
+    for (unsigned int j = 0; j < m_nt; j++)  
+      out[j] = m_rFFTr[m_nt-j-1];
+}
+
 
 void PeriodicTransformT::T_To_ST_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
 {

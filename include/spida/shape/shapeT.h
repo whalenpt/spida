@@ -5,7 +5,7 @@
 #include <string>
 #include <complex>
 #include "spida/shape/shape.hpp"
-#include "spida/grid/uniformT.h"
+#include "spida/grid/gridT.h"
 
 namespace spida{
 
@@ -33,6 +33,13 @@ class ShapeT : public Shape1D<double,std::complex<double>>
         void computeReal(const std::vector<double>& t,std::vector<double>& y) const;
         dcmplx computePhaseFactor(double t) const;
 
+        void compute(const GridT& grid,std::vector<dcmplx>& y){
+            Shape1D::compute(grid.getT(),y);
+        }
+        void computeReal(const GridT& grid,std::vector<double>& y){
+            computeReal(grid.getT(),y);
+        }
+
     private:
         double m_A;
         double m_tp;
@@ -49,7 +56,6 @@ class GaussT : public ShapeT
         ~GaussT() {}; 
         std::complex<double> compute(double t) const;
 };
-
 
 
 class SechT : public ShapeT

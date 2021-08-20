@@ -15,6 +15,7 @@ set(SRC_FILES
 	report/reportcenter.cpp
 	report/reporthandler.cpp
 	shape/shapeT.cpp
+	shape/shapeR.cpp
 	solver/solver.cpp
 	solver/solverETDAS.cpp
 	solver/solverETDCS.cpp
@@ -24,6 +25,7 @@ set(SRC_FILES
 	transform/periodicT.cpp
 	transform/chebX.cpp
 	transform/hankelR.cpp
+	transform/hankelperiodicRT.cpp
 )
 
 set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
@@ -31,6 +33,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/constants.h"
    "${INCL_DIR}/grid/uniformT.h"
    "${INCL_DIR}/grid/gridX.h"
+   "${INCL_DIR}/grid/gridT.h"
    "${INCL_DIR}/grid/chebX.h"
    "${INCL_DIR}/grid/uniformX.h"
    "${INCL_DIR}/grid/gridR.h"
@@ -44,6 +47,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/report/reporthandler.h"
    "${INCL_DIR}/shape/shape.hpp"
    "${INCL_DIR}/shape/shapeT.h"
+   "${INCL_DIR}/shape/shapeR.h"
    "${INCL_DIR}/solver/solver.h"
    "${INCL_DIR}/solver/solverETDAS.h"
    "${INCL_DIR}/solver/solverETDCS.h"
@@ -54,9 +58,11 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/transform/transformT.h"
    "${INCL_DIR}/transform/transformR.h"
    "${INCL_DIR}/transform/transformX.h"
+   "${INCL_DIR}/transform/transformRT.h"
    "${INCL_DIR}/transform/periodicT.h"
    "${INCL_DIR}/transform/chebX.h"
    "${INCL_DIR}/transform/hankelR.h"
+   "${INCL_DIR}/transform/hankelperiodicRT.h"
 )
 
 set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")

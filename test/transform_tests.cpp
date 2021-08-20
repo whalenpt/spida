@@ -5,8 +5,10 @@
 #include <spida/grid/uniformT.h>
 #include <spida/grid/besselR.h>
 #include <spida/shape/shapeT.h>
+#include <spida/shape/shapeR.h>
 #include <spida/transform/periodicT.h>
 #include <spida/transform/hankelR.h>
+#include <spida/transform/hankelperiodicRT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <algorithm>
@@ -14,7 +16,7 @@
 #include <functional>
 #include <random>
 
-TEST(KTRANSFORM_TEST,GAUSST)
+TEST(PERIODICT_TRANSFORM_TEST,GAUSST)
 {
     using spida::dcmplx;
     int nt = 4096;
@@ -40,7 +42,34 @@ TEST(KTRANSFORM_TEST,GAUSST)
     EXPECT_LT(pw::relative_error(y,yinv),1e-6);
 }
 
-TEST(KTRANSFORM_TEST,COMPLEX_GAUSST)
+TEST(PERIODICT_TRANSFORM_TEST,GAUSST_POINTERS)
+{
+    using spida::dcmplx;
+    int nt = 4096;
+    double I0 = 5.0e16;
+    double tp = 20.0e-15;
+    double omega0 = 4.7091e14;
+    spida::GaussT shape(std::sqrt(I0),tp,omega0);
+    spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
+    spida::PeriodicTransformT transform(grid);
+
+    const std::vector<double>& t = grid.getT();
+    std::vector<double> y(nt);
+    std::vector<double> yinv(nt);
+    std::vector<dcmplx> ysp(grid.getNst());
+    shape.ShapeT::computeReal(t,y);
+    transform.T_To_ST(y.data(),ysp.data());
+    transform.ST_To_T(ysp.data(),yinv.data());
+
+    auto maxval = pw::max(ysp);
+    auto maxpos = pw::argmax(ysp);
+	EXPECT_DOUBLE_EQ(abs(maxval),33811981379.747528);
+	EXPECT_EQ(maxpos,28);
+    EXPECT_LT(pw::relative_error(y,yinv),1e-6);
+}
+
+
+TEST(PERIODICT_TRANSFORM_TEST,COMPLEX_GAUSST)
 {
     using spida::dcmplx;
     int nt = 4096;
@@ -183,6 +212,41 @@ TEST(HANKEL_TRANSFORM_TEST,ORTHOGONALITY)
     }
     EXPECT_NEAR(zero_sum,0,1e-6);
 }
+
+#include <fstream>
+TEST(HANKELPERIODICRT_TRANSFORM_TEST,GAUSSTGAUSSR)
+{
+    using spida::dcmplx;
+    int nt = 4096;
+    double I0 = 5.0e16;
+    double tp = 2.0e-15;
+    double omega0 = 2.7091e15;
+
+    std::vector<double> u0t(nt);
+    spida::GaussT shapeT(std::sqrt(I0),tp,omega0);
+    spida::UniformGridT gridT(nt,-240e-15,240e-15,5.10803e14,1.448963e16);
+    shapeT.computeReal(gridT,u0t);
+
+    double w0 = 20.0e-6;
+    int nr = 100;
+    std::vector<double> u0r(nr);
+    spida::GaussR shapeR(1.0,w0);
+    spida::BesselRootGridR gridR(nr,6*w0);
+    compute(gridR,shapeR,u0r);
+
+    std::vector<double> u(nr*nt);
+    int nst = gridT.getNst();
+    std::vector<dcmplx> v(nr*nst);
+    std::vector<double> uinv(nr*nt);
+
+    spida::HankelPeriodicTransformRT transform(gridR,gridT);
+    transform.RT_To_SRST(u,v);
+    transform.SRST_To_RT(v,uinv);
+
+    EXPECT_LT(pw::relative_error(u,uinv),1e-6);
+}
+
+
 
 
 

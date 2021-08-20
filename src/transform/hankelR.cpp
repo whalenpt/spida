@@ -32,7 +32,7 @@ namespace spida {
       initDHT(grid);
   }
 
-  void HankelTransformR::R_To_SR(const std::vector<double>& in,std::vector<double>& out) 
+  void HankelTransformR::R_To_SR(const double* in,double* out) 
   {
       for(unsigned int m = 0; m < m_nr; m++){
           double sum = 0.0;
@@ -42,10 +42,31 @@ namespace spida {
       }
   }
 
-  void HankelTransformR::SR_To_R(const std::vector<double>& in,std::vector<double>& out) 
+  void HankelTransformR::R_To_SR(const dcmplx* in,dcmplx* out) 
+  {
+      for(unsigned int m = 0; m < m_nr; m++){
+          dcmplx sum = 0.0;
+          for(unsigned int k = 0; k < m_nr; k++)
+              sum += m_Ymk[m*m_nr+k]*in[k];
+          out[m] = m_alpha*sum;
+      }
+  }
+
+  void HankelTransformR::SR_To_R(const double* in,double* out) 
   {
       for(unsigned int k = 0; k < m_nr; k++){
           double sum = 0.0;
+          for(unsigned int m = 0; m < m_nr; m++)
+              sum += m_Ymk[k*m_nr+m]*in[m];
+          out[k] = sum/m_alpha;
+      }
+  }
+
+
+  void HankelTransformR::SR_To_R(const dcmplx* in,dcmplx* out) 
+  {
+      for(unsigned int k = 0; k < m_nr; k++){
+          dcmplx sum = 0.0;
           for(unsigned int m = 0; m < m_nr; m++)
               sum += m_Ymk[k*m_nr+m]*in[m];
           out[k] = sum/m_alpha;

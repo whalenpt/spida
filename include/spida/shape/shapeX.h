@@ -57,6 +57,8 @@ class CosX : public ShapeX
         double compute(double x) const;
 };
 
+
+
 }
 
 #endif

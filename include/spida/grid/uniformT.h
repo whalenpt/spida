@@ -3,26 +3,24 @@
 #define SPIDA_GRID_UNIFORMT_H_
 
 #include <vector>
+#include "spida/grid/gridT.h"
 
 namespace spida{
 
 void setUniformT(double minT,double maxT,std::vector<double>& t);
 void setUniformST(double minST,double maxST,std::vector<double>& st);
 
-class UniformGridT 
+class UniformGridT : public GridT
 {
   public:
-      UniformGridT(int nt,double minT,double maxT); 
-      UniformGridT(int nt,double minT,double maxT,double minST,double maxST); 
-      UniformGridT(const UniformGridT& grid);
+      explicit UniformGridT(int nt,double minT,double maxT); 
+      explicit UniformGridT(int nt,double minT,double maxT,double minST,double maxST); 
+      explicit UniformGridT(const UniformGridT& grid);
       ~UniformGridT() {}; 
       const std::vector<double>& getT() const {return m_t;}
       const std::vector<double>& getST() const {return m_st;}
-      int getNt() const {return m_t.size();}
       int getNst() const {return m_st.size();}
-      double getMinT() const {return m_t[0];}
       double getMinST() const {return m_st[0];}
-      double getMaxT() const {return m_t.back();}
       double getMaxST() const {return m_st.back();}
       double getDT() const {return (m_t.back()-m_t[0])/(m_t.size()-1);}
       double getDST() const {return (m_st.back()-m_st[0])/(m_st.size()-1);}

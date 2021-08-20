@@ -1,4 +1,5 @@
 
+#include "spida/grid/gridT.h"
 #include "spida/grid/uniformT.h"
 #include "spida/grid/uniformX.h"
 #include "spida/constants.h"
@@ -24,16 +25,22 @@ void setUniformST(double minST,double maxST,std::vector<double>& st)
     for(int i = 0; i < nst; i++) st[i] = minST + i*dst; 
 }
 
-UniformGridT::UniformGridT(const UniformGridT& grid) 
+UniformGridT::UniformGridT(const UniformGridT& grid) : 
+    GridT(grid.getNt(),grid.getMinT(),grid.getMaxT()),
+    m_t(grid.getNt()), m_st(grid.getNst())
 {
     m_minI = grid.getMinI();
     m_maxI = grid.getMaxI();
-    m_t = grid.getT();
-    m_st = grid.getST();
+    const std::vector<double>& t = grid.getT();
+    const std::vector<double>& st = grid.getST();
+    std::copy(std::cbegin(t),std::cend(t),std::begin(m_t));
+    std::copy(std::cbegin(st),std::cend(st),std::begin(m_st));
 }
 
+
 UniformGridT::UniformGridT(int nt,double minT,double maxT) : 
-    m_t(nt,0.0), m_st(nt/2+1), m_minI(0), m_maxI(nt/2)
+    GridT(nt,minT,maxT),
+    m_t(nt), m_st(nt/2+1), m_minI(0), m_maxI(nt/2)
 {
     setUniformT(minT,maxT,m_t);
     double minST = convertIndxToFreq(m_minI);
@@ -43,8 +50,10 @@ UniformGridT::UniformGridT(int nt,double minT,double maxT) :
 }
 
 
-UniformGridT::UniformGridT(int nt,double minT,double maxT,double minST,double maxST) 
-    : m_t(nt,0.0)
+UniformGridT::UniformGridT(int nt,double minT,double maxT,\
+        double minST,double maxST) : 
+    GridT(nt,minT,maxT),
+    m_t(nt)
 {
     setUniformT(minT,maxT,m_t);
     m_minI = convertFreqToIndx(minST);
