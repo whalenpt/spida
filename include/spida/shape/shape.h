@@ -1,6 +1,6 @@
 
-#ifndef SPIDA_SHAPE_HPP_
-#define SPIDA_SHAPE_HPP_
+#ifndef SPIDA_SHAPEH_
+#define SPIDA_SHAPEH_
 
 #include <string>
 #include <complex>
@@ -10,14 +10,14 @@
 
 namespace spida{
 
-template<class T1,class T2>
-class Shape1D 
+class Shape1D
 {
     public:
         Shape1D() {};
         virtual ~Shape1D() {};
-        virtual T2 compute(T1 x) const = 0;
-        void compute(const std::vector<T1>& x,std::vector<T2>& y) const;
+//        virtual double compute(double x) const = 0;
+    private:
+        virtual void compute() const = 0;
 };
 
 template<class T1,class T2>

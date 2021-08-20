@@ -23,15 +23,21 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST)
     double I0 = 5.0e16;
     double tp = 20.0e-15;
     double omega0 = 4.7091e14;
-    spida::GaussT shape(std::sqrt(I0),tp,omega0);
-    spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
-    spida::PeriodicTransformT transform(grid);
+    double minT = -240e-15;
+    double maxT = 240e-15;
 
-    const std::vector<double>& t = grid.getT();
+    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+
     std::vector<double> y(nt);
     std::vector<double> yinv(nt);
     std::vector<dcmplx> ysp(grid.getNst());
-    shape.ShapeT::computeReal(t,y);
+
+    spida::PeriodicTransformT transform(grid);
+
+    spida::GaussT shape(grid,std::sqrt(I0),tp);
+    shape.setFastPhase(omega0);
+    shape.shapeReal(y);
+
     transform.T_To_ST(y,ysp);
     transform.ST_To_T(ysp,yinv);
 
@@ -49,15 +55,20 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST_POINTERS)
     double I0 = 5.0e16;
     double tp = 20.0e-15;
     double omega0 = 4.7091e14;
-    spida::GaussT shape(std::sqrt(I0),tp,omega0);
-    spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
+    double minT = -240e-15;
+    double maxT = 240e-15;
+
+    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
     spida::PeriodicTransformT transform(grid);
 
-    const std::vector<double>& t = grid.getT();
+    spida::GaussT shape(grid,std::sqrt(I0),tp);
+    shape.setFastPhase(omega0);
+
     std::vector<double> y(nt);
     std::vector<double> yinv(nt);
     std::vector<dcmplx> ysp(grid.getNst());
-    shape.ShapeT::computeReal(t,y);
+
+    shape.ShapeT::shapeReal(y);
     transform.T_To_ST(y.data(),ysp.data());
     transform.ST_To_T(ysp.data(),yinv.data());
 
@@ -76,16 +87,20 @@ TEST(PERIODICT_TRANSFORM_TEST,COMPLEX_GAUSST)
     double I0 = 5.0e16;
     double tp = 20.0e-15;
     double omega0 = 4.7091e14;
-    spida::GaussT shape(std::sqrt(I0),tp,omega0);
-    spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
+    double minT = -240e-15;
+    double maxT = 240e-15;
+
+    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
     spida::PeriodicTransformT transform(grid);
 
-    const std::vector<double>& t = grid.getT();
+    spida::GaussT shape(grid,std::sqrt(I0),tp);
+    shape.setFastPhase(omega0);
+
     std::vector<dcmplx> y(nt);
     std::vector<dcmplx> yinv(nt);
-
     std::vector<dcmplx> ysp(grid.getNst());
-    shape.Shape1D::compute(t,y);
+    shape.shape(y);
+
     transform.T_To_ST_c(y,ysp);
     transform.ST_To_T_c(ysp,yinv);
 
@@ -102,6 +117,7 @@ TEST(HANKEL_TRANSFORM_TEST,GAUSS)
     double rmax = 2.0;
     spida::BesselRootGridR grid(N,rmax);
     spida::HankelTransformR transform(grid);
+
     const std::vector<double>& r = grid.getR();
     const std::vector<double>& kr = grid.getSR();
 
@@ -221,18 +237,25 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,GAUSSTGAUSSR)
     double I0 = 5.0e16;
     double tp = 2.0e-15;
     double omega0 = 2.7091e15;
+    double minT = -240e-15;
+    double maxT = 240e-15;
+
+
+    spida::UniformGridT gridT(nt,minT,maxT,5.10803e14,1.448963e16);
+    spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
+    shapeT.setFastPhase(omega0);
 
     std::vector<double> u0t(nt);
-    spida::GaussT shapeT(std::sqrt(I0),tp,omega0);
-    spida::UniformGridT gridT(nt,-240e-15,240e-15,5.10803e14,1.448963e16);
-    shapeT.computeReal(gridT,u0t);
+    shapeT.shapeReal(u0t);
 
-    double w0 = 20.0e-6;
     int nr = 100;
-    std::vector<double> u0r(nr);
-    spida::GaussR shapeR(1.0,w0);
+    double w0 = 20.0e-6;
+
     spida::BesselRootGridR gridR(nr,6*w0);
-    compute(gridR,shapeR,u0r);
+    spida::GaussR shapeR(gridR,1.0,w0);
+
+    std::vector<double> u0r(nr);
+    shapeR.shape(u0r);
 
     std::vector<double> u(nr*nt);
     int nst = gridT.getNst();

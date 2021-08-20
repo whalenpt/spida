@@ -11,12 +11,14 @@ TEST(SHAPE_TEST,GAUSST)
     double I0 = 5.0e16;
     double tp = 20.0e-15;
     double car_freq = 4.7091e14;
-    spida::GaussT shape(std::sqrt(I0),tp,car_freq);
-    spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
-    nt = grid.getNt();
-    const std::vector<double>& t = grid.getT();
     std::vector<double> y(nt);
-    shape.ShapeT::computeReal(t,y);
+
+    spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
+    spida::GaussT shape(grid,std::sqrt(I0),tp);
+    shape.setFastPhase(car_freq);
+    shape.shapeReal(y);
+
+
     auto itmax = std::max_element(std::begin(y),std::end(y));
     auto itmin = std::min_element(std::begin(y),std::end(y));
 	EXPECT_NEAR(223519721.79339397,*itmax,1e-6);
@@ -31,13 +33,13 @@ TEST(SHAPE_TEST,SECHT)
     double I0 = 5.0e16;
     double tp = 20.0e-15;
     double car_freq = 4.7091e14;
-    //double apod = 0.2;
-    spida::SechT shape(std::sqrt(I0),tp,car_freq);
-    spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
-    nt = grid.getNt();
-    const std::vector<double>& t = grid.getT();
     std::vector<double> y(nt);
-    shape.ShapeT::computeReal(t,y);
+
+    spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
+    spida::SechT shape(grid,std::sqrt(I0),tp);
+    shape.setFastPhase(car_freq);
+    shape.shapeReal(y);
+
     auto itmax = std::max_element(std::begin(y),std::end(y));
     auto itmin = std::min_element(std::begin(y),std::end(y));
 
@@ -56,13 +58,12 @@ TEST(SHAPE_TEST,AIRYT)
     double minT = -320e-15;
     double maxT = 120e-15;
     double apod = 0.2;
-    spida::AiryT shape(std::sqrt(I0),tp,omega0);
-    shape.setApodization(apod);
-    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    nt = grid.getNt();
-    const std::vector<double>& t = grid.getT();
     std::vector<double> y(nt);
-    shape.ShapeT::computeReal(t,y);
+
+    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+    spida::AiryT shape(grid,std::sqrt(I0),tp,apod);
+    shape.setFastPhase(omega0);
+    shape.shapeReal(y);
 
     auto itmax = std::max_element(std::begin(y),std::end(y));
     auto itmin = std::min_element(std::begin(y),std::end(y));
@@ -82,12 +83,12 @@ TEST(SHAPE_TEST,BESSELT)
     double minT = -240e-15;
     double maxT = 240e-15;
     double apod = 0.5;
-    spida::BesselT shape(std::sqrt(I0),tp,omega0);
-    shape.setApodization(apod);
-    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    const std::vector<double>& t = grid.getT();
     std::vector<double> y(nt);
-    shape.ShapeT::computeReal(t,y);
+
+    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+    spida::BesselT shape(grid,std::sqrt(I0),tp,apod);
+    shape.setFastPhase(omega0);
+    shape.shapeReal(y);
 
     auto itmax = std::max_element(std::begin(y),std::end(y));
     auto itmin = std::min_element(std::begin(y),std::end(y));

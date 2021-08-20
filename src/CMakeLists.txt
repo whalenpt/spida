@@ -45,7 +45,6 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/propagator/propagatorT.h"
    "${INCL_DIR}/report/reportcenter.h"
    "${INCL_DIR}/report/reporthandler.h"
-   "${INCL_DIR}/shape/shape.hpp"
    "${INCL_DIR}/shape/shapeT.h"
    "${INCL_DIR}/shape/shapeR.h"
    "${INCL_DIR}/solver/solver.h"

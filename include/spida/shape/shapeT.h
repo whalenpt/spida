@@ -4,21 +4,24 @@
 
 #include <string>
 #include <complex>
-#include "spida/shape/shape.hpp"
+#include "spida/constants.h"
 #include "spida/grid/gridT.h"
 
 namespace spida{
 
-class ShapeT : public Shape1D<double,std::complex<double>>
+// Interface class
+class ShapeT 
 {
     public:
-        ShapeT(double A,double tp,double omega0) :
-            Shape1D<double,std::complex<double>>(),m_A(A),m_tp(tp),m_omega0(omega0),
-                m_slow_phase(0.0),m_offset(0.0),m_chirp(0.0) {}
+        ShapeT(const GridT& grid,double A,double tp);
         virtual ~ShapeT() {};
         void setChirp(double v) {m_chirp = v;}
         void setOffset(double v) {m_offset = v;}
         void setSlowPhase(double v) {m_slow_phase = v;}
+        void setAmplitude(double v) {m_A = v;}
+        void setWidth(double v) {m_tp = v;}
+        void setFastPhase(double v) {m_omega0 = v;}
+
         double amplitude() const {return m_A;}
         double width() const {return m_tp;}
         double offset() const {return m_offset;}
@@ -26,66 +29,73 @@ class ShapeT : public Shape1D<double,std::complex<double>>
         double fastPhase() const {return m_omega0;}
         double slowPhase() const {return m_slow_phase;}
 
-        virtual std::complex<double> compute(double t) const = 0;
-        dcmplx envelope(double t) const {return compute(t)*exp(ii*m_omega0*(t-m_offset));}
-        void envelope(const std::vector<double>& t,std::vector<dcmplx>& y) const;
-        double computeReal(double t) const {return compute(t).real();}
-        void computeReal(const std::vector<double>& t,std::vector<double>& y) const;
-        dcmplx computePhaseFactor(double t) const;
-
-        void compute(const GridT& grid,std::vector<dcmplx>& y){
-            Shape1D::compute(grid.getT(),y);
-        }
-        void computeReal(const GridT& grid,std::vector<double>& y){
-            computeReal(grid.getT(),y);
-        }
+        void shape(std::vector<dcmplx>& v) const;
+        void shapeReal(std::vector<double>& v) const;
+        void envelope(std::vector<dcmplx>& v) const;
 
     private:
+        std::vector<double> m_t;
         double m_A;
         double m_tp;
-        double m_omega0; 
-        double m_slow_phase; 
         double m_offset;
         double m_chirp;
+        double m_slow_phase; 
+        double m_omega0; 
+
+        dcmplx fastPhaseFactor(double t) const; 
+        dcmplx slowPhaseFactor(double t) const; 
+
+        dcmplx computeShape(double t) const {return computeEnvelope(t)*fastPhaseFactor(t);}
+        double computeShapeReal(double t) const {return computeShape(t).real();}
+        dcmplx computeEnvelope(double t) const {return compute(t)*slowPhaseFactor(t);}
+
+        // compute, will compute base shape
+        virtual double compute(double t) const = 0;
 };
 
 class GaussT : public ShapeT
 {
     public:
-        GaussT(double A,double tp,double omega0) : ShapeT(A,tp,omega0) {}
+        GaussT(const GridT& grid,double A,double tp) : 
+            ShapeT(grid,A,tp) {}
         ~GaussT() {}; 
-        std::complex<double> compute(double t) const;
+    private:
+        double compute(double t) const;
 };
 
 
 class SechT : public ShapeT
 {
     public:
-        SechT(double A,double tp,double omega0) : ShapeT(A,tp,omega0) {}
+        SechT(const GridT& grid,double A,double tp) : 
+            ShapeT(grid,A,tp) {}
         ~SechT() {}; 
-        std::complex<double> compute(double t) const;
+    private:
+        double compute(double t) const;
 };
 
 class AiryT : public ShapeT
 {
     public:
-        AiryT(double A,double tp,double omega0) : ShapeT(A,tp,omega0) {m_apod = 0.25;}
+        AiryT(const GridT& grid,double A,double tp,double apod) : 
+            ShapeT(grid,A,tp), m_apod(apod) {}
         ~AiryT() {}; 
-        std::complex<double> compute(double t) const;
         void setApodization(double val) {m_apod = val;}
         double apodization() const {return m_apod;}
     private:
+        double compute(double t) const;
         double m_apod;
 };
 
 class SuperGaussT : public ShapeT
 {
     public:
-        SuperGaussT(double A,double tp,double omega0,double m) : ShapeT(A,tp,omega0) {m = m_M;}
+        SuperGaussT(const GridT& grid,double A,double tp,double m) : 
+            ShapeT(grid,A,tp), m_M(m) {}
         ~SuperGaussT() {}; 
-        std::complex<double> compute(double t) const;
         void setM(double val) {m_M = val;}
     private:
+        double compute(double t) const;
         int m_M;
 
 };
@@ -93,14 +103,14 @@ class SuperGaussT : public ShapeT
 class BesselT : public ShapeT
 {
     public:
-        BesselT(double A,double tp,double omega0);
+        BesselT(const GridT& grid,double A,double tp,double apod);
         ~BesselT() {}; 
-        std::complex<double> compute(double t) const;
         void setApodization(double val) {m_apod = val;}
         double apodization() const {return m_apod;}
     private:
-        double m_j1;
+        double compute(double t) const;
         double m_apod;
+        double m_j1;
 };
 
 

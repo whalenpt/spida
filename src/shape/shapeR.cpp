@@ -4,23 +4,23 @@
 
 namespace spida{
 
-void compute(const GridR& grid,const ShapeR& shape,std::vector<double>& out)
-{
-    const std::vector<double>& r = grid.getR();
-    for(auto i = 0; i < r.size(); i++)
-        out[i] = shape.compute(r[i]);
-}
+ShapeR::ShapeR(const GridR& grid,double A,double w0) :
+            m_r(grid.getR()),
+            m_A(A),
+            m_w0(w0)
+    {}
 
-
-void ShapeR::compute(const GridR& grid,std::vector<double>& y) const
+void ShapeR::shape(std::vector<double>& v) const
 {
-    const std::vector<double>& r = grid.getR();
-    Shape1D<double,double>::compute(r,y);
+    v.clear();
+    v.resize(m_r.size());
+    for(auto i = 0; i < m_r.size(); i++)
+        v[i] = compute(m_r[i]);
 }
 
 double GaussR::compute(double r) const
 {
-    return GaussR::amplitude()*exp(-pow((r-ShapeR::offset())/ShapeR::width(),2));
+    return ShapeR::amplitude()*exp(-pow(r/ShapeR::width(),2));
 }
 
 }
