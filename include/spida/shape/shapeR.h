@@ -16,7 +16,7 @@ void compute(const GridR& grid,const ShapeR& shape,std::vector<double>& out);
 class ShapeR : public Shape1D<double,double>
 {
     public:
-        ShapeR(const GridR& grid,double A0,double w0,double offset) :
+        ShapeR(double A0,double w0,double offset) :
             Shape1D<double,double>(),m_A0(A0),m_w0(w0),m_offset(offset) {}
         virtual ~ShapeR() {};
         void setAmplitude(double A0) {m_A0 = A0;}
@@ -28,7 +28,7 @@ class ShapeR : public Shape1D<double,double>
         virtual double compute(double r) const = 0;
         void compute(const GridR& grid,std::vector<double>& y) const;
     private:
-        GridR m_grid;
+//        GridR m_grid;
         double m_A0;
         double m_w0;
         double m_offset;
