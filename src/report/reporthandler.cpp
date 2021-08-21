@@ -35,7 +35,7 @@ void ReportHandler::report1D(const std::filesystem::path& dir_path,int repNum,do
     std::ofstream os;
     std::vector<std::unique_ptr<pw::ReportData1D>>::const_iterator it; 
     for(it = m_defs_1D.begin(); it != m_defs_1D.end(); it++){
-        std::filesystem::path file_path = (*it)->filePath(dir_path,repNum);
+        std::filesystem::path file_path = (*it)->path(dir_path,repNum);
         (*it)->setItem("sim_duration",t);
         try{
             os.open(file_path.string());
@@ -48,7 +48,7 @@ void ReportHandler::report1D(const std::filesystem::path& dir_path,int repNum,do
 
     std::vector<std::unique_ptr<pw::TrackData>>::const_iterator tit; 
     for(tit = m_tracker_defs.begin(); tit != m_tracker_defs.end(); tit++){
-        std::filesystem::path file_path = (*tit)->filePath(dir_path);
+        std::filesystem::path file_path = (*tit)->path(dir_path);
         (*tit)->updateTracker(t);
         (*tit)->setItem("sim_duration",t);
         try{
