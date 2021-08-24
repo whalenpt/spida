@@ -11,7 +11,6 @@
 
 namespace spida{
 
-
 PeriodicTransformT::PeriodicTransformT(const UniformGridT& grid) :
     m_rFFTr(grid.getNt(),0.0),
     m_rFFTs(grid.getNt()/2+1,0.0),
@@ -24,7 +23,6 @@ PeriodicTransformT::PeriodicTransformT(const UniformGridT& grid) :
     m_nst = grid.getNst();
     m_minI = grid.getMinI();
     m_maxI = grid.getMaxI();
-
     // T-transform centered around -iwt -> use inverse kissfft for forward direction (s.t.
     // fft central frequency is the first half of the grid and aligns with the UniformGridT class)
     m_cfg_forward = kiss_fft_alloc(m_nt,1,nullptr,nullptr); 
@@ -56,8 +54,6 @@ void PeriodicTransformT::execute_backward()
     kiss_fftri(m_rcfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_rFFTs.data()),\
                   reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()));
 }
-
-
 
 void PeriodicTransformT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out)
 {
@@ -121,8 +117,6 @@ void PeriodicTransformT::ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcm
     kiss_fft(m_cfg_reverse,reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()),\
             reinterpret_cast<kiss_fft_cpx*>(out.data()));
 }
-
-
 
 
 

@@ -80,16 +80,12 @@ namespace spida {
       for(auto i = 0; i < m_nr; i++)
           J1[i] = boost::math::cyl_bessel_j<double>(1.0,J0[i]);
 
-//      for(auto i = 0; i < m_nr; i++)
-//          J1[i] = gsl_sf_bessel_J1(J0[i]);
-
       double jN = grid.getjN();
       for(auto m = 0; m < m_nr; m++){
           for(auto k = 0; k < m_nr; k++){
               double beta_mk = 2.0/(jN*pow(J1[k],2));
               double arg = J0[m]*J0[k]/jN;
               double J0_mk = boost::math::cyl_bessel_j<double>(0.0,arg);
-              //double J0_mk = gsl_sf_bessel_J0(arg);
               m_Ymk[m*m_nr+k] = beta_mk*J0_mk;
           }
       }
