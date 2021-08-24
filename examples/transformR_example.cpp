@@ -36,26 +36,20 @@ int main()
     shapeR.shape(u);
     std::vector<double> v(nr);
 
-
     spida::HankelTransformR transform(gridR);
     dat::ReportData1D<double,double> in_report("R",gridR.getR(),u);
     in_report.setLabelX("r");
+    std::cout << in_report.path().string() << std::endl;
 
-    pw::createDirectory("outfolder",false);
-    std::ofstream os{in_report.path("outfolder")};
+    std::ofstream os;
     os << std::scientific << std::setprecision(3);
-    std::cout << in_report.path("outfolder") << std::endl;
     os << in_report;
-    os.close();
 
     transform.R_To_SR(u,v);
     dat::ReportData1D<double,double> out_report("SR",gridR.getSR(),v);
     out_report.setLabelX("kr");
-    os.open(out_report.path("outfolder"));
     os << std::scientific << std::setprecision(8);
-    std::cout << out_report.path("outfolder") << std::endl;
     os << out_report;
-    os.close();
 
     std::vector<dcmplx> ucmplx(nr);
     for(auto i = 0; i < nr; i++)
@@ -65,8 +59,7 @@ int main()
     transform.R_To_SR(ucmplx,vcmplx);
     dat::ReportComplexData1D<double> cmplx_report("SRcmplx",gridR.getSR(),vcmplx);
     cmplx_report.setLabelX("kr");
-    os.open(cmplx_report.path("outfolder"));
-    std::cout << cmplx_report.path("outfolder") << std::endl;
+    std::cout << cmplx_report.path() << std::endl;
     os << cmplx_report;
     os.close();
 

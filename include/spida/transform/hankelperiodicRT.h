@@ -24,9 +24,13 @@ class HankelPeriodicTransformRT : public TransformsRT
         HankelPeriodicTransformRT()=delete;
         HankelPeriodicTransformRT(const HankelPeriodicTransformRT& sp)=delete;
         HankelPeriodicTransformRT& operator=(const HankelPeriodicTransformRT& sp)=delete;
-        void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
         void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
+        void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
+
         void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
+        void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
+        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
+        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
     private:
         int m_nr;
         int m_nt;
@@ -35,6 +39,7 @@ class HankelPeriodicTransformRT : public TransformsRT
 
         std::vector<double> m_uRT;
         std::vector<dcmplx> m_uRST;
+        std::vector<double> m_uSRT;
         std::vector<dcmplx> m_uSRST;
 
         std::vector<std::thread> m_thread;
@@ -55,9 +60,12 @@ class HankelPeriodicTransformRT : public TransformsRT
 
         void worker_RT_To_RST(int tid);
         void worker_RST_To_SRST(int tid);
-
         void worker_SRST_To_RST(int tid);
         void worker_RST_To_RT(int tid);
+
+        void worker_RT_To_SRT(int tid);
+        void worker_SRST_To_SRT(int tid);
+
 };
 
 }

@@ -34,33 +34,28 @@ int main()
     double maxST = 4.3e15;
 
     spida::UniformGridT gridT(nt,minT,maxT,minST,maxST);
+    spida::PeriodicTransformT transform(gridT);
     spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
     shapeT.setFastPhase(omega0);
 
     std::vector<double> u(nt);
     shapeT.shapeReal(u);
-
     int nst = gridT.getNst();
     std::vector<dcmplx> v(nst);
 
-    spida::PeriodicTransformT transform(gridT);
-    dat::ReportData1D<double,double> in_report("T",gridT.getT(),u);
-
-    pw::createDirectory("outfolder",false);
-    std::ofstream os{in_report.path("outfolder")};
-    os << std::scientific << std::setprecision(5);
-    std::cout << in_report.path("outfolder") << std::endl;
-    os << in_report;
-    os.close();
-
     transform.T_To_ST(u,v);
+
+    dat::ReportData1D<double,double> in_report("T",gridT.getT(),u);
     dat::ReportComplexData1D<double> out_report("ST",gridT.getST(),v);
 
-    os.open(out_report.path("outfolder"));
+    std::ofstream os;
+    os << std::scientific << std::setprecision(5);
+    std::cout << in_report.path() << std::endl;
+    os << in_report;
+
     os << std::scientific << std::setprecision(8);
-    std::cout << out_report.path("outfolder") << std::endl;
+    std::cout << out_report.path() << std::endl;
     os << out_report;
-    os.close();
 
     return 0;
 }
