@@ -31,6 +31,8 @@ class HankelPeriodicTransformRT : public TransformsRT
         void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
         void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
         void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
+        enum class State{Wait,RT_To_RST,RST_To_SRST,SRST_To_RST,RST_To_RT,RT_To_SRT,SRST_To_SRT,Done};
+
     private:
         int m_nr;
         int m_nt;
@@ -46,15 +48,16 @@ class HankelPeriodicTransformRT : public TransformsRT
         std::vector<PeriodicTransformT*> m_transformT;
         std::vector<HankelTransformR*> m_transformR;
 
-        int m_STATE;
+        State m_STATE;
         int m_THCOUNT;
         std::vector<bool> m_ready;
         bool m_processed;
         std::mutex m_mut;
         std::condition_variable m_cv;
 
-        void ReadySTATE(int);
-        void ProcessedSTATE(int);
+        void ReadySTATE(State state);
+        void ProcessedSTATE(State state);
+
         void worker_thread(int id);
         void worker_wait(int id);
 
