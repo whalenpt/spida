@@ -55,28 +55,8 @@ namespace spida {
       m_transformR.clear();
   }
 
-  void HankelPeriodicTransformRT::RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out) 
-  {
-      std::copy(std::begin(in),std::end(in),std::begin(m_uRT));
-      ReadySTATE(State::RT_To_RST);
-      worker_RT_To_RST(0);
-      ProcessedSTATE(State::Wait);
-      std::copy(std::begin(m_uSRST),std::end(m_uSRST),std::begin(out));
-  }                                  
-
   void HankelPeriodicTransformRT::RT_To_SRT(const std::vector<double>& in,std::vector<double>& out) 
   {
-//      for(unsigned int i = 0; i < m_nr; i++)
-//          for (unsigned int j = 0; j < m_nt; j++){
-//              m_uRT[j*m_nr+i] = in[i*m_nt+j];
-//      }
-//      for(unsigned int j = 0; j < m_nt; j++)
-//          m_transformR[0]->R_To_SR(m_uRT.data()+j*m_nr,m_uSRT.data()+j*m_nr);
-//
-//      for(unsigned int i = 0; i < m_nr; i++)
-//          for(unsigned int j = 0; j < m_nt; j++)
-//              out[i*m_nt+j] = m_uSRT[m_nr*j + i]; 
-
       for(unsigned int i = 0; i < m_nr; i++)
           for (unsigned int j = 0; j < m_nt; j++){
               m_uRT[j*m_nr+i] = in[i*m_nt+j];
@@ -91,13 +71,38 @@ namespace spida {
 
   void HankelPeriodicTransformRT::SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
   {
-      return;
+      // Transpose array -> in has SR-ST row-column form
+      for(unsigned int i = 0; i < m_nr; i++)
+          for(unsigned int j = 0; j < m_nst; j++)
+              m_uSRST[m_nr*j+i] = in[m_nst*i + j]; 
+
+      ReadySTATE(State::SRST_To_RST);
+      worker_SRST_To_RST(0);
+      ProcessedSTATE(State::Wait);
+      // Transpose again
+      for(unsigned int i = 0; i < m_nr; i++)
+          for(unsigned int j = 0; j < m_nst; j++)
+              out[m_nst*i+j] = m_uRST[m_nr*j + i]; 
   }
 
   void HankelPeriodicTransformRT::SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out)
   {
-      return;
+      std::copy(std::begin(in),std::end(in),std::begin(m_uSRST));
+      ReadySTATE(State::SRST_To_SRT);
+      worker_SRST_To_SRT(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_uSRT),std::end(m_uSRT),std::begin(out));
   }
+
+  void HankelPeriodicTransformRT::RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out) 
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_uRT));
+      ReadySTATE(State::RT_To_RST);
+      worker_RT_To_RST(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_uSRST),std::end(m_uSRST),std::begin(out));
+  }                                  
+
 
   void HankelPeriodicTransformRT::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
   {
@@ -108,18 +113,19 @@ namespace spida {
       ProcessedSTATE(State::Wait);
 
       // Transpose array -> R data ready for transform
-      for (unsigned int j = 0; j < m_nst; j++)  
-          for (unsigned int i = 0; i < m_nr; i++) 
-              m_uRST[m_nr*i + j] = m_uSRST[i*m_nst + j];
-  
+      for(unsigned int i = 0; i < m_nr; i++)
+          for (unsigned int j = 0; j < m_nst; j++){
+              m_uRST[j*m_nr+i] = m_uSRST[i*m_nst+j];
+      }
+
       // Transform from R to SR
       ReadySTATE(State::RST_To_SRST);
       worker_RST_To_SRST(0);
       ProcessedSTATE(State::Wait);
       // Transpose again -> out is in SR-ST row-column form
-      for (unsigned int i = 0; i < m_nst; i++)  
-          for (unsigned int j = 0; j < m_nr; j++) 
-              out[m_nr*i + j] = m_uSRST[m_nst*j+i];
+      for(unsigned int i = 0; i < m_nr; i++)
+          for(unsigned int j = 0; j < m_nst; j++)
+              out[i*m_nst+j] = m_uSRST[m_nr*j + i]; 
   }                                  
 
   void HankelPeriodicTransformRT::worker_RT_To_RST(int tid)
@@ -137,18 +143,19 @@ namespace spida {
 
   void HankelPeriodicTransformRT::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) 
   {
-      // Transpose array
-      for (unsigned int i = 0; i < m_nr; i++) 
-          for (unsigned int j = 0; j < m_nst; j++)  
-              m_uSRST[m_nst*i + j] = in[m_nr*j+i];
+      // Transpose array -> in is in SR-ST row-column form
+      for(unsigned int i = 0; i < m_nr; i++)
+          for(unsigned int j = 0; j < m_nst; j++)
+              m_uSRST[m_nr*j+i] = in[m_nst*i + j]; 
 
       ReadySTATE(State::SRST_To_RST);
       worker_SRST_To_RST(0);
       ProcessedSTATE(State::Wait);
-      // Transpose again 
-      for(int i = 0; i < m_nr; i++)
-          for(int j = 0; j < m_nst; j++)
-              m_uSRST[m_nst*i+j] = m_uRST[m_nr*j+i];
+      // result in m_uRST
+      // Transpose again
+      for(unsigned int i = 0; i < m_nr; i++)
+          for(unsigned int j = 0; j < m_nst; j++)
+              m_uSRST[m_nst*i+j] = m_uRST[m_nr*j + i]; 
 
       ReadySTATE(State::RST_To_RT);
       worker_RST_To_RT(0);
@@ -158,14 +165,14 @@ namespace spida {
 
   void HankelPeriodicTransformRT::worker_SRST_To_RST(int tid)
   {
-      for (unsigned int i = tid; i < m_nst; i+=m_nThreads)  
-          m_transformR[tid]->SR_To_R(m_uSRST.data()+m_nr*i,m_uRST.data()+m_nr*i);
+      for (unsigned int j = tid; j < m_nst; j+=m_nThreads)  
+          m_transformR[tid]->SR_To_R(m_uSRST.data()+m_nr*j,m_uRST.data()+m_nr*j);
   }
 
   void HankelPeriodicTransformRT::worker_RST_To_RT(int tid)
   {
       for (unsigned int i = tid; i < m_nr; i+= m_nThreads)
-          m_transformT[tid]->ST_To_T(m_uSRST.data()+m_nst*i,m_uRT.data()+m_nst*i);
+          m_transformT[tid]->ST_To_T(m_uSRST.data()+m_nst*i,m_uRT.data()+m_nt*i);
   }
 
 
@@ -232,8 +239,8 @@ namespace spida {
 
   void HankelPeriodicTransformRT::worker_SRST_To_SRT(int tid)
   {
-      // not implemented
-      return;
+      for (unsigned int i = tid; i < m_nr; i+= m_nThreads)
+          m_transformT[tid]->ST_To_T(m_uSRST.data()+m_nst*i,m_uSRT.data()+m_nt*i);
   }
 
 
