@@ -175,7 +175,6 @@ namespace spida {
           m_transformT[tid]->ST_To_T(m_uSRST.data()+m_nst*i,m_uRT.data()+m_nt*i);
   }
 
-
   void HankelPeriodicTransformRT::worker_thread(int tid)
   {
     bool threads_done = false;

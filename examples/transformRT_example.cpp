@@ -20,6 +20,7 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <chrono>
 
 //------------------------------------------------------------------------------
 
@@ -29,7 +30,7 @@ int main()
 
     using spida::dcmplx;
     int nr = 200;
-    int nt = 1024;
+    int nt = 512;
     double w0 = 20.0e-6;
     double I0 = 5.0e16;
     double tp = 5.0e-15;
@@ -40,7 +41,7 @@ int main()
     double maxST = 4.3e15;
 
     spida::UniformGridT gridT(nt,minT,maxT,minST,maxST);
-    spida::BesselRootGridR gridR(nr,12*w0);
+    spida::BesselRootGridR gridR(nr,6*w0);
 
     spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
     shapeT.setFastPhase(omega0);
@@ -129,6 +130,39 @@ int main()
     srt_report2.setLabelX("kr");
     srt_report2.setLabelY("t");
     os << srt_report2;
+
+    unsigned int MAX_THREADS = 8;
+    std::vector<int> rt_srst_timings(MAX_THREADS);
+    std::vector<int> srst_rt_timings(MAX_THREADS);
+    for(auto threads = 1; threads < MAX_THREADS; threads++){
+        spida::HankelPeriodicTransformRT transform_threaded(gridR,gridT,threads);
+        std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
+
+        //auto start_time = std::chrono::steady_clock::now();
+        transform_threaded.RT_To_SRST(u,v);
+        //auto elapsed_time = std::chrono::steady_clock::now() - start_time;
+        std::chrono::duration<double> elapsed_time = std::chrono::steady_clock::now() - start_time;
+        rt_srst_timings[threads] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
+
+        start_time = std::chrono::steady_clock::now();
+        transform_threaded.SRST_To_RT(v,u);
+        elapsed_time = std::chrono::steady_clock::now() - start_time;
+
+        srst_rt_timings[threads] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
+
+    }
+
+    for(auto threads = 1; threads < MAX_THREADS; threads++){
+        std::cout << "HankelPeriodic RT_To_SRST duration with " << threads << " thread(s): "\
+                  << rt_srst_timings[threads] << "us" << std::endl;
+    }
+    std::cout << std::endl;
+    for(auto threads = 1; threads < MAX_THREADS; threads++){
+        std::cout << "HankelPeriodic SRST_To_RT duration with " << threads << " thread(s): "\
+                  << srst_rt_timings[threads] << "us" << std::endl;
+    }
+    std::cout << std::endl;
+
 
     return 0;
 }
