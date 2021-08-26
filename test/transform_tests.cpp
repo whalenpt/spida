@@ -285,6 +285,63 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,GAUSSTGAUSSR)
     EXPECT_LT(pw::relative_error(zeta,zetab),1e-6);
 }
 
+TEST(HANKELPERIODICRT_TRANSFORM_TEST,MULTITHREAD)
+{
+    using spida::dcmplx;
+    int nr = 100;
+    int nt = 512;
+    double w0 = 20.0e-6;
+    double I0 = 5.0e16;
+    double tp = 5.0e-15;
+    double omega0 = 2.7091e15;
+    double minT = -10*tp;
+    double maxT = 10*tp;
+    double minST = 1.0e15;
+    double maxST = 4.3e15;
+    int NUM_THREADS = 3;
+
+    spida::UniformGridT gridT(nt,minT,maxT,minST,maxST);
+    spida::BesselRootGridR gridR(nr,12*w0);
+    spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
+    shapeT.setFastPhase(omega0);
+    spida::GaussR shapeR(gridR,1.0,w0);
+
+    std::vector<double> u0t(nt);
+    shapeT.shapeReal(u0t);
+    std::vector<double> u0r(nr);
+    shapeR.shape(u0r);
+    std::vector<double> u(nr*nt);
+
+    for(auto i = 0; i < nr; i++)
+        for(auto j = 0; j < nt; j++)
+            u[i*nt + j] = u0r[i]*u0t[j];
+
+    int nst = gridT.getNst();
+    std::vector<dcmplx> v(nr*nst);
+    std::vector<double> ub(nr*nt);
+
+    // Check forward tranform and reverse transform applied in sequence is identity
+    spida::HankelPeriodicTransformRT transform(gridR,gridT,NUM_THREADS);
+    transform.RT_To_SRST(u,v);
+    transform.SRST_To_RT(v,ub);
+    EXPECT_LT(pw::relative_error(u,ub),1e-6);
+
+    // Check RT_To_RST and SRST_To_RST are equal
+    std::vector<dcmplx> w(nr*nst);
+    std::vector<dcmplx> wb(nr*nst);
+    transform.RT_To_RST(u,w);
+    transform.SRST_To_RST(v,wb);
+    EXPECT_LT(pw::relative_error(w,wb),1e-6);
+
+    // Check RT_To_SRT and SRST_To_SRT are equal
+    std::vector<double> zeta(nr*nt);
+    std::vector<double> zetab(nr*nt);
+    transform.RT_To_SRT(u,zeta);
+    transform.SRST_To_SRT(v,zetab);
+    EXPECT_LT(pw::relative_error(zeta,zetab),1e-6);
+}
+
+
 
 
 
