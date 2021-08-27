@@ -10,7 +10,6 @@
 namespace spida {
 
   ChebTransformX::ChebTransformX(const ChebRootGridX& grid) : 
-      TransformX(grid),
       m_nx(grid.getNx()),
       m_uFFT(grid.getNx())
   {

@@ -1,12 +1,12 @@
 
 #include <gtest/gtest.h>
-#include <spida/constants.h>
+#include <spida/helper/constants.h>
 #include <spida/grid/uniformT.h>
 #include <spida/shape/shapeT.h>
 #include <spida/grid/chebX.h>
 #include <spida/transform/chebX.h>
+#include <spida/ChebX.h>
 #include <nayukidct/FastDctLee.hpp>
-#include <spida/spidaChebX.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <random>

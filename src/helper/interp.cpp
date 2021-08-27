@@ -1,5 +1,5 @@
 
-#include "spida/interp.h"
+#include "spida/helper/interp.h"
 #include <pwutils/pwexcept.h>
 #include <iostream>
 #include <algorithm>

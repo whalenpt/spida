@@ -1,6 +1,6 @@
 
 #include <gtest/gtest.h>
-#include <spida/constants.h>
+#include <spida/helper/constants.h>
 #include <spida/grid/uniformT.h>
 #include <spida/shape/shapeT.h>
 #include <pwutils/report/dataio.hpp>

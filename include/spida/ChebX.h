@@ -1,16 +1,16 @@
 
-#ifndef SPIDACHEB_X_H_
-#define SPIDACHEB_X_H_
+#ifndef SPIDACHEBX_H_
+#define SPIDACHEBX_H_
 
 #include <vector>
-#include "spida/spidaX.h"
 
 namespace spida{
 
 class ChebTransformX;
 class ChebRootGridX;
+class GridX;
 
-class ChebX : public SpidaX
+class ChebX 
 {
     public:
         ChebX(const ChebRootGridX& grid);
@@ -21,7 +21,7 @@ class ChebX : public SpidaX
         void dX(const std::vector<double>& in,std::vector<double>& out,int n); 
         void dX(const std::vector<double>& in,std::vector<double>& out); 
         const GridX& getGridX(); 
-        const TransformX& getTransformX();
+        const ChebTransformX& getTransformX();
     private:
         ChebRootGridX* m_gr;
         ChebTransformX* m_tr;

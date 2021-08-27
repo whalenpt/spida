@@ -3,27 +3,23 @@
 #define MODELT_H_
 
 #include "spida/model/model.h"
-#include "spida/spidaT.h"
-#include "spida/grid/uniformT.h"
-#include <memory>
 
 namespace spida{
 
-class ModelT : public ModelDC
+class PeriodicBLT;
+class UniformGridT;
+
+class ModelPeriodicBLT : public ModelCV
 {
   public:
-      ModelT(int nt,double minT,double maxT,double minST,double maxST,int c_nthreads = 1) :
-          ModelDC(c_nthreads), m_spi(new PeriodicT(UniformGridT(nt,minT,maxT,minST,maxST))) {}
-      ModelT(const UniformGridT& grid,int c_nthreads = 1) :
-          ModelDC(c_nthreads), m_spi(new PeriodicT(grid)) {}
-      virtual ~ModelT();
-      virtual const std::vector<dcmplx>& linOperator() = 0;
+      ModelPeriodicBLT(const UniformGridT& grid,int c_nthreads = 1); 
+      virtual ~ModelPeriodicBLT() {}
+      virtual const std::vector<dcmplx>& linOp() = 0;
       virtual void nonLinResponse(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) = 0;
-      int numDimensions() const {return 1;}
-      int specDimSize() const {return m_spi->getNst();}
-      spida::PeriodicT& spida() {return *m_spi;}
+      spida::PeriodicBLT& spida() {return *m_spi;}
+      virtual Dimension dimension() {return Dimension::D1;}
   private:
-      std::unique_ptr<spida::PeriodicT> m_spi;
+      std::unique_ptr<spida::PeriodicBLT> m_spi;
 };
 
 }

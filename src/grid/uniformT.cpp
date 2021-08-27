@@ -2,7 +2,7 @@
 #include "spida/grid/gridT.h"
 #include "spida/grid/uniformT.h"
 #include "spida/grid/uniformX.h"
-#include "spida/constants.h"
+#include "spida/helper/constants.h"
 #include <string>
 #include <iostream>
 #include <pwutils/pwexcept.h>

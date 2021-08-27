@@ -1,10 +1,9 @@
 
 
-#include "spida/constants.h"
+#include "spida/ChebX.h"
 #include "spida/grid/chebX.h"
 #include "spida/transform/chebX.h"
-#include "spida/spidaChebX.h"
-#include "spida/interp.h"
+#include "spida/helper/constants.h"
 #include <vector>
 #include <memory>
 #include <iostream>
@@ -14,7 +13,7 @@
 
 namespace spida{
 
-  ChebX::ChebX(const ChebRootGridX& grid) : SpidaX(grid),
+  ChebX::ChebX(const ChebRootGridX& grid) :
     m_gr(new ChebRootGridX(grid)),
     m_tr(new ChebTransformX(grid)),
     m_sp(grid.getNx()), 
@@ -31,7 +30,7 @@ namespace spida{
   const GridX& ChebX::getGridX() {
       return *m_gr;
   }
-  const TransformX& ChebX::getTransformX() {
+  const ChebTransformX& ChebX::getTransformX() {
       return *m_tr;
   }
 

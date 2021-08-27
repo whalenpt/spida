@@ -1,20 +1,19 @@
 
-#ifndef PROPAGATORS_H_
-#define PROPAGATORS_H_
+#ifndef PROPAGATOR_H_
+#define PROPAGATOR_H_
 
-#include "spida/report/reporthandler.h"
-#include "spida/constants.h"
 #include <string>
 #include <vector>
-
+#include "spida/helper/constants.h"
+#include "spida/report/reporthandler.h"
 
 namespace spida{
 
-class Propagators
+class Propagator
 {
   public:
-      Propagators() {} 
-      virtual ~Propagators() {}; 
+      Propagator() {} 
+      virtual ~Propagator() {}; 
       virtual void updateFields(double t) = 0;
       ReportHandler& reportHandler() {return m_report_handler;}
   private:
@@ -22,14 +21,14 @@ class Propagators
       ReportHandler m_report_handler;
 };
 
-class PropagatorsDC : public Propagators
+
+class PropagatorCV : public Propagator
 {
   public:
-      PropagatorsDC() {} 
-      virtual ~PropagatorsDC() {}; 
-      virtual std::vector<double>& real() = 0;
-      virtual std::vector<dcmplx>& spec() = 0;
+      PropagatorCV() {} 
+      virtual ~PropagatorCV() {}; 
       virtual void updateFields(double t) = 0;
+      virtual std::vector<dcmplx>& propagator() = 0;
   private:
       virtual void initReport() = 0;
 };

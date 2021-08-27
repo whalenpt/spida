@@ -1,9 +1,9 @@
 
-#include "spida/constants.h"
-#include "spida/chebInterpX.h"
+#include "spida/ChebInterpX.h"
+#include "spida/ChebX.h"
 #include "spida/grid/chebX.h"
-#include "spida/spidaChebX.h"
-#include "spida/interp.h"
+#include "spida/helper/interp.h"
+#include "spida/helper/constants.h"
 #include <vector>
 
 namespace spida{

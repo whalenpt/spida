@@ -1,32 +1,30 @@
 
-#ifndef SPIDA_TRANSFORM_HANKELPERIODICRT_H_
-#define SPIDA_TRANSFORM_HANKELPERIODICRT_H_ 
+#ifndef SPIDA_TRANSFORM_HANKELFFTRBLT_H_
+#define SPIDA_TRANSFORM_HANKELFFTRBLT_H_ 
 
 #include <vector>
 #include <mutex>
 #include <condition_variable>
 #include <thread>
-#include "spida/constants.h"
-#include "spida/transform/transformRT.h"
+#include "spida/helper/constants.h"
 
 namespace spida{
 
-class PeriodicTransformT;
+class FFTBLT;
 class HankelTransformR;
 class BesselRootGridR;
 class UniformGridT;
 
-class HankelPeriodicTransformRT : public TransformsRT
+class HankelFFTRBLT 
 {
     public:
-        explicit HankelPeriodicTransformRT(const BesselRootGridR& gridR,const UniformGridT& gridT,int threads=1);
-        ~HankelPeriodicTransformRT();
-        HankelPeriodicTransformRT()=delete;
-        HankelPeriodicTransformRT(const HankelPeriodicTransformRT& sp)=delete;
-        HankelPeriodicTransformRT& operator=(const HankelPeriodicTransformRT& sp)=delete;
+        explicit HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,int threads=1);
+        ~HankelFFTRBLT();
+        HankelFFTRBLT()=delete;
+        HankelFFTRBLT(const HankelFFTRBLT& sp)=delete;
+        HankelFFTRBLT& operator=(const HankelFFTRBLT& sp)=delete;
         void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
-
         void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
         void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
@@ -45,7 +43,7 @@ class HankelPeriodicTransformRT : public TransformsRT
         std::vector<dcmplx> m_uSRST;
 
         std::vector<std::thread> m_thread;
-        std::vector<PeriodicTransformT*> m_transformT;
+        std::vector<FFTBLT*> m_transformT;
         std::vector<HankelTransformR*> m_transformR;
 
         State m_STATE;

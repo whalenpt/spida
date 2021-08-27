@@ -4,16 +4,16 @@
 #include "spida/model/model.h"
 #include "spida/solver/solver.h"
 #include "spida/propagator/propagator.h"
-#include "spida/constants.h"
+#include "spida/helper/constants.h"
 #include <iostream>
 
 //class Model;
 namespace spida{
 
-class SolverAS_ETD : public SolverAS_DC
+class SolverAS_ETD : public SolverCV_AS
 {
     public:
-        SolverAS_ETD(ModelDC& cmodel,PropagatorsDC& cprs,double sf,double qv);
+        SolverAS_ETD(ModelCV& cmodel,PropagatorCV& cprs,double sf,double qv);
         virtual ~SolverAS_ETD() {}; 
         void setModeCutoff(double val) {m_mode_cutoff = val;}
         void setContourRadius(double val) {m_contour_radi = val;}
@@ -33,7 +33,7 @@ class SolverAS_ETD : public SolverAS_DC
 class ETD34 : public SolverAS_ETD
 {
     public:
-        ETD34(ModelDC& cmodel,PropagatorsDC& cprs);
+        ETD34(ModelCV& cmodel,PropagatorCV& cprs);
         ~ETD34() {};
     private:
         void updateCoefficients(double dt);
@@ -60,7 +60,7 @@ class ETD34 : public SolverAS_ETD
 class ETD35: public SolverAS_ETD
 {
     public:
-        ETD35(ModelDC& cmodel,PropagatorsDC& cprs);
+        ETD35(ModelCV& cmodel,PropagatorCV& cprs);
         ~ETD35() {};
     private:
         void updateCoefficients(double dt);

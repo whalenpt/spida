@@ -1,29 +1,29 @@
 
-#ifndef PROPAGATORST_H_
-#define PROPAGATORST_H_
+#ifndef PROPAGATORT_H_
+#define PROPAGATORT_H_
 
-#include "spida/model/modelT.h"
 #include "spida/propagator/propagator.h"
-#include "spida/shape/shapeT.h"
-#include "spida/spidaT.h"
 
 namespace spida{
 
-class PropagatorsT : public PropagatorsDC
+class ModelPeriodicBLT;
+class PeriodicBLT;
+class ShapeT;
+
+class PropagatorBLT : public PropagatorCV
 {
     public:
-        PropagatorsT(ModelT& md) : m_spi(md.spida()), 
-            m_U(m_spi.getNt(),0.0), m_V(m_spi.getNst(),0.0) {}
-        virtual ~PropagatorsT() {} 
+        PropagatorBLT(ModelPeriodicBLT& md); 
+        virtual ~PropagatorBLT() {} 
         virtual void updateFields(double z) = 0;
-        std::vector<double>& real() {return m_U;}
-        std::vector<dcmplx>& spec() {return m_V;}
+        std::vector<double>& realField() {return m_real_field;}
+        std::vector<dcmplx>& propagator() {return m_propagator;}
         void initFields(const ShapeT& shape);
-        spida::PeriodicT& spida() {return m_spi;}
+        spida::PeriodicBLT& spida() {return m_spi;}
     private:
-        spida::PeriodicT& m_spi;
-        std::vector<double> m_U;
-        std::vector<dcmplx> m_V;
+        spida::PeriodicBLT& m_spi;
+        std::vector<dcmplx> m_propagator;
+        std::vector<double> m_real_field;
 };
 
 }

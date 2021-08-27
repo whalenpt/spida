@@ -4,7 +4,7 @@
 
 #include <vector>
 #include "spida/grid/gridX.h"
-#include "spida/constants.h"
+#include "spida/helper/constants.h"
 
 namespace spida{
 

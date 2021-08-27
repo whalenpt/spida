@@ -1,6 +1,6 @@
 
 #include <gtest/gtest.h>
-#include <spida/constants.h>
+#include <spida/helper/constants.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <nayukidct/FastDctLee.hpp>

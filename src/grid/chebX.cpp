@@ -3,7 +3,7 @@
 #include <string>
 #include <stdexcept>
 #include "spida/grid/chebX.h"
-#include "spida/constants.h"
+#include "spida/helper/constants.h"
 
 namespace spida{
 

@@ -4,27 +4,12 @@
 #include <algorithm>
 #include <vector>
 #include <boost/math/special_functions/bessel.hpp>
-//#include <gsl/gsl_sf_bessel.h>
 #include "spida/transform/hankelR.h"
 #include "spida/grid/besselR.h" 
 
 namespace spida {
 
-  void printHankel(const HankelTransformR& transform,std::ostream& os)
-  {
-      const std::vector<double>& Ymk = transform.getYmk();
-      int nr = transform.getNr();
-      os << std::endl << std::endl;
-      for(auto m = 0; m < nr; m++){
-          for(auto k = 0; k < nr-1; k++)
-              os << std::setprecision(3) << std::scientific << Ymk[m*nr+k] << " ";
-          os << std::setprecision(3) << std::scientific << Ymk[m*nr+nr-1]  << std::endl;
-      }
-      os << std::endl;
-  }
-
   HankelTransformR::HankelTransformR(const BesselRootGridR& grid) : 
-      TransformR(grid), 
       m_nr(grid.getNr()),
       m_Ymk(grid.getNr()*grid.getNr())
   {

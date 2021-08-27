@@ -2,42 +2,44 @@
 #ifndef SOLVER_H_
 #define SOLVER_H_
 
-#include "spida/model/model.h"
-#include "spida/report/reportcenter.h"
-#include "spida/constants.h"
+
 #include <iostream>
-#include <map>
 #include <string>
 #include <ctime>
 #include <cmath>
+#include <memory>
+#include <exception>
+#include <filesystem>
 #include <pwutils/pwstats.h>
 #include <pwutils/pwmath.hpp>
 #include <pwutils/pwthreads.h>
-#include <memory>
-#include <exception>
+#include "spida/helper/constants.h"
+
 
 namespace spida{
 
 const int MAX_LOOP = 100;
-
 using pw::StatCenter;
 
-class SolverDC 
+class ModelCV;
+class PropagatorCV;
+class ReportCenter;
+
+class SolverCV
 {
   public:
-      SolverDC(ModelDC& model,PropagatorsDC& prs);
-      virtual ~SolverDC() {}
-
+      SolverCV(ModelCV& model,PropagatorCV& prs);
+      virtual ~SolverCV();
       void setStatFrequency(int val) {m_stat.setReportFrequency(val);}
       void setLogProgress(bool val); 
       void setCurrentTime(double t) {m_tcurrent = t;}
-      void setTargetDirectory(const std::string& dirname);
+      void setTargetDirectory(const std::filesystem::path& dirpath);
 
-      ModelDC& model() {return m_model;}
-      PropagatorsDC& propagators() {return m_prs;}
+      ModelCV& model() {return m_model;}
+      PropagatorCV& propagator() {return m_prs;}
       ReportCenter& reportCenter();
+      int size() const;
 
-      int numThreads() {return m_model.numThreads();}
       StatCenter& statCenter() {return m_stat;}
       int size() {return m_sz;}
       double currentTime() {return m_tcurrent;}
@@ -53,8 +55,8 @@ class SolverDC
   private:
       virtual void updateCoefficients([[maybe_unused]] double dt) {};
 
-      ModelDC& m_model;
-      PropagatorsDC& m_prs;
+      ModelCV& m_model;
+      PropagatorCV& m_prs;
       std::unique_ptr<ReportCenter> m_report_center;
       StatCenter m_stat;
 
@@ -110,11 +112,11 @@ class Control{
 };
 
 
-class SolverAS_DC : public SolverDC
+class SolverCV_AS : public SolverCV
 {
   public:
-      SolverAS_DC(ModelDC& cmodel,PropagatorsDC& cprs,double sf,double qv);
-      virtual ~SolverAS_DC(); 
+      SolverCV_AS(ModelCV& cmodel,PropagatorCV& cprs,double sf,double qv);
+      virtual ~SolverCV_AS(); 
   
       void setIncrementThreshold(double val); 
       void setDecrementThreshold(double val);
@@ -140,11 +142,11 @@ class SolverAS_DC : public SolverDC
 };
 
 
-class SolverCS_DC : public SolverDC 
+class SolverCV_CS : public SolverCV 
 {
   public:
-      SolverCS_DC(ModelDC& cmodel,PropagatorsDC& cprs);
-      virtual ~SolverCS_DC() {};
+      SolverCV_CS(ModelCV& cmodel,PropagatorCV& cprs);
+      virtual ~SolverCV_CS() {};
       void setCountTime(bool val) {m_count_time = val;}
 
       void step(double h);

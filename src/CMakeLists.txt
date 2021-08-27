@@ -3,15 +3,18 @@
 cmake_minimum_required(VERSION 3.19.1)
 
 set(SRC_FILES
+    PeriodicBLT.cpp
+    ChebX.cpp
+    ChebInterpX.cpp
+	helper/interp.cpp
     grid/chebX.cpp
     grid/uniformX.cpp
 	grid/uniformT.cpp
 	grid/besselR.cpp
-	interp.cpp
 	model/modelT.cpp
 	propagator/propagatorRT_RC.cpp
 	propagator/propagatorRTp_RC.cpp
-	propagator/propagatorT.cpp
+	propagator/propagatorBLT.cpp
 	report/reportcenter.cpp
 	report/reporthandler.cpp
 	shape/shapeT.cpp
@@ -19,18 +22,19 @@ set(SRC_FILES
 	solver/solver.cpp
 	solver/solverETDAS.cpp
 	solver/solverETDCS.cpp
-	spidaPeriodicT.cpp
-    spidaChebX.cpp
-    chebInterpX.cpp
-	transform/periodicT.cpp
+    transform/fftBLT.cpp
 	transform/chebX.cpp
 	transform/hankelR.cpp
-	transform/hankelperiodicRT.cpp
+    transform/hankelfftRBLT.cpp
 )
 
 set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
 set(SPIDA_INCLUDES
-   "${INCL_DIR}/constants.h"
+   "${INCL_DIR}/ChebInterpX.h"
+   "${INCL_DIR}/ChebX.h"
+   "${INCL_DIR}/PeriodicBLT.h"
+   "${INCL_DIR}/helper/constants.h"
+   "${INCL_DIR}/helper/interp.h"
    "${INCL_DIR}/grid/uniformT.h"
    "${INCL_DIR}/grid/gridX.h"
    "${INCL_DIR}/grid/gridT.h"
@@ -38,7 +42,6 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/grid/uniformX.h"
    "${INCL_DIR}/grid/gridR.h"
    "${INCL_DIR}/grid/besselR.h"
-   "${INCL_DIR}/interp.h"
    "${INCL_DIR}/model/model.h"
    "${INCL_DIR}/model/modelT.h"
    "${INCL_DIR}/propagator/propagator.h"
@@ -50,18 +53,10 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/solver/solver.h"
    "${INCL_DIR}/solver/solverETDAS.h"
    "${INCL_DIR}/solver/solverETDCS.h"
-   "${INCL_DIR}/spidaT.h"
-   "${INCL_DIR}/spidaX.h"
-   "${INCL_DIR}/spidaChebX.h"
-   "${INCL_DIR}/chebInterpX.h"
-   "${INCL_DIR}/transform/transformT.h"
-   "${INCL_DIR}/transform/transformR.h"
-   "${INCL_DIR}/transform/transformX.h"
-   "${INCL_DIR}/transform/transformRT.h"
-   "${INCL_DIR}/transform/periodicT.h"
+   "${INCL_DIR}/transform/fftBLT.h"
    "${INCL_DIR}/transform/chebX.h"
    "${INCL_DIR}/transform/hankelR.h"
-   "${INCL_DIR}/transform/hankelperiodicRT.h"
+   "${INCL_DIR}/transform/hankelfftRBLT.h"
 )
 
 set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")

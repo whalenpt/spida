@@ -15,7 +15,7 @@
 #include <string>
 #include <ParamBin/parambin.hpp>
 #include <pwutils/report/dataio.hpp>
-#include "spida/interp.h"
+#include <spida/helper/interp.h>
 //------------------------------------------------------------------------------
 
 int main()

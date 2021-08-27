@@ -5,17 +5,17 @@
 
 namespace spida{
 
-SolverAS_ETD::SolverAS_ETD(ModelDC& model,PropagatorsDC& prs,double sf,double qv)
- :  SolverAS_DC(model,prs,sf,qv)
+SolverAS_ETD::SolverAS_ETD(ModelCV& model,PropagatorCV& prs,double sf,double qv)
+ :  SolverCV_AS(model,prs,sf,qv)
 {
     m_mode_cutoff = 0.01;
     m_contour_radi = 1.0;
     m_contourM = 32;
 }
 
-ETD34::ETD34(ModelDC& model,PropagatorsDC& prs)
-  : SolverAS_ETD(model,prs,0.84,4),m_sz(SolverDC::size()),
-    L(model.linOperator()),EL(m_sz), EL2(m_sz), 
+ETD34::ETD34(ModelCV& model,PropagatorCV& prs)
+  : SolverAS_ETD(model,prs,0.84,4),m_sz(SolverCV::size()),
+    L(model.linOp()),EL(m_sz), EL2(m_sz), 
     N1(m_sz), N2(m_sz), N3(m_sz), N4(m_sz), N5(m_sz), 
     tempK(m_sz), a21(m_sz), a31(m_sz), a32(m_sz),
     a41(m_sz), a43(m_sz), a51(m_sz), a52(m_sz), a54(m_sz), r1(m_sz),
@@ -83,14 +83,15 @@ void ETD34::updateCoefficients(double dt)
         threads[i].join();
 }
 
+
 void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew,\
         std::vector<dcmplx>& errVec)
 {
     if(!N1_init){
-        SolverDC::model().nonLinResponse(in,N1);
+        SolverCV::model().nonLinResponse(in,N1);
         N1_init = true;
     }
-    else if(SolverAS_DC::accept()){
+    else if(SolverCV_AS::accept()){
         for(int i = 0; i < m_sz; i++) 
             N1[i] = N5[i]; 
     }
@@ -98,30 +99,30 @@ void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew
     for(int i = 0; i < m_sz; i++)
         tempK[i] =  EL2[i]*in[i] + a21[i]*N1[i];
 
-    SolverDC::model().nonLinResponse(tempK,N2);
+    SolverCV::model().nonLinResponse(tempK,N2);
   
     for(int i = 0; i < m_sz; i++) 
         tempK[i] = EL2[i]*in[i] + a31[i]*N1[i]+a32[i]*N2[i];
 
-    SolverDC::model().nonLinResponse(tempK,N3);
+    SolverCV::model().nonLinResponse(tempK,N3);
   
     for(int i = 0; i < m_sz; i++) 
         tempK[i] = EL[i]*in[i] + a41[i]*N1[i] + a43[i]*N3[i];
 
-    SolverDC::model().nonLinResponse(tempK,N4);
+    SolverCV::model().nonLinResponse(tempK,N4);
   
     for(int i = 0; i < m_sz; i++) 
         ynew[i] = EL[i]*in[i] + a51[i]*N1[i] + a52[i]*(N2[i]+N3[i]) + a54[i]*N4[i];
   
-    SolverDC::model().nonLinResponse(ynew,N5);
+    SolverCV::model().nonLinResponse(ynew,N5);
 
     for (int i = 0; i < m_sz; i++)
         errVec[i] = a54[i]*(N4[i] - N5[i]);
 }
 
-ETD35::ETD35(ModelDC& model,PropagatorsDC& prs)
-  : SolverAS_ETD(model,prs,0.84,4),m_sz(SolverDC::size()),
-    L(model.linOperator()),EL(m_sz),EL2(m_sz),EL4(m_sz),EL5(m_sz),
+ETD35::ETD35(ModelCV& model,PropagatorCV& prs)
+  : SolverAS_ETD(model,prs,0.84,4),m_sz(SolverCV::size()),
+    L(model.linOp()),EL(m_sz),EL2(m_sz),EL4(m_sz),EL5(m_sz),
     N1(m_sz),N2(m_sz),N3(m_sz),N4(m_sz),N5(m_sz),N6(m_sz),N7(m_sz),
     tempK(m_sz),a21(m_sz),a31(m_sz),a32(m_sz),a41(m_sz),a43(m_sz),
     a51(m_sz),a52(m_sz),a54(m_sz),a61(m_sz),a62(m_sz),a63(m_sz),a65(m_sz),
@@ -235,33 +236,33 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
         std::vector<dcmplx>& ynew,std::vector<dcmplx>& errVec)
 {
     if(!N1_init){
-        SolverDC::model().nonLinResponse(in,N1);
+        SolverCV::model().nonLinResponse(in,N1);
         N1_init = true;
     }
-    if(SolverAS_DC::accept())
-        SolverDC::model().nonLinResponse(ynew,N1);
+    if(SolverCV_AS::accept())
+        SolverCV::model().nonLinResponse(ynew,N1);
 
     for(int i = 0; i < m_sz; i++)
         tempK[i] = EL2[i]*in[i] + a21[i]*N1[i];
 
-    SolverDC::model().nonLinResponse(tempK,N2);
+    SolverCV::model().nonLinResponse(tempK,N2);
     for(int i = 0; i < m_sz; i++)
         tempK[i] = EL2[i]*in[i] + a31[i]*N1[i] + a32[i]*N2[i];
 
-    SolverDC::model().nonLinResponse(tempK,N3);
+    SolverCV::model().nonLinResponse(tempK,N3);
     for(int i = 0; i < m_sz; i++)
         tempK[i] = EL4[i]*in[i] + a41[i]*N1[i] + a43[i]*N3[i];
 
-    SolverDC::model().nonLinResponse(tempK,N4);
+    SolverCV::model().nonLinResponse(tempK,N4);
     for(int i = 0; i < m_sz; i++) 
         tempK[i] = EL5[i]*in[i] + a51[i]*N1[i] + a52[i]*(N2[i]-N3[i]) + a54[i]*N4[i];
 
-    SolverDC::model().nonLinResponse(tempK,N5);
+    SolverCV::model().nonLinResponse(tempK,N5);
     for(int i = 0; i < m_sz; i++) {
         tempK[i] = EL[i]*in[i] + a61[i]*N1[i] + a62[i]*(N2[i]-(3.0/2)*N4[i]) \
             + a63[i]*N3[i] + a65[i]*N5[i];
     }
-    SolverDC::model().nonLinResponse(tempK,N6);
+    SolverCV::model().nonLinResponse(tempK,N6);
 
     for(int i = 0; i < m_sz; i++) {
         ynew[i] = EL[i]*in[i] + a71[i]*N1[i] + a73[i]*N3[i] + a74[i]*N4[i] \
@@ -316,11 +317,11 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
         std::vector<dcmplx>& ynew,std::vector<dcmplx>& errVec)
 {
     if(!N1_init){
-        SolverDC::model().nonLinResponse(in,N1);
+        SolverCV::model().nonLinResponse(in,N1);
         N1_init = true;
     }
-    if(SolverAS_DC::accept())
-        SolverDC::model().nonLinResponse(ynew,N1);
+    if(SolverCV_AS::accept())
+        SolverCV::model().nonLinResponse(ynew,N1);
 
     unsigned int nthreads = thmgt.getNumThreads();
     std::vector<unsigned int> bounds = thmgt.getBounds(m_sz);
@@ -335,7 +336,7 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
         delete t;
     threads.clear();
 
-    SolverDC::model().nonLinResponse(tempK,N2);
+    SolverCV::model().nonLinResponse(tempK,N2);
 
     for(unsigned int i = 0; i < nthreads-1; i++)
         threads.push_back(new std::thread(&ETD35::worker_stage3,this,std::ref(in),bounds[i],bounds[i+1]));
@@ -346,7 +347,7 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
         delete t;
     threads.clear();
 
-    SolverDC::model().nonLinResponse(tempK,N3);
+    SolverCV::model().nonLinResponse(tempK,N3);
 
     for(unsigned int i = 0; i < nthreads-1; i++)
         threads.push_back(new std::thread(&ETD35::worker_stage4,this,std::ref(in),bounds[i],bounds[i+1]));
@@ -357,7 +358,7 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
         delete t;
     threads.clear();
 
-    SolverDC::model().nonLinResponse(tempK,N4);
+    SolverCV::model().nonLinResponse(tempK,N4);
     for(unsigned int i = 0; i < nthreads-1; i++)
         threads.push_back(new std::thread(&ETD35::worker_stage5,this,std::ref(in),bounds[i],bounds[i+1]));
     worker_stage5(in,bounds[nthreads-1],bounds[nthreads]);
@@ -367,7 +368,7 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
         delete t;
     threads.clear();
 
-    SolverDC::model().nonLinResponse(tempK,N5);
+    SolverCV::model().nonLinResponse(tempK,N5);
 
     for(unsigned int i = 0; i < nthreads-1; i++)
         threads.push_back(new std::thread(&ETD35::worker_stage6,this,std::ref(in),bounds[i],bounds[i+1]));
@@ -378,7 +379,7 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
         delete t;
     threads.clear();
 
-    SolverDC::model().nonLinResponse(tempK,N6);
+    SolverCV::model().nonLinResponse(tempK,N6);
 
     for(unsigned int i = 0; i < nthreads-1; i++)
         threads.push_back(new std::thread(&ETD35::worker_stage7,this,std::ref(in),std::ref(ynew),std::ref(errVec),bounds[i],bounds[i+1]));

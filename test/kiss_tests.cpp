@@ -5,7 +5,7 @@
 #include <cmath>
 #include <random>
 #include <pwutils/report/dataio.hpp>
-#include <spida/constants.h>
+#include <spida/helper/constants.h>
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
 

@@ -4,7 +4,7 @@
 
 #include <string>
 #include <complex>
-#include "spida/constants.h"
+#include "spida/helper/constants.h"
 #include "spida/grid/gridT.h"
 
 namespace spida{

@@ -4,15 +4,12 @@
 
 #include <vector>
 #include <iostream>
-#include "spida/transform/transformR.h"
-#include "spida/grid/besselR.h" 
+#include "spida/helper/constants.h"
 
 namespace spida{
 
-class HankelTransformR;
-void printHankel(const HankelTransformR& transform,std::ostream& os = std::cout);
-
-class HankelTransformR : public TransformR
+class BesselRootGridR;
+class HankelTransformR 
 {
     public:
         explicit HankelTransformR(const BesselRootGridR& grid);

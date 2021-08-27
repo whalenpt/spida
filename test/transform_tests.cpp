@@ -1,14 +1,14 @@
 
 
 #include <gtest/gtest.h>
-#include <spida/constants.h>
+#include <spida/helper/constants.h>
 #include <spida/grid/uniformT.h>
 #include <spida/grid/besselR.h>
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
-#include <spida/transform/periodicT.h>
+#include <spida/transform/fftBLT.h>
 #include <spida/transform/hankelR.h>
-#include <spida/transform/hankelperiodicRT.h>
+#include <spida/transform/hankelfftRBLT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <algorithm>
@@ -32,7 +32,7 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST)
     std::vector<double> yinv(nt);
     std::vector<dcmplx> ysp(grid.getNst());
 
-    spida::PeriodicTransformT transform(grid);
+    spida::FFTBLT transform(grid);
 
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
@@ -59,7 +59,7 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST_POINTERS)
     double maxT = 240e-15;
 
     spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    spida::PeriodicTransformT transform(grid);
+    spida::FFTBLT transform(grid);
 
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
@@ -91,7 +91,7 @@ TEST(PERIODICT_TRANSFORM_TEST,COMPLEX_GAUSST)
     double maxT = 240e-15;
 
     spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    spida::PeriodicTransformT transform(grid);
+    spida::FFTBLT transform(grid);
 
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
@@ -265,7 +265,7 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,GAUSSTGAUSSR)
     std::vector<double> ub(nr*nt);
 
     // Check forward tranform and reverse transform applied in sequence is identity
-    spida::HankelPeriodicTransformRT transform(gridR,gridT);
+    spida::HankelFFTRBLT transform(gridR,gridT);
     transform.RT_To_SRST(u,v);
     transform.SRST_To_RT(v,ub);
     EXPECT_LT(pw::relative_error(u,ub),1e-6);
@@ -321,7 +321,7 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,MULTITHREAD)
     std::vector<double> ub(nr*nt);
 
     // Check forward tranform and reverse transform applied in sequence is identity
-    spida::HankelPeriodicTransformRT transform(gridR,gridT,NUM_THREADS);
+    spida::HankelFFTRBLT transform(gridR,gridT,NUM_THREADS);
     transform.RT_To_SRST(u,v);
     transform.SRST_To_RT(v,ub);
     EXPECT_LT(pw::relative_error(u,ub),1e-6);

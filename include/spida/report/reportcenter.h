@@ -2,15 +2,15 @@
 #ifndef REPORTCENTER_H_
 #define REPORTCENTER_H_ 
 
-#include "spida/propagator/propagator.h"
-#include <complex> 
-#include <string> 
+
 #include <vector> 
 #include <ctime>
 #include <filesystem>
 #include <pwutils/pwstats.h>
 
 namespace spida{
+
+class Propagator;
 
 class ReportCenter{
     public:
@@ -21,17 +21,16 @@ class ReportCenter{
         virtual void setStepsPerOutput1D(int val) = 0;
         virtual void setStepsPerOutput2D(int val) = 0;
 
-        void addPropagator(Propagators* pr) {m_prs = pr;}
+        void addPropagator(Propagator* pr) {m_prs = pr;}
         void setMaxReports(int val) {m_max_reports = val;}
         void setLogProgress(bool val) {m_log_progress = val;}
-        std::string dirName() {return m_dir_path.string();}
         std::filesystem::path dirPath() {return m_dir_path;}
 
     protected:
         pw::StatCenter m_stat;
         int m_steps_taken;
         int m_max_reports;
-        Propagators* m_prs;
+        Propagator* m_prs;
     	const std::filesystem::path m_dir_path;
         bool m_log_progress;
 };

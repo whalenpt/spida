@@ -1,21 +1,23 @@
 
 
 #include "spida/solver/solverETDCS.h"
+#include "spida/model/model.h"
+#include "spida/propagator/propagator.h"
 #include <cmath>
 
 namespace spida{
 
-SolverCS_ETD::SolverCS_ETD(ModelDC& cmodel,PropagatorsDC& cprs)
- :  SolverCS_DC(cmodel,cprs)
+SolverCS_ETD::SolverCS_ETD(ModelCV& cmodel,PropagatorCV& cprs)
+ :  SolverCV_CS(cmodel,cprs)
 {
     m_mode_cutoff = 0.01;
     m_contour_radi = 1.0;
     m_contourM = 32;
 }
 
-ETD4::ETD4(ModelDC& model,PropagatorsDC& prs) :
-  SolverCS_ETD(model,prs),sz(SolverDC::size()),
-    L(model.linOperator()), EL(sz), EL2(sz), N1(sz), N2(sz),
+ETD4::ETD4(ModelCV& model,PropagatorCV& prs) :
+  SolverCS_ETD(model,prs),sz(SolverCV::size()),
+    L(model.linOp()), EL(sz), EL2(sz), N1(sz), N2(sz),
     N3(sz), N4(sz), tempK(sz), a21(sz), a31(sz), a32(sz), a41(sz), a43(sz),
     a51(sz), a52(sz), a54(sz)
 {
@@ -69,19 +71,19 @@ void ETD4::updateCoefficients(double dt)
 
 void ETD4::updateStages(std::vector<dcmplx>& in)
 {
-    SolverDC::model().nonLinResponse(in,N1);
+    SolverCV::model().nonLinResponse(in,N1);
     for(int i = 0; i < sz; i++)
         tempK[i] = EL2[i]*in[i] + a21[i]*N1[i];
   
-    SolverDC::model().nonLinResponse(tempK,N2);
+    SolverCV::model().nonLinResponse(tempK,N2);
     for(int i = 0; i < sz; i++)
         tempK[i] = EL2[i]*in[i] + a31[i]*N1[i] + a32[i]*N2[i];
 
-    SolverDC::model().nonLinResponse(tempK,N3);
+    SolverCV::model().nonLinResponse(tempK,N3);
     for(int i = 0; i < sz; i++)
         tempK[i] = EL[i]*in[i] + a41[i]*N1[i] + a43[i]*N3[i];
 
-    SolverDC::model().nonLinResponse(tempK,N4);
+    SolverCV::model().nonLinResponse(tempK,N4);
     for(int i = 0; i < sz; i++) 
         in[i] = EL[i]*in[i] + a51[i]*N1[i] + a52[i]*(N2[i]+N3[i]) + a54[i]*N4[i];
 }

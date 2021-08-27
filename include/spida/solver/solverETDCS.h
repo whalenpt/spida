@@ -2,17 +2,18 @@
 #ifndef SOLVERETDCS_H_
 #define SOLVERETDCS_H_
 
-#include "spida/model/model.h"
 #include "spida/solver/solver.h"
-#include "spida/constants.h"
-#include <iostream>
+#include "spida/helper/constants.h"
 
 namespace spida{
 
-class SolverCS_ETD : public SolverCS_DC
+class ModelCV;
+class PropagatorCV;
+
+class SolverCS_ETD : public SolverCV_CS
 {
     public:
-        SolverCS_ETD(ModelDC& cmodel,PropagatorsDC& cprs);
+        SolverCS_ETD(ModelCV& cmodel,PropagatorCV& cprs);
         virtual ~SolverCS_ETD() {}; 
         void setModeCutoff(double val) {m_mode_cutoff = val;}
         void setContourRadius(double val) {m_contour_radi = val;}
@@ -31,7 +32,7 @@ class SolverCS_ETD : public SolverCS_DC
 class ETD4 : public SolverCS_ETD
 {
     public:
-        ETD4(ModelDC& cmodel,PropagatorsDC& cprs);
+        ETD4(ModelCV& cmodel,PropagatorCV& cprs);
         ~ETD4() {};
     private:
         void updateCoefficients(double dt);

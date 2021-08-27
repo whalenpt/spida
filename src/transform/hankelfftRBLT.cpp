@@ -4,15 +4,15 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include "spida/transform/hankelperiodicRT.h"
-#include "spida/transform/periodicT.h"
+#include "spida/transform/hankelfftRBLT.h"
+#include "spida/transform/fftBLT.h"
 #include "spida/transform/hankelR.h"
 #include "spida/grid/besselR.h" 
 #include "spida/grid/uniformT.h" 
 
 namespace spida {
 
-    HankelPeriodicTransformRT::HankelPeriodicTransformRT(const BesselRootGridR& gridR,const UniformGridT& gridT,int threads) :
+    HankelFFTRBLT::HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,int threads) :
         m_nr(gridR.getNr()),
         m_nt(gridT.getNt()),
         m_nst(gridT.getNst()),
@@ -31,18 +31,18 @@ namespace spida {
         for (int m = 1; m < m_nThreads; m++)
         {
             m_ready.push_back(false);
-            m_thread.push_back(std::thread(&HankelPeriodicTransformRT::worker_thread,this,m));
+            m_thread.push_back(std::thread(&HankelFFTRBLT::worker_thread,this,m));
         }
 
         for(int i = 0; i < m_nThreads; i++) {
-            PeriodicTransformT* t_transform = new PeriodicTransformT(gridT);
+            FFTBLT* t_transform = new FFTBLT(gridT);
             HankelTransformR* r_transform = new HankelTransformR(gridR);
             m_transformT.push_back(t_transform);
             m_transformR.push_back(r_transform);
         }
   }
 
-  HankelPeriodicTransformRT::~HankelPeriodicTransformRT(){
+  HankelFFTRBLT::~HankelFFTRBLT(){
       ReadySTATE(State::Done);
       for (unsigned int m = 0; m < m_thread.size(); m++)
           m_thread[m].join();
@@ -55,7 +55,7 @@ namespace spida {
       m_transformR.clear();
   }
 
-  void HankelPeriodicTransformRT::RT_To_SRT(const std::vector<double>& in,std::vector<double>& out) 
+  void HankelFFTRBLT::RT_To_SRT(const std::vector<double>& in,std::vector<double>& out) 
   {
       for(unsigned int i = 0; i < m_nr; i++)
           for (unsigned int j = 0; j < m_nt; j++){
@@ -69,7 +69,7 @@ namespace spida {
               out[i*m_nt+j] = m_uSRT[m_nr*j + i]; 
   }                                  
 
-  void HankelPeriodicTransformRT::SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+  void HankelFFTRBLT::SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
   {
       // Transpose array -> in has SR-ST row-column form
       for(unsigned int i = 0; i < m_nr; i++)
@@ -85,7 +85,7 @@ namespace spida {
               out[m_nst*i+j] = m_uRST[m_nr*j + i]; 
   }
 
-  void HankelPeriodicTransformRT::SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out)
+  void HankelFFTRBLT::SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out)
   {
       std::copy(std::begin(in),std::end(in),std::begin(m_uSRST));
       ReadySTATE(State::SRST_To_SRT);
@@ -94,7 +94,7 @@ namespace spida {
       std::copy(std::begin(m_uSRT),std::end(m_uSRT),std::begin(out));
   }
 
-  void HankelPeriodicTransformRT::RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out) 
+  void HankelFFTRBLT::RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out) 
   {
       std::copy(std::begin(in),std::end(in),std::begin(m_uRT));
       ReadySTATE(State::RT_To_RST);
@@ -104,7 +104,7 @@ namespace spida {
   }                                  
 
 
-  void HankelPeriodicTransformRT::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
+  void HankelFFTRBLT::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
   {
       std::copy(std::begin(in),std::end(in),std::begin(m_uRT));
       // Transform from T to ST
@@ -128,20 +128,20 @@ namespace spida {
               out[i*m_nst+j] = m_uSRST[m_nr*j + i]; 
   }                                  
 
-  void HankelPeriodicTransformRT::worker_RT_To_RST(int tid)
+  void HankelFFTRBLT::worker_RT_To_RST(int tid)
   {
       for (unsigned int i = tid; i < m_nr; i+=m_nThreads) 
           m_transformT[tid]->T_To_ST(m_uRT.data()+m_nt*i,m_uSRST.data()+m_nst*i);
   }
 
-  void HankelPeriodicTransformRT::worker_RST_To_SRST(int tid)
+  void HankelFFTRBLT::worker_RST_To_SRST(int tid)
   {
       for(unsigned int i = tid; i < m_nst; i+=m_nThreads)
           m_transformR[tid]->R_To_SR(reinterpret_cast<const dcmplx*>(m_uRST.data()+m_nr*i),\
                   m_uSRST.data()+m_nr*i);
   }
 
-  void HankelPeriodicTransformRT::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) 
+  void HankelFFTRBLT::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) 
   {
       // Transpose array -> in is in SR-ST row-column form
       for(unsigned int i = 0; i < m_nr; i++)
@@ -163,19 +163,19 @@ namespace spida {
       std::copy(std::begin(m_uRT),std::end(m_uRT),std::begin(out));
   }
 
-  void HankelPeriodicTransformRT::worker_SRST_To_RST(int tid)
+  void HankelFFTRBLT::worker_SRST_To_RST(int tid)
   {
       for (unsigned int j = tid; j < m_nst; j+=m_nThreads)  
           m_transformR[tid]->SR_To_R(m_uSRST.data()+m_nr*j,m_uRST.data()+m_nr*j);
   }
 
-  void HankelPeriodicTransformRT::worker_RST_To_RT(int tid)
+  void HankelFFTRBLT::worker_RST_To_RT(int tid)
   {
       for (unsigned int i = tid; i < m_nr; i+= m_nThreads)
           m_transformT[tid]->ST_To_T(m_uSRST.data()+m_nst*i,m_uRT.data()+m_nt*i);
   }
 
-  void HankelPeriodicTransformRT::worker_thread(int tid)
+  void HankelFFTRBLT::worker_thread(int tid)
   {
     bool threads_done = false;
     while(!threads_done)
@@ -216,7 +216,7 @@ namespace spida {
     }
   }
 
-  void HankelPeriodicTransformRT::worker_wait(int tid)
+  void HankelFFTRBLT::worker_wait(int tid)
   {
       m_mut.lock();
       m_ready[tid - 1] = false;
@@ -230,20 +230,20 @@ namespace spida {
       m_mut.unlock();
   }
 
-  void HankelPeriodicTransformRT::worker_RT_To_SRT(int tid)
+  void HankelFFTRBLT::worker_RT_To_SRT(int tid)
   {
       for(unsigned int j = tid; j < m_nt; j+=m_nThreads)
           m_transformR[tid]->R_To_SR(m_uRT.data()+j*m_nr,m_uSRT.data()+j*m_nr);
   }
 
-  void HankelPeriodicTransformRT::worker_SRST_To_SRT(int tid)
+  void HankelFFTRBLT::worker_SRST_To_SRT(int tid)
   {
       for (unsigned int i = tid; i < m_nr; i+= m_nThreads)
           m_transformT[tid]->ST_To_T(m_uSRST.data()+m_nst*i,m_uSRT.data()+m_nt*i);
   }
 
 
-  void HankelPeriodicTransformRT::ReadySTATE(State state)  
+  void HankelFFTRBLT::ReadySTATE(State state)  
   {
       if(m_nThreads < 2)
           return;
@@ -258,7 +258,7 @@ namespace spida {
       m_cv.notify_all();
   }
 
-  void HankelPeriodicTransformRT::ProcessedSTATE(State state)  
+  void HankelFFTRBLT::ProcessedSTATE(State state)  
   {
       if(m_nThreads < 2)
           return;

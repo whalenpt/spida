@@ -5,7 +5,7 @@
 #include <cmath>
 #include <string>
 #include "spida/shape/shapeT.h"
-#include "spida/constants.h"
+#include "spida/helper/constants.h"
 #include <boost/math/special_functions/airy.hpp>
 #include <boost/math/special_functions/bessel.hpp>
 

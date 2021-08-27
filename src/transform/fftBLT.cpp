@@ -3,15 +3,15 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
-#include "spida/transform/periodicT.h"
+#include "spida/transform/fftBLT.h"
 #include "spida/grid/uniformT.h" 
-#include "spida/constants.h"
+#include "spida/helper/constants.h"
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
 
 namespace spida{
 
-PeriodicTransformT::PeriodicTransformT(const UniformGridT& grid) :
+FFTBLT::FFTBLT(const UniformGridT& grid) :
     m_rFFTr(grid.getNt(),0.0),
     m_rFFTs(grid.getNt()/2+1,0.0),
     m_cFFT(grid.getNt(),0.0)
@@ -34,7 +34,7 @@ PeriodicTransformT::PeriodicTransformT(const UniformGridT& grid) :
 }
 
 
-PeriodicTransformT::~PeriodicTransformT()
+FFTBLT::~FFTBLT()
 {
     kiss_fft_free(m_cfg_forward);
     kiss_fft_free(m_cfg_reverse);
@@ -43,19 +43,19 @@ PeriodicTransformT::~PeriodicTransformT()
 
 }
 
-void PeriodicTransformT::execute_forward()
+void FFTBLT::execute_forward()
 {
     kiss_fftr(m_rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(m_rFFTs.data()));
 }
 
-void PeriodicTransformT::execute_backward()
+void FFTBLT::execute_backward()
 {
     kiss_fftri(m_rcfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_rFFTs.data()),\
                   reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()));
 }
 
-void PeriodicTransformT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out)
+void FFTBLT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out)
 {
     // FFTW FORWARD - > +iwt transform def -> reverse time t -> -t
     std::reverse_copy(std::begin(in),std::end(in),std::begin(m_rFFTr));
@@ -63,7 +63,7 @@ void PeriodicTransformT::T_To_ST(const std::vector<double>& in,std::vector<dcmpl
     std::copy(std::begin(m_rFFTs)+m_minI,std::begin(m_rFFTs)+m_maxI+1,std::begin(out));
 }
 
-void PeriodicTransformT::T_To_ST(const double* in,dcmplx* out)
+void FFTBLT::T_To_ST(const double* in,dcmplx* out)
 {
     // FFTW FORWARD - > +iwt transform def -> reverse time t -> -t
     for (unsigned int j = 0; j < m_nt; j++) 
@@ -73,7 +73,7 @@ void PeriodicTransformT::T_To_ST(const double* in,dcmplx* out)
         out[j-m_minI] = m_rFFTs[j];
 }
 
-void PeriodicTransformT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out)
+void FFTBLT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out)
 {
     std::fill(m_rFFTs.begin(),m_rFFTs.begin()+m_minI,dcmplx(0,0));
     for(auto j = m_minI; j <= m_maxI; j++)
@@ -83,7 +83,7 @@ void PeriodicTransformT::ST_To_T(const std::vector<dcmplx>& in,std::vector<doubl
     std::reverse_copy(std::begin(m_rFFTr),std::end(m_rFFTr),std::begin(out));
 }
 
-void PeriodicTransformT::ST_To_T(const dcmplx* in,double* out)
+void FFTBLT::ST_To_T(const dcmplx* in,double* out)
 {
     // band limited minimum frequency 
     for(unsigned int j = 0; j < m_minI; j++) 
@@ -100,14 +100,14 @@ void PeriodicTransformT::ST_To_T(const dcmplx* in,double* out)
 }
 
 
-void PeriodicTransformT::T_To_ST_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+void FFTBLT::T_To_ST_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
 {
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in.data()),\
             reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()));
     std::copy(std::begin(m_cFFT)+m_minI,std::begin(m_cFFT)+m_maxI+1,std::begin(out));
 }
 
-void PeriodicTransformT::ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+void FFTBLT::ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
 {
     std::fill(m_cFFT.begin(),m_cFFT.begin()+m_minI,dcmplx(0,0));
     for(auto j = m_minI; j <= m_maxI; j++) 

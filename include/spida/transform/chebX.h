@@ -4,12 +4,11 @@
 
 #include <complex>
 #include <vector>
-#include "spida/transform/transformX.h"
 #include "spida/grid/chebX.h"
 
 namespace spida{
 
-  class ChebTransformX : public TransformX
+  class ChebTransformX 
   {
     public:
         explicit ChebTransformX(const ChebRootGridX& grid);

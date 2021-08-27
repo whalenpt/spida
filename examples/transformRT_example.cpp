@@ -14,7 +14,7 @@
 #include <spida/grid/uniformT.h>
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
-#include <spida/transform/hankelperiodicRT.h>
+#include <spida/transform/hankelfftRBLT.h>
 #include <pwutils/report/dat.hpp>
 #include <pwutils/report/reporthelper.h>
 #include <cmath>
@@ -78,7 +78,7 @@ int main()
     std::vector<dcmplx> v(nr*nst);
     std::vector<double> uop(nr*nt);
 
-    spida::HankelPeriodicTransformRT transform(gridR,gridT);
+    spida::HankelFFTRBLT transform(gridR,gridT);
     transform.RT_To_SRST(u,v);
     transform.SRST_To_RT(v,uop);
 
@@ -135,7 +135,7 @@ int main()
     std::vector<int> rt_srst_timings(MAX_THREADS);
     std::vector<int> srst_rt_timings(MAX_THREADS);
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        spida::HankelPeriodicTransformRT transform_threaded(gridR,gridT,threads);
+        spida::HankelFFTRBLT transform_threaded(gridR,gridT,threads);
         std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
 
         //auto start_time = std::chrono::steady_clock::now();
