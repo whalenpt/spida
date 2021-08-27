@@ -43,6 +43,43 @@ class HankelTransformR
         void initDHT(const BesselRootGridR& grid);
 };
 
+class HankelTransformRb 
+{
+    public:
+        explicit HankelTransformRb(const BesselRootGridR& grid,unsigned int threads=1);
+        ~HankelTransformRb() {};
+        HankelTransformRb()=delete;
+        HankelTransformRb(const HankelTransformRb& sp)=delete;
+        HankelTransformRb& operator=(const HankelTransformRb& sp)=delete;
+
+        // Read data input to transform
+        void R_To_SR(const double* in,double* out);
+        void SR_To_R(const double* in,double* out);
+        void R_To_SR(const std::vector<double>& in,std::vector<double>& out) 
+            {return R_To_SR(in.data(),out.data());}
+        void SR_To_R(const std::vector<double>& in,std::vector<double>& out)
+            { return SR_To_R(in.data(),out.data());}
+ 
+        // Complex data input to transform
+        void R_To_SR(const dcmplx* in,dcmplx* out);
+        void SR_To_R(const dcmplx* in,dcmplx* out);
+        void R_To_SR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+            { return R_To_SR(in.data(),out.data());}
+        void SR_To_R(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+            { return SR_To_R(in.data(),out.data());}
+
+        const std::vector<double>& getYmk() const {return m_Ymk;}
+        int getNr() const {return m_nr;}
+    private:
+        unsigned int m_threads;
+        int m_nr;
+        double m_alpha;
+        std::vector<double> m_Ymk; 
+        void initDHT(const BesselRootGridR& grid);
+};
+
+
+
 }
 
 

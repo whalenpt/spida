@@ -4,7 +4,7 @@
  *    Email: whalenpt@gmail.com
  *    Status: Development
  *    Date: 08/17/21
- *    Description: Examples of HankelPeriodicRT transform
+ *    Description: Examples of HankelFFTRBLTRT transform
  *
 ------------------------------------------------------------------------------*/
 
@@ -29,7 +29,7 @@ int main()
 {
 
     using spida::dcmplx;
-    int nr = 200;
+    int nr = 500;
     int nt = 512;
     double w0 = 20.0e-6;
     double I0 = 5.0e16;
@@ -153,12 +153,41 @@ int main()
     }
 
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelPeriodic RT_To_SRST duration with " << threads << " thread(s): "\
+        std::cout << "HankelFFTRBLT RT_To_SRST duration with " << threads << " thread(s): "\
                   << rt_srst_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelPeriodic SRST_To_RT duration with " << threads << " thread(s): "\
+        std::cout << "HankelFFTRBLT SRST_To_RT duration with " << threads << " thread(s): "\
+                  << srst_rt_timings[threads] << "us" << std::endl;
+    }
+    std::cout << std::endl;
+
+    for(auto threads = 1; threads < MAX_THREADS; threads++){
+        spida::HankelFFTRBLTb transform_threaded(gridR,gridT,threads);
+        std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
+
+        //auto start_time = std::chrono::steady_clock::now();
+        transform_threaded.RT_To_SRST(u,v);
+        //auto elapsed_time = std::chrono::steady_clock::now() - start_time;
+        std::chrono::duration<double> elapsed_time = std::chrono::steady_clock::now() - start_time;
+        rt_srst_timings[threads] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
+
+        start_time = std::chrono::steady_clock::now();
+        transform_threaded.SRST_To_RT(v,u);
+        elapsed_time = std::chrono::steady_clock::now() - start_time;
+
+        srst_rt_timings[threads] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
+
+    }
+
+    for(auto threads = 1; threads < MAX_THREADS; threads++){
+        std::cout << "HankelFFTRBLTb RT_To_SRST duration with " << threads << " thread(s): "\
+                  << rt_srst_timings[threads] << "us" << std::endl;
+    }
+    std::cout << std::endl;
+    for(auto threads = 1; threads < MAX_THREADS; threads++){
+        std::cout << "HankelFFTRBLTb SRST_To_RT duration with " << threads << " thread(s): "\
                   << srst_rt_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;
