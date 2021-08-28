@@ -95,26 +95,14 @@ class HankelFFTRBLTb
         HankelFFTRBLTb()=delete;
         HankelFFTRBLTb(const HankelFFTRBLTb& sp)=delete;
         HankelFFTRBLTb& operator=(const HankelFFTRBLTb& sp)=delete;
+
         void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
 
-        void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
-        void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
-        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
-        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
-
-        enum class State{Wait,\
-            RT_To_RST,\
-            RST_To_STR,\
-            STR_To_STSR,\
-            STSR_To_SRST,\
-            SRST_To_STSR,\
-            STSR_To_STR,\
-            STR_To_RST,\
-            RST_To_RT,\
-            RT_To_SRT,\
-            SRST_To_SRT,\
-            Done};
+//        void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
+//        void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
+//        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
+//        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
 
     private:
         int m_nr;
@@ -131,31 +119,18 @@ class HankelFFTRBLTb
         std::vector<FFTBLT*> m_transformT;
         std::vector<HankelTransformR*> m_transformR;
 
-        State m_STATE;
-        int m_THCOUNT;
-        std::vector<bool> m_ready;
-        bool m_processed;
-        std::mutex m_mut;
-        std::condition_variable m_cv;
-
-        void ReadySTATE(State state);
-        void ProcessedSTATE(State state);
-
-        void worker_thread(int id);
-        void worker_wait(int id);
-
-        void worker_RT_To_RST(int tid);
-        void worker_RST_To_STR(int tid);
-        void worker_STR_To_STSR(int tid);
-        void worker_STSR_To_SRST(int tid);
-
-        void worker_SRST_To_STSR(int tid);
-        void worker_STSR_To_STR(int tid);
-        void worker_STR_To_RST(int tid);
-        void worker_RST_To_RT(int tid);
-
-        void worker_RT_To_SRT(int tid);
-        void worker_SRST_To_SRT(int tid);
+//        void worker_RT_To_RST(int tid);
+//        void worker_RST_To_STR(int tid);
+//        void worker_STR_To_STSR(int tid);
+//        void worker_STSR_To_SRST(int tid);
+//
+//        void worker_SRST_To_STSR(int tid);
+//        void worker_STSR_To_STR(int tid);
+//        void worker_STR_To_RST(int tid);
+//        void worker_RST_To_RT(int tid);
+//
+//        void worker_RT_To_SRT(int tid);
+//        void worker_SRST_To_SRT(int tid);
 };
 
 
