@@ -5,16 +5,16 @@
 
 namespace spida{
 
-SolverAS_ETD::SolverAS_ETD(ModelCV& model,PropagatorCV& prs,double sf,double qv)
- :  SolverCV_AS(model,prs,sf,qv)
+SolverAS_ETD::SolverAS_ETD(ModelCV& model,double sf,double qv)
+ :  SolverCV_AS(model,sf,qv)
 {
     m_mode_cutoff = 0.01;
     m_contour_radi = 1.0;
     m_contourM = 32;
 }
 
-ETD34::ETD34(ModelCV& model,PropagatorCV& prs)
-  : SolverAS_ETD(model,prs,0.84,4),m_sz(SolverCV::size()),
+ETD34::ETD34(ModelCV& model)
+  : SolverAS_ETD(model,0.84,4),m_sz(SolverCV::size()),
     L(model.linOp()),EL(m_sz), EL2(m_sz), 
     N1(m_sz), N2(m_sz), N3(m_sz), N4(m_sz), N5(m_sz), 
     tempK(m_sz), a21(m_sz), a31(m_sz), a32(m_sz),
@@ -79,8 +79,8 @@ void ETD34::updateCoefficients(double dt)
     for(unsigned int i = 1; i < thmgt.getNumThreads(); i++)
         threads.push_back(std::thread(&ETD34::worker_coeff,this,dt,i));
     worker_coeff(dt,0);
-    for(unsigned int i = 0; i < threads.size(); i++)
-        threads[i].join();
+    for(auto& thread : threads)
+        thread.join();
 }
 
 
@@ -120,8 +120,8 @@ void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew
         errVec[i] = a54[i]*(N4[i] - N5[i]);
 }
 
-ETD35::ETD35(ModelCV& model,PropagatorCV& prs)
-  : SolverAS_ETD(model,prs,0.84,4),m_sz(SolverCV::size()),
+ETD35::ETD35(ModelCV& model)
+  : SolverAS_ETD(model,0.84,4),m_sz(SolverCV::size()),
     L(model.linOp()),EL(m_sz),EL2(m_sz),EL4(m_sz),EL5(m_sz),
     N1(m_sz),N2(m_sz),N3(m_sz),N4(m_sz),N5(m_sz),N6(m_sz),N7(m_sz),
     tempK(m_sz),a21(m_sz),a31(m_sz),a32(m_sz),a41(m_sz),a43(m_sz),
@@ -227,50 +227,9 @@ void ETD35::updateCoefficients(double dt)
   for(unsigned int i = 1; i < thmgt.getNumThreads(); i++)
       threads.push_back(std::thread(&ETD35::worker_coeff,this,dt,i));
   worker_coeff(dt,0);
-  for(unsigned int i = 0; i < threads.size(); i++)
-    threads[i].join();
+  for(auto& thread : threads)
+      thread.join();
 }
-
-/*
-void ETD35::updateStages(const std::vector<dcmplx>& in,\
-        std::vector<dcmplx>& ynew,std::vector<dcmplx>& errVec)
-{
-    if(!N1_init){
-        SolverCV::model().nonLinResponse(in,N1);
-        N1_init = true;
-    }
-    if(SolverCV_AS::accept())
-        SolverCV::model().nonLinResponse(ynew,N1);
-
-    for(int i = 0; i < m_sz; i++)
-        tempK[i] = EL2[i]*in[i] + a21[i]*N1[i];
-
-    SolverCV::model().nonLinResponse(tempK,N2);
-    for(int i = 0; i < m_sz; i++)
-        tempK[i] = EL2[i]*in[i] + a31[i]*N1[i] + a32[i]*N2[i];
-
-    SolverCV::model().nonLinResponse(tempK,N3);
-    for(int i = 0; i < m_sz; i++)
-        tempK[i] = EL4[i]*in[i] + a41[i]*N1[i] + a43[i]*N3[i];
-
-    SolverCV::model().nonLinResponse(tempK,N4);
-    for(int i = 0; i < m_sz; i++) 
-        tempK[i] = EL5[i]*in[i] + a51[i]*N1[i] + a52[i]*(N2[i]-N3[i]) + a54[i]*N4[i];
-
-    SolverCV::model().nonLinResponse(tempK,N5);
-    for(int i = 0; i < m_sz; i++) {
-        tempK[i] = EL[i]*in[i] + a61[i]*N1[i] + a62[i]*(N2[i]-(3.0/2)*N4[i]) \
-            + a63[i]*N3[i] + a65[i]*N5[i];
-    }
-    SolverCV::model().nonLinResponse(tempK,N6);
-
-    for(int i = 0; i < m_sz; i++) {
-        ynew[i] = EL[i]*in[i] + a71[i]*N1[i] + a73[i]*N3[i] + a74[i]*N4[i] \
-            + a75[i]*N5[i] + a76[i]*N6[i];
-        errVec[i] = a75[i]*(-N1[i] + 4.0*N3[i] - 6.0*N4[i] + 4.0*N5[i] - N6[i])/4.0;
-    }
-}
-*/
 
 void ETD35::worker_stage2(const std::vector<dcmplx>& in,int sti,int endi)
 {

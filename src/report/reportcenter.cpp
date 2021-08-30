@@ -4,18 +4,23 @@
 
 namespace spida{
 
-ReportCenter::ReportCenter(const std::filesystem::path& dir_path,int max_report) :
+ReportCenter::ReportCenter(Propagator* pr,const std::filesystem::path& dir_path,int max_report) :
+    m_pr(pr),
     m_dir_path(dir_path)
 {
-    m_prs = nullptr;
     m_steps_taken = 0;
     m_max_reports = max_report;
     m_stat.setHeader("REPORT STATS");
 }
 
+void ReportCenter::setDirPath(const std::filesystem::path& dir_path)
+{
+    m_dir_path = dir_path;
+}
 
-ReportCenter1D::ReportCenter1D(const std::filesystem::path& dir_path,int step_per1D,int max_report) :
-    ReportCenter(dir_path,max_report)
+
+ReportCenter1D::ReportCenter1D(Propagator* pr,const std::filesystem::path& dir_path,int step_per1D,int max_report) :
+    ReportCenter(pr,dir_path,max_report)
 {
     m_reportCount1D = 0;
     m_stepsPerOutput1D = step_per1D;
@@ -38,9 +43,12 @@ bool ReportCenter1D::stepUpdate(double t)
 
 void ReportCenter1D::report1D(double t) 
 {
-    m_prs->updateFields(t);
+    if(!m_pr)
+        return;
+
+    m_pr->updateFields(t);
     m_stat.startTimer("Time Reports1D");
-    m_prs->reportHandler().report1D(m_dir_path,m_reportCount1D,t);
+    m_pr->reportHandler().report1D(m_dir_path,m_reportCount1D,t);
     m_stat.endTimer("Time Reports1D");
     m_reportCount1D++;
     m_stat.incrementCounter("Number Reports1D");
@@ -54,8 +62,8 @@ void ReportCenter1D::report(double t)
 }
 
 
-ReportCenter2D::ReportCenter2D(const std::filesystem::path& dir_path,int step_per1D,int step_per2D,int max_report) :
-    ReportCenter1D(dir_path,step_per1D,max_report)
+ReportCenter2D::ReportCenter2D(Propagator* pr,const std::filesystem::path& dir_path,int step_per1D,int step_per2D,int max_report) :
+    ReportCenter1D(pr,dir_path,step_per1D,max_report)
 {
     m_reportCount2D = 0;
     m_stepsPerOutput2D = step_per2D;
@@ -86,9 +94,12 @@ void ReportCenter2D::report(double t)
 
 void ReportCenter2D::report2D(double t) 
 {
-    m_prs->updateFields(t);
+    if(!m_pr)
+        return;
+
+    m_pr->updateFields(t);
     m_stat.startTimer("Time Reports2D");
-    m_prs->reportHandler().report2D(m_dir_path,m_reportCount2D,t);
+    m_pr->reportHandler().report2D(m_dir_path,m_reportCount2D,t);
     m_stat.endTimer("Time Reports2D");
     m_reportCount2D++;
     m_stat.incrementCounter("Number Reports2D");
@@ -99,14 +110,17 @@ void ReportCenter2D::report2D(double t)
 
 void ReportCenter2D::report1D2D(double t) 
 {
-    m_prs->updateFields(t);
+    if(!m_pr)
+        return;
+
+    m_pr->updateFields(t);
 
     m_stat.startTimer("Time Reports1D");
-    m_prs->reportHandler().report1D(m_dir_path,m_reportCount1D,t);
+    m_pr->reportHandler().report1D(m_dir_path,m_reportCount1D,t);
     m_stat.endTimer("Time Reports1D");
 
     m_stat.startTimer("Time Reports2D");
-    m_prs->reportHandler().report2D(m_dir_path,m_reportCount2D,t);
+    m_pr->reportHandler().report2D(m_dir_path,m_reportCount2D,t);
     m_stat.endTimer("Time Reports2D");
 
     m_reportCount1D++;

@@ -18,8 +18,9 @@
 
 namespace spida{
 
-SolverCV::SolverCV(ModelCV& model,PropagatorCV& prs)
- :  m_model(model), m_prs(prs)
+SolverCV::SolverCV(ModelCV& model)
+ :  m_model(model),
+    m_report_center(nullptr)
 { 
     m_tcurrent = 0.0;
     m_dt_last = 0.0;
@@ -41,16 +42,7 @@ int SolverCV::size() const
 
 SolverCV::~SolverCV() {}
 
-ReportCenter& SolverCV::reportCenter()
-{
-    if(!m_report_center)
-        throw pw::Exception("File reporting has not been activated."\
-        " To enable file reporting use the SolverCV::setFileReport(std::string directory)"\
-        " function. Then specify reporting details through the ReportCenter object"\
-        " returned from the function SolverCV::reportCenter().");
-    else
-        return *m_report_center;
-}
+
 
 void SolverCV::computeCo(double dt)
 {
@@ -66,8 +58,12 @@ void SolverCV::computeCo(double dt)
 }
 
 void SolverCV::fileReportStats() {
+
+    if(!m_report_center)
+        return;
+
 	std::filesystem::path local_path("solver_stat.dat");
-    std::filesystem::path dir_path = reportCenter().dirPath();
+    std::filesystem::path dir_path = m_report_center->dirPath();
     std::filesystem::path full_path = dir_path / local_path;
     std::ofstream fout(full_path.c_str());
     m_stat.report(fout);
@@ -79,24 +75,28 @@ void SolverCV::reportStats()
     m_stat.report(std::cout);
 }
 
-void SolverCV::setTargetDirectory(const std::filesystem::path& dirpath)
+void SolverCV::setFileReport(PropagatorCV& pr,const std::filesystem::path& dirpath)
 {
-    if(m_report_center){
+    if(m_report_center)
         m_report_center.reset();
-    }
 
     if(m_model.dimension() == Dimension::D1){
-        m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(dirpath,1,10000));
+        m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(&pr,dirpath,1,10000));
     } else if(m_model.dimension() == Dimension::D2) {
-        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(dirpath,1,1,250));
+        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(&pr,dirpath,1,1,250));
     } else{
         throw pw::Exception("SolverCV::setFileReport","SolverAS can only handle"\
                 "1 or 2 dimensions. ");
     }
-    m_report_center->addPropagator(&m_prs);
     m_report_center->setLogProgress(m_log_progress);
 }
 
+void SolverCV::setTargetDirectory(const std::filesystem::path& dirpath)
+{
+    if(!m_report_center)
+        return;
+    m_report_center->setDirPath(dirpath);
+}
 
 void SolverCV::setLogProgress(bool val) {
     m_log_progress = val;
@@ -104,8 +104,8 @@ void SolverCV::setLogProgress(bool val) {
         m_report_center->setLogProgress(val);
 }
 
-SolverCV_AS::SolverCV_AS(ModelCV& model,PropagatorCV& prs,double sf,double qv)
- :  SolverCV(model,prs), m_yv(SolverCV::size()), m_errv(SolverCV::size())
+SolverCV_AS::SolverCV_AS(ModelCV& model,double sf,double qv)
+ :  SolverCV(model), m_yv(SolverCV::size()), m_errv(SolverCV::size())
 {
     m_accept = false;
     m_control = std::unique_ptr<Control>(new Control(sf,qv,1.0e-3,1.25,0.85,SolverCV::size(),\
@@ -114,9 +114,7 @@ SolverCV_AS::SolverCV_AS(ModelCV& model,PropagatorCV& prs,double sf,double qv)
     SolverCV::statCenter().addCounter("Step Size Increases",1);
 }
 
-SolverCV_AS::~SolverCV_AS()
-{
-}
+SolverCV_AS::~SolverCV_AS() { }
 
 void SolverCV_AS::setIncrementThreshold(double val) 
 {m_control->setIncrementThreshold(val);}
@@ -128,9 +126,8 @@ void SolverCV_AS::setEpsRel(double val)
 {m_control->setEpsRel(val);}
 
 
-void SolverCV_AS::step(double& h,double& hNext)
+void SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext)
 {
-    std::vector<dcmplx>& in = SolverCV::propagator().propagator();
     statCenter().startClock("Clock Computer Time");
     statCenter().startTimer("Computer Time");
     double h_cur = h;
@@ -180,38 +177,42 @@ void SolverCV_AS::step(double& h,double& hNext)
     statCenter().statUpdate();
 }
 
-void SolverCV_AS::evolve(double t0,double tf,double& dt)
+void SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt)
 {
-    SolverCV::reportCenter().report(t0);
+    if(fileReportOn())
+        SolverCV::reportCenter()->report(t0);
+
     SolverCV::setCurrentTime(t0);
     if(dt > (tf-t0))
         dt = tf-t0;
 
-    bool report = true;
     double dt_next;
+    bool report = true;
     while(SolverCV::currentTime() < tf && report){
-        step(dt,dt_next);
-        report = reportCenter().stepUpdate(SolverCV::currentTime());
+        SolverCV_AS::step(u,dt,dt_next);
+        if(fileReportOn())
+            report = SolverCV::reportCenter()->stepUpdate(SolverCV::currentTime());
+
         if(SolverCV::currentTime() + dt_next > tf)
             dt = tf - SolverCV::currentTime();
         else
             dt = dt_next;
     }
-    reportCenter().report(SolverCV::currentTime());
+    if(fileReportOn())
+        reportCenter()->report(SolverCV::currentTime());
 }
 
-SolverCV_CS::SolverCV_CS(ModelCV& model,PropagatorCV& prs) :
-    SolverCV(model,prs)
+SolverCV_CS::SolverCV_CS(ModelCV& model) :
+    SolverCV(model)
 {
     m_count_time = true;
 }
 
-void SolverCV_CS::step(double dt) 
+void SolverCV_CS::step(std::vector<dcmplx>& in,double dt) 
 {
     statCenter().startClock("Clock Computer Time");
     statCenter().startTimer("Computer Time");
 
-    std::vector<dcmplx>& in = SolverCV::propagator().propagator();
     computeCo(dt);
     statCenter().startClock("Clock Stepping");
     statCenter().startTimer("Solver Stepping");
@@ -227,18 +228,21 @@ void SolverCV_CS::step(double dt)
     statCenter().statUpdate();
 }
 
-void SolverCV_CS::evolve(double t0,double tf,double& dt)
+void SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt)
 {
     SolverCV::setCurrentTime(t0);
-    reportCenter().report(t0);
+    if(fileReportOn())
+        reportCenter()->report(t0);
     bool report = true;
     while(SolverCV::currentTime() < tf && report){
         if ((SolverCV::currentTime() + dt) > tf)
             dt = tf - SolverCV::currentTime();
-        step(dt);
-        report = reportCenter().stepUpdate(SolverCV::currentTime());
+        SolverCV_CS::step(u,dt);
+        if(fileReportOn())
+            report = reportCenter()->stepUpdate(SolverCV::currentTime());
     }
-    reportCenter().report(SolverCV::currentTime());
+    if(fileReportOn())
+        reportCenter()->report(SolverCV::currentTime());
 }
 
 

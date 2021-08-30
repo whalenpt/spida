@@ -28,42 +28,38 @@ class ReportCenter;
 class SolverCV
 {
   public:
-      SolverCV(ModelCV& model,PropagatorCV& prs);
+      SolverCV(ModelCV& model);
       virtual ~SolverCV();
+
+      virtual void evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) = 0;
+      void computeCo(double dt);
+      ModelCV& model() {return m_model;}
+      int size() const;
+
+      void setFileReport(PropagatorCV& propagator,const std::filesystem::path& dirpath);
+      void setTargetDirectory(const std::filesystem::path& dirpath);
+      bool fileReportOn() const {return (m_report_center ? true : false);}
+      ReportCenter* reportCenter() {return m_report_center.get();}
+
       void setStatFrequency(int val) {m_stat.setReportFrequency(val);}
       void setLogProgress(bool val); 
       void setCurrentTime(double t) {m_tcurrent = t;}
-      void setTargetDirectory(const std::filesystem::path& dirpath);
-
-      ModelCV& model() {return m_model;}
-      PropagatorCV& propagator() {return m_prs;}
-      ReportCenter& reportCenter();
-      int size() const;
-
-      StatCenter& statCenter() {return m_stat;}
-      int size() {return m_sz;}
       double currentTime() {return m_tcurrent;}
       double dtLast() {return m_dt_last;}
       bool logProgress() {return m_log_progress;}
 
-      virtual void evolve(double t0,double tf,double& dt) = 0;
-      void computeCo(double dt);
-
       void fileReportStats();
       void reportStats();
+      StatCenter& statCenter() {return m_stat;}
 
   private:
       virtual void updateCoefficients([[maybe_unused]] double dt) {};
-
       ModelCV& m_model;
-      PropagatorCV& m_prs;
       std::unique_ptr<ReportCenter> m_report_center;
       StatCenter m_stat;
-
       double m_tcurrent;
       double m_dt_last;
       bool m_log_progress;
-      int m_sz;
 };
 
 void norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,double* esum_val,double* ysum_val);
@@ -99,36 +95,23 @@ class Control{
       std::vector<double> ysum;
  
       enum {NORM1,NORM2,NORMINF,NORMSYS,NORMW2};
-//      double norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew); // returns s-val, not error
-//      double norm1(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew); // returns s-val, not error
-//      double weightedNorm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew); // returns s-val, not error
-//      double normInf(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew); // returns s-val, not error
-//      double normSys(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew); // returns s-val, not error
-//      void worker_norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,long double* esum,long double* ysum);
-//      void worker_norm1(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,double* esum,double* ysum);
-//      void worker_weighted_norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,double,double* esum,double* ysum);
-//      void worker_norminf(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,double* emax,double* ymax);
-//      void worker_normsys(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,double cutoff,double* sval);
 };
 
 
 class SolverCV_AS : public SolverCV
 {
   public:
-      SolverCV_AS(ModelCV& cmodel,PropagatorCV& cprs,double sf,double qv);
+      SolverCV_AS(ModelCV& cmodel,double sf,double qv);
       virtual ~SolverCV_AS(); 
+      void evolve(std::vector<dcmplx>& u,double t0,double tf,double& h_next);
+      void step(std::vector<dcmplx>& u,double& h,double& h_next);
   
       void setIncrementThreshold(double val); 
       void setDecrementThreshold(double val);
       void setEpsRel(double val);
       void setNorm(std::string);
       void setAccept(bool val) {m_accept = val;}
-
       bool accept() {return m_accept;}
-  
-      void evolve(double t0,double tf,double& h_next);
-      void step(double& h,double& h_next);
-      
       std::vector<dcmplx>& getY() {return m_yv;}
       std::vector<dcmplx>& getErr() {return m_errv;}
 
@@ -145,13 +128,11 @@ class SolverCV_AS : public SolverCV
 class SolverCV_CS : public SolverCV 
 {
   public:
-      SolverCV_CS(ModelCV& cmodel,PropagatorCV& cprs);
+      SolverCV_CS(ModelCV& cmodel);
       virtual ~SolverCV_CS() {};
+      void step(std::vector<dcmplx>& u,double h);
+      void evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt);
       void setCountTime(bool val) {m_count_time = val;}
-
-      void step(double h);
-      void evolve(double t0,double tf,double& dt);
-
   private:
       virtual void updateCoefficients([[maybe_unused]] double dt) {};
       virtual void updateStages(std::vector<dcmplx>& in) = 0;

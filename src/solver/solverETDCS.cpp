@@ -7,16 +7,16 @@
 
 namespace spida{
 
-SolverCS_ETD::SolverCS_ETD(ModelCV& cmodel,PropagatorCV& cprs)
- :  SolverCV_CS(cmodel,cprs)
+SolverCS_ETD::SolverCS_ETD(ModelCV& cmodel)
+ :  SolverCV_CS(cmodel)
 {
     m_mode_cutoff = 0.01;
     m_contour_radi = 1.0;
     m_contourM = 32;
 }
 
-ETD4::ETD4(ModelCV& model,PropagatorCV& prs) :
-  SolverCS_ETD(model,prs),sz(SolverCV::size()),
+ETD4::ETD4(ModelCV& model) :
+  SolverCS_ETD(model),sz(SolverCV::size()),
     L(model.linOp()), EL(sz), EL2(sz), N1(sz), N2(sz),
     N3(sz), N4(sz), tempK(sz), a21(sz), a31(sz), a32(sz), a41(sz), a43(sz),
     a51(sz), a52(sz), a54(sz)
