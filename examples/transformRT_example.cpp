@@ -30,8 +30,8 @@ int main()
 {
 
     using spida::dcmplx;
-    int nr = 400;
-    int nt = 512;
+    int nr = 800;
+    int nt = 256;
     double w0 = 20.0e-6;
     double I0 = 5.0e16;
     double tp = 5.0e-15;
@@ -168,9 +168,7 @@ int main()
     std::cout << std::endl;
 
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        spida::HankelFFTRBLTb transform_threaded(gridR,gridT);
-        thread_pool pool(threads);
-        transform_threaded.setThreadPool(&pool);
+        spida::HankelFFTRBLTb transform_threaded(gridR,gridT,threads);
 
         auto start_time = std::chrono::steady_clock::now();
         for(auto i = 0; i < NUM_LOOPS; i++)
