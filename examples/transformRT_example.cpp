@@ -15,7 +15,6 @@
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
 #include <spida/transform/hankelfftRBLT.h>
-#include <spida/thread-pool/thread_pool.hpp>
 #include <pwutils/report/dat.hpp>
 #include <pwutils/report/reporthelper.h>
 #include <cmath>
@@ -30,7 +29,7 @@ int main()
 {
 
     using spida::dcmplx;
-    int nr = 800;
+    int nr = 200;
     int nt = 256;
     double w0 = 20.0e-6;
     double I0 = 5.0e16;
@@ -167,6 +166,7 @@ int main()
     }
     std::cout << std::endl;
 
+    /*
     for(auto threads = 1; threads < MAX_THREADS; threads++){
         spida::HankelFFTRBLTb transform_threaded(gridR,gridT,threads);
 
@@ -195,6 +195,7 @@ int main()
                   << srst_rt_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;
+    */
 
 
     return 0;

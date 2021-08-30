@@ -262,17 +262,39 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,GAUSSTGAUSSR)
 
     int nst = gridT.getNst();
     std::vector<dcmplx> v(nr*nst);
+    std::vector<dcmplx> vb(nr*nst);
+    std::vector<dcmplx> w(nr*nst);
+    std::vector<dcmplx> wb(nr*nst);
     std::vector<double> ub(nr*nt);
+    std::vector<double> usr(nr*nt);
+    spida::HankelFFTRBLT transform(gridR,gridT);
+
+    // Check forward transform and reverse transform over R dimension
+    transform.RT_To_SRT(u,usr);
+    transform.SRT_To_RT(usr,ub);
+    EXPECT_LT(pw::relative_error(u,ub),1e-6);
+
+    // Check forward transform and reverse transform over T dimension
+    transform.RT_To_RST(u,v);
+    transform.RST_To_RT(v,ub);
+    EXPECT_LT(pw::relative_error(u,ub),1e-6);
 
     // Check forward tranform and reverse transform applied in sequence is identity
-    spida::HankelFFTRBLT transform(gridR,gridT);
     transform.RT_To_SRST(u,v);
     transform.SRST_To_RT(v,ub);
     EXPECT_LT(pw::relative_error(u,ub),1e-6);
 
+    // Check forward tranform and reverse transform over SR dimension
+    transform.SRST_To_RST(v,w);
+    transform.RST_To_SRST(w,vb);
+    EXPECT_LT(pw::relative_error(v,vb),1e-6);
+
+    // Check forward tranform and reverse transform over ST dimension
+    transform.SRST_To_SRT(v,usr);
+    transform.SRT_To_SRST(usr,vb);
+    EXPECT_LT(pw::relative_error(v,vb),1e-6);
+
     // Check RT_To_RST and SRST_To_RST are equal
-    std::vector<dcmplx> w(nr*nst);
-    std::vector<dcmplx> wb(nr*nst);
     transform.RT_To_RST(u,w);
     transform.SRST_To_RST(v,wb);
     EXPECT_LT(pw::relative_error(w,wb),1e-6);

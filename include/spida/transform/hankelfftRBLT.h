@@ -10,13 +10,10 @@
 #include <map>
 #include "spida/helper/constants.h"
 
-class thread_pool;
-
 namespace spida{
 
 class FFTBLT;
 class HankelTransformR;
-class HankelTransformRb;
 class BesselRootGridR;
 class UniformGridT;
 
@@ -28,14 +25,14 @@ void transpose(const T* in,T* out,unsigned int nd1,unsigned int nd2)
             out[j*nd1+i] = in[i*nd2+j];
 }
 
-class HankelFFTRBLTb 
+class HankelFFTRBLT 
 {
     public:
-        explicit HankelFFTRBLTb(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads = 1);
-        ~HankelFFTRBLTb();
-        HankelFFTRBLTb()=delete;
-        HankelFFTRBLTb(const HankelFFTRBLTb& sp)=delete;
-        HankelFFTRBLTb& operator=(const HankelFFTRBLTb& sp)=delete;
+        explicit HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads = 1);
+        ~HankelFFTRBLT();
+        HankelFFTRBLT()=delete;
+        HankelFFTRBLT(const HankelFFTRBLT& sp)=delete;
+        HankelFFTRBLT& operator=(const HankelFFTRBLT& sp)=delete;
 
         void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
@@ -81,6 +78,7 @@ class HankelFFTRBLTb
 };
 
 
+/*
 
 class HankelFFTRBLT 
 {
@@ -152,6 +150,13 @@ class HankelFFTRBLT
         void worker_RT_To_SRT(int tid);
         void worker_SRST_To_SRT(int tid);
 };
+*/
+
+
+/*
+
+
+// Attempt at using a third party thread pool - slow results :(
 
 void worker_RT_To_RST(const double* in,dcmplx* out,\
         std::map<std::thread::id,FFTBLT*> fftblt_map);
@@ -196,6 +201,7 @@ class HankelFFTRBLTc
 
 };
 
+*/
 
 
 
