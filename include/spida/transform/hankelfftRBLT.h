@@ -28,9 +28,6 @@ void transpose(const T* in,T* out,unsigned int nd1,unsigned int nd2)
             out[j*nd1+i] = in[i*nd2+j];
 }
 
-
-
-
 class HankelFFTRBLTb 
 {
     public:
@@ -44,16 +41,16 @@ class HankelFFTRBLTb
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
 
         void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
+        void RST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
+
+        void RST_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
+        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
+
         void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
+        void SRT_To_RT(const std::vector<double>& in,std::vector<double>& out); 
 
-//        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
-//        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
-
-
-//        void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
-//        void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
-//        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
-//        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
+        void SRT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out);
+        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
 
     private:
         int m_nr;
@@ -61,37 +58,26 @@ class HankelFFTRBLTb
         int m_nst;
         int m_threads;
 
-        std::vector<double> m_uRT;
-        std::vector<dcmplx> m_uRST;
-        std::vector<double> m_uSRT;
-        std::vector<dcmplx> m_uSRST;
+        std::vector<double> m_rr;
+        std::vector<dcmplx> m_rs;
+        std::vector<double> m_sr;
+        std::vector<dcmplx> m_ss;
 
         std::vector<FFTBLT*> m_transformT;
         std::vector<HankelTransformR*> m_transformR;
 
-        void worker_RT_To_RST(unsigned int tid,const double* in,dcmplx* out);
-        void worker_STR_To_STSR(unsigned int tid,const dcmplx* in,dcmplx* out);
-        void worker_STSR_To_STR(unsigned int tid,const dcmplx* in, dcmplx* out);
-        void worker_RST_To_RT(unsigned int tid,const dcmplx* in,double* out);
-        void worker_RT_To_SRT(unsigned int tid,const double* in,double* out);
+        void worker_T_To_ST(unsigned int tid,const double* in,dcmplx* out);
+        void worker_ST_To_T(unsigned int tid,const dcmplx* in,double* out);
+        void worker_R_To_SR(unsigned int tid,const double* in,double* out);
+        void worker_SR_To_R(unsigned int tid,const double* in,double* out);
+        void workerCMP_R_To_SR(unsigned int tid,const dcmplx* in,dcmplx* out);
+        void workerCMP_SR_To_R(unsigned int tid,const dcmplx* in,dcmplx* out);
+
         void wait_for_workers(std::vector<std::thread>& workers);
 
-//        BesselRootGridR* m_gridR;
-//        UniformGridT* m_gridT;
+        void hSTR_To_STSR(const std::vector<dcmplx>& in, std::vector<dcmplx>& out);
+        void hSTSR_To_STR(const std::vector<dcmplx>& in, std::vector<dcmplx>& out);
 
-//        Semaphore m_task_limiter;
-
-//        void worker_RST_To_STR(int tid);
-//        void worker_STR_To_STSR(int tid);
-//        void worker_STSR_To_SRST(int tid);
-//
-//        void worker_SRST_To_STSR(int tid);
-//        void worker_STSR_To_STR(int tid);
-//        void worker_STR_To_RST(int tid);
-//        void worker_RST_To_RT(int tid);
-//
-//        void worker_RT_To_SRT(int tid);
-//        void worker_SRST_To_SRT(int tid);
 };
 
 
@@ -131,10 +117,10 @@ class HankelFFTRBLT
         int m_nst;
         int m_nThreads;
 
-        std::vector<double> m_uRT;
-        std::vector<dcmplx> m_uRST;
-        std::vector<double> m_uSRT;
-        std::vector<dcmplx> m_uSRST;
+        std::vector<double> m_rr;
+        std::vector<dcmplx> m_rs;
+        std::vector<double> m_sr;
+        std::vector<dcmplx> m_ss;
 
         std::vector<std::thread> m_thread;
         std::vector<FFTBLT*> m_transformT;
@@ -172,6 +158,7 @@ void worker_RT_To_RST(const double* in,dcmplx* out,\
 void worker_STR_To_STSR(const dcmplx* in,dcmplx* out,\
         std::map<std::thread::id,HankelTransformR*> hankel_map);
 
+
 class HankelFFTRBLTc 
 {
     public:
@@ -185,21 +172,16 @@ class HankelFFTRBLTc
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
         bool setThreadPool(thread_pool* pool);
 
-//        void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
-//        void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
-//        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
-//        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
-
     private:
         int m_nr;
         int m_nt;
         int m_nst;
         int m_nThreads;
 
-        std::vector<double> m_uRT;
-        std::vector<dcmplx> m_uRST;
-        std::vector<double> m_uSRT;
-        std::vector<dcmplx> m_uSRST;
+        std::vector<double> m_rr;
+        std::vector<dcmplx> m_rs;
+        std::vector<double> m_sr;
+        std::vector<dcmplx> m_ss;
 
         BesselRootGridR* m_gridR;
         UniformGridT* m_gridT;
@@ -212,21 +194,6 @@ class HankelFFTRBLTc
         void worker_RT_To_RST(unsigned int tid);
         void worker_STR_To_STSR(unsigned int tid);
 
-
-//        Semaphore m_task_limiter;
-
-//        void worker_RT_To_RST(int tid);
-//        void worker_RST_To_STR(int tid);
-//        void worker_STR_To_STSR(int tid);
-//        void worker_STSR_To_SRST(int tid);
-//
-//        void worker_SRST_To_STSR(int tid);
-//        void worker_STSR_To_STR(int tid);
-//        void worker_STR_To_RST(int tid);
-//        void worker_RST_To_RT(int tid);
-//
-//        void worker_RT_To_SRT(int tid);
-//        void worker_SRST_To_SRT(int tid);
 };
 
 
