@@ -19,9 +19,9 @@ class PropagatorBLT : public PropagatorCV
         std::vector<double>& realField() {return m_real_field;}
         std::vector<dcmplx>& spectralField() {return m_spectral_field;}
         void initFields(const ShapeT& shape);
-        spida::PeriodicBLT& spida() {return m_spi;}
+        PeriodicBLT& spida(); 
     private:
-        spida::PeriodicBLT& m_spi;
+        PeriodicBLT& m_spi;
         std::vector<dcmplx> m_spectral_field;
         std::vector<double> m_real_field;
 };
