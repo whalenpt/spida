@@ -9,8 +9,8 @@ ModelPeriodicBLT::ModelPeriodicBLT(const UniformGridT& grid) :
       ModelCV(1), 
       m_spi(new PeriodicBLT(grid)) {}
 
-spida::PeriodicBLT& ModelPeriodicBLT::spida() { return *m_spi; }
-
+PeriodicBLT& ModelPeriodicBLT::spida() { return *m_spi; }
+ModelPeriodicBLT::~ModelPeriodicBLT() {}
 
 }
 

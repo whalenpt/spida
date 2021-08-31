@@ -8,8 +8,6 @@
 
 namespace spida{
 
-//enum class 
-
 enum class Dimension{D1,D2,D3};
 
 class ModelCV
