@@ -28,6 +28,7 @@ class PropagatorCV : public Propagator
       PropagatorCV() {} 
       virtual ~PropagatorCV() {}; 
       virtual void updateFields(double t) = 0;
+      virtual dcmplx* propagator() = 0;
   private:
       virtual void initReport() = 0;
 };

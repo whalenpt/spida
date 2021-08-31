@@ -3,11 +3,14 @@
 #define SPIDA_GRIDX_H_
 
 #include <vector>
+#include "spida/grid/grid.h"
+
 int indexFromVal(double val,std::vector<double> vec);
 
 namespace spida{
 
-class GridX{
+class GridX : public Grid
+{
   public:
       GridX(int nx,double minX,double maxX)  : 
           m_nx(nx),m_minX(minX),m_maxX(maxX) {}

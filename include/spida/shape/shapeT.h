@@ -6,11 +6,12 @@
 #include <complex>
 #include "spida/helper/constants.h"
 #include "spida/grid/gridT.h"
+#include "spida/shape/shape.h"
 
 namespace spida{
 
 // Interface class
-class ShapeT 
+class ShapeT : public Shape
 {
     public:
         ShapeT(const GridT& grid,double A,double tp);

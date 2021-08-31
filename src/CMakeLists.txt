@@ -11,6 +11,7 @@ set(SRC_FILES
     grid/uniformX.cpp
 	grid/uniformT.cpp
 	grid/besselR.cpp
+    grid/grid.cpp
 	model/modelT.cpp
 	propagator/propagatorRT_RC.cpp
 	propagator/propagatorRTp_RC.cpp
@@ -35,6 +36,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/PeriodicBLT.h"
    "${INCL_DIR}/helper/constants.h"
    "${INCL_DIR}/helper/interp.h"
+   "${INCL_DIR}/grid/grid.h"
    "${INCL_DIR}/grid/uniformT.h"
    "${INCL_DIR}/grid/gridX.h"
    "${INCL_DIR}/grid/gridT.h"
@@ -48,6 +50,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/propagator/propagatorT.h"
    "${INCL_DIR}/report/reportcenter.h"
    "${INCL_DIR}/report/reporthandler.h"
+   "${INCL_DIR}/shape/shape.h"
    "${INCL_DIR}/shape/shapeT.h"
    "${INCL_DIR}/shape/shapeR.h"
    "${INCL_DIR}/solver/solver.h"

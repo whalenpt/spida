@@ -4,17 +4,21 @@
 
 #include <string>
 #include <complex>
-#include "spida/shape/shape.hpp"
+#include "spida/shape/shape.h"
 #include "spida/grid/gridX.h"
 
 namespace spida{
 
-// ShapeX in form of A0*shape(c0*(x-offset)+phi0)
-class ShapeX 
+class ShapeX : public Shape
 {
     public:
         ShapeX(const GridX& grid,double A0,double c0) :
-            m_grid(grid),m_A(A0),m_c0(c0), m_offset(0.0), m_phi0(0.0)
+            Shape(grid),
+            m_grid(grid),
+            m_A(A0),
+            m_c0(c0), 
+            m_offset(0.0), 
+            m_phi0(0.0)
         virtual ~ShapeX() {};
         void setAmplitude(double A0) {m_A = A0;}
         void setWidth(double c0) {m_c0 = c0;}

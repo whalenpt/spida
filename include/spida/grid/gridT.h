@@ -2,10 +2,12 @@
 #define SPIDA_GRIDT_H_
 
 #include <vector>
+#include "spida/grid/grid.h"
 
 namespace spida{
 
-class GridT{
+class GridT : public Grid
+{
   public:
       explicit GridT(int nt,double minT,double maxT)  : 
           m_nt(nt),m_minT(minT),m_maxT(maxT) {}

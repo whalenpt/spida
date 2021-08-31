@@ -5,11 +5,12 @@
 #include <string>
 #include <complex>
 #include "spida/grid/gridR.h"
+#include "spida/shape/shape.h"
 
 namespace spida{
 
 // ShapeR in form of A0*shape(r/w0)
-class ShapeR
+class ShapeR : public Shape
 {
     public:
         ShapeR(const GridR& grid,double A,double w0); 

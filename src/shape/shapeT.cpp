@@ -12,6 +12,7 @@
 namespace spida{
 
 ShapeT::ShapeT(const GridT& grid,double A,double tp) :
+            Shape(grid),
             m_t(grid.getT()),
             m_A(A),m_tp(tp),
             m_offset(0.0),

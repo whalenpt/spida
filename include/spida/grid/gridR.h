@@ -3,10 +3,12 @@
 #define SPIDA_GRIDR_H_
 
 #include <vector>
+#include "spida/grid/grid.h"
 
 namespace spida{
 
-class GridR{
+class GridR : public Grid
+{
   public:
       GridR(int nr,double rmax)  : 
           m_nr(nr),m_rmax(rmax) {}

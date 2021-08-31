@@ -5,6 +5,7 @@
 namespace spida{
 
 ShapeR::ShapeR(const GridR& grid,double A,double w0) :
+            Shape(grid),
             m_r(grid.getR()),
             m_A(A),
             m_w0(w0)
