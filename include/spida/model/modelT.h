@@ -16,7 +16,8 @@ class ModelPeriodicBLT : public ModelCV
       virtual ~ModelPeriodicBLT() {}
       virtual const std::vector<dcmplx>& linOp() = 0;
       virtual void nonLinResponse(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) = 0;
-      spida::PeriodicBLT& spida() {return *m_spi;}
+      //spida::PeriodicBLT& spida() {return *m_spi;}
+      spida::PeriodicBLT& spida();
       virtual Dimension dimension() {return Dimension::D1;}
   private:
       std::unique_ptr<spida::PeriodicBLT> m_spi;
