@@ -5,10 +5,9 @@
 
 namespace spida{
 
-ModelPeriodicBLT::ModelPeriodicBLT(const UniformGridT& grid,int c_nthreads) :
-      ModelCV(c_nthreads), 
+ModelPeriodicBLT::ModelPeriodicBLT(const UniformGridT& grid) :
+      ModelCV(1), 
       m_spi(new PeriodicBLT(grid)) {}
-
 
 }
 

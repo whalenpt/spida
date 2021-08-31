@@ -17,12 +17,12 @@ class PropagatorBLT : public PropagatorCV
         virtual ~PropagatorBLT() {} 
         virtual void updateFields(double z) = 0;
         std::vector<double>& realField() {return m_real_field;}
-        std::vector<dcmplx>& propagator() {return m_propagator;}
+        std::vector<dcmplx>& spectralField() {return m_spectral_field;}
         void initFields(const ShapeT& shape);
         spida::PeriodicBLT& spida() {return m_spi;}
     private:
         spida::PeriodicBLT& m_spi;
-        std::vector<dcmplx> m_propagator;
+        std::vector<dcmplx> m_spectral_field;
         std::vector<double> m_real_field;
 };
 

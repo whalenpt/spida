@@ -12,7 +12,7 @@ class UniformGridT;
 class ModelPeriodicBLT : public ModelCV
 {
   public:
-      ModelPeriodicBLT(const UniformGridT& grid,int c_nthreads = 1); 
+      ModelPeriodicBLT(const UniformGridT& grid); 
       virtual ~ModelPeriodicBLT() {}
       virtual const std::vector<dcmplx>& linOp() = 0;
       virtual void nonLinResponse(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) = 0;
