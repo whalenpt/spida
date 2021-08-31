@@ -3,11 +3,10 @@
 #define MODELT_H_
 
 #include "spida/model/model.h"
+#include "spida/PeriodicBLT.h"
+#include "spida/grid/uniformT.h"
 
 namespace spida{
-
-class PeriodicBLT;
-class UniformGridT;
 
 class ModelPeriodicBLT : public ModelCV
 {
