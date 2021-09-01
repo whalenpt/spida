@@ -36,9 +36,10 @@ class ShapeT : public Shape
         std::vector<dcmplx> shapeCV() const;
         std::vector<double> shapeRV() const;
         std::vector<dcmplx> envelope() const;
+        const GridT& grid() const {return m_grid;}
 
     private:
-        std::vector<double> m_t;
+        const GridT& m_grid;
         double m_A;
         double m_tp;
         double m_offset;
