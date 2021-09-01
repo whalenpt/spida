@@ -36,7 +36,7 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST)
 
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
-    shape.shapeReal(y);
+    shape.shapeRV(y);
 
     transform.T_To_ST(y,ysp);
     transform.ST_To_T(ysp,yinv);
@@ -68,7 +68,7 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST_POINTERS)
     std::vector<double> yinv(nt);
     std::vector<dcmplx> ysp(grid.getNst());
 
-    shape.ShapeT::shapeReal(y);
+    shape.ShapeT::shapeRV(y);
     transform.T_To_ST(y.data(),ysp.data());
     transform.ST_To_T(ysp.data(),yinv.data());
 
@@ -99,7 +99,7 @@ TEST(PERIODICT_TRANSFORM_TEST,COMPLEX_GAUSST)
     std::vector<dcmplx> y(nt);
     std::vector<dcmplx> yinv(nt);
     std::vector<dcmplx> ysp(grid.getNst());
-    shape.shape(y);
+    shape.shapeCV(y);
 
     transform.T_To_ST_c(y,ysp);
     transform.ST_To_T_c(ysp,yinv);
@@ -251,7 +251,7 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,GAUSSTGAUSSR)
     spida::GaussR shapeR(gridR,1.0,w0);
 
     std::vector<double> u0t(nt);
-    shapeT.shapeReal(u0t);
+    shapeT.shapeRV(u0t);
     std::vector<double> u0r(nr);
     shapeR.shape(u0r);
     std::vector<double> u(nr*nt);
@@ -329,7 +329,7 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,MULTITHREAD)
     spida::GaussR shapeR(gridR,1.0,w0);
 
     std::vector<double> u0t(nt);
-    shapeT.shapeReal(u0t);
+    shapeT.shapeRV(u0t);
     std::vector<double> u0r(nr);
     shapeR.shape(u0r);
     std::vector<double> u(nr*nt);

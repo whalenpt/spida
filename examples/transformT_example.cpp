@@ -39,7 +39,7 @@ int main()
     shapeT.setFastPhase(omega0);
 
     std::vector<double> u(nt);
-    shapeT.shapeReal(u);
+    shapeT.shapeRV(u);
     int nst = gridT.getNst();
     std::vector<dcmplx> v(nst);
 

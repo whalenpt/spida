@@ -16,7 +16,7 @@ TEST(SHAPE_TEST,GAUSST)
     spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(car_freq);
-    shape.shapeReal(y);
+    shape.shapeRV(y);
 
 
     auto itmax = std::max_element(std::begin(y),std::end(y));
@@ -38,7 +38,7 @@ TEST(SHAPE_TEST,SECHT)
     spida::UniformGridT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
     spida::SechT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(car_freq);
-    shape.shapeReal(y);
+    shape.shapeRV(y);
 
     auto itmax = std::max_element(std::begin(y),std::end(y));
     auto itmin = std::min_element(std::begin(y),std::end(y));
@@ -63,7 +63,7 @@ TEST(SHAPE_TEST,AIRYT)
     spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
     spida::AiryT shape(grid,std::sqrt(I0),tp,apod);
     shape.setFastPhase(omega0);
-    shape.shapeReal(y);
+    shape.shapeRV(y);
 
     auto itmax = std::max_element(std::begin(y),std::end(y));
     auto itmin = std::min_element(std::begin(y),std::end(y));
@@ -88,7 +88,7 @@ TEST(SHAPE_TEST,BESSELT)
     spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
     spida::BesselT shape(grid,std::sqrt(I0),tp,apod);
     shape.setFastPhase(omega0);
-    shape.shapeReal(y);
+    shape.shapeRV(y);
 
     auto itmax = std::max_element(std::begin(y),std::end(y));
     auto itmin = std::min_element(std::begin(y),std::end(y));

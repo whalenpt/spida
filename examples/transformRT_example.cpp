@@ -48,7 +48,7 @@ int main()
     spida::GaussR shapeR(gridR,1.0,w0);
 
     std::vector<double> u0t(nt);
-    shapeT.shapeReal(u0t);
+    shapeT.shapeRV(u0t);
     std::vector<double> u0r(nr);
     shapeR.shape(u0r);
     std::vector<double> u(nr*nt);

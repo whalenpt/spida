@@ -16,7 +16,7 @@ PropagatorBLT::PropagatorBLT(ModelPeriodicBLT& md) :
 
 void PropagatorBLT::initFields(const spida::ShapeT& shape)
 {
-    shape.shapeReal(m_real_field);
+    shape.shapeRV(m_real_field);
     spida().T_To_ST(m_real_field,m_spectral_field);
 }
 

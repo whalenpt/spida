@@ -20,7 +20,28 @@ ShapeT::ShapeT(const GridT& grid,double A,double tp) :
             m_slow_phase(0.0),
             m_omega0(0.0) {}
 
-void ShapeT::shape(std::vector<dcmplx>& v) const
+std::vector<dcmplx> ShapeT::shapeCV() const
+{
+    std::vector<dcmplx> v;
+    shapeCV(v);
+    return v;
+}
+
+std::vector<double> ShapeT::shapeRV() const
+{
+    std::vector<double> v;
+    shapeRV(v);
+    return v;
+}
+
+std::vector<dcmplx> ShapeT::envelope() const
+{
+    std::vector<dcmplx> v;
+    envelope(v);
+    return v;
+}
+
+void ShapeT::shapeCV(std::vector<dcmplx>& v) const
 {
     v.clear();
     v.resize(m_t.size());
@@ -28,7 +49,7 @@ void ShapeT::shape(std::vector<dcmplx>& v) const
         v[i] = computeShape(m_t[i]);
 }
 
-void ShapeT::shapeReal(std::vector<double>& v) const
+void ShapeT::shapeRV(std::vector<double>& v) const
 {
     v.clear();
     v.resize(m_t.size());

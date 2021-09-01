@@ -30,9 +30,12 @@ class ShapeT : public Shape
         double fastPhase() const {return m_omega0;}
         double slowPhase() const {return m_slow_phase;}
 
-        void shape(std::vector<dcmplx>& v) const;
-        void shapeReal(std::vector<double>& v) const;
+        void shapeCV(std::vector<dcmplx>& v) const;
+        void shapeRV(std::vector<double>& v) const;
         void envelope(std::vector<dcmplx>& v) const;
+        std::vector<dcmplx> shapeCV() const;
+        std::vector<double> shapeRV() const;
+        std::vector<dcmplx> envelope() const;
 
     private:
         std::vector<double> m_t;
