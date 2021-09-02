@@ -8,19 +8,18 @@
 
 namespace spida{
 
-void setUniformX(double minX,double maxX,std::vector<double>& x);
-void setUniformSX(double minSX,double maxSX,std::vector<double>& sx);
+std::vector<double> buildUniformX(unsigned int nx,double minX,double maxX);
+std::vector<double> buildUniformSX(unsigned int nx,double minX,double maxX);
 
 class UniformGridX : public GridX
 {
     public:
-        UniformGridX(int nx,double min,double max);
+        UniformGridX(unsigned int nx,double min,double max);
         ~UniformGridX() {}; 
         const std::vector<double>& getX() const {return m_x;}
         const std::vector<double>& getSX() const {return m_sx;}
-        double getL() const {return GridX::getMaxX()-GridX::getMinX();}
-        double getMinSX() const {return -getNx()*spida::PI/getL();} 
-        double getMaxSX() const {return getNx()*spida::PI/getL();}
+        double getMinSX() const {return -getNx()*spida::PI/getLX();} 
+        double getMaxSX() const {return getNx()*spida::PI/getLX();}
     private:
         std::vector<double> m_x;
         std::vector<double> m_sx;

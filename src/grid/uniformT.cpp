@@ -5,142 +5,132 @@
 #include "spida/helper/constants.h"
 #include <string>
 #include <iostream>
-#include <pwutils/pwexcept.h>
+#include <stdexcept>
+#include <pwutils/pwindexing.hpp>
 
 namespace spida{
 
-void setUniformT(double minT,double maxT,std::vector<double>& t)
+std::vector<double> buildUniformT(unsigned int nt,double minT,double maxT)
 {
-    setUniformX(minT,maxT,t);
-}
- 
-void setUniformST(double minST,double maxST,std::vector<double>& st) 
-{
-    int nst = st.size();
-    double dst = (maxST - minST)/(nst-1);
-    if(dst <= 0.0){
-        std::string msg = "Error in setUniformST: maxST - minST must be positive.";
-        throw pw::Exception(msg);
+    if(minT >= maxT){
+        std::string msg = "Error in buildUniformT: minT must be less than maxT.";
+        throw std::invalid_argument(msg);
     }
-    for(int i = 0; i < nst; i++) st[i] = minST + i*dst; 
+    return buildUniformX(nt,minT,maxT);
+}
+
+std::vector<double> buildUniformST(unsigned int nt,double minT,double maxT)
+{
+    if(minT >= maxT){
+        std::string msg = "Error in buildUniformST: minT must be less than maxT.";
+        throw std::invalid_argument(msg);
+    }
+    std::vector<double> full_st(nt/2+1);
+    double dst = 2.0*PI/(maxT-minT);
+    for(auto i = 0; i <= nt/2; i++)
+        full_st[i] = i*dst;
+    return full_st;
 }
 
 UniformGridT::UniformGridT(const UniformGridT& grid) : 
     GridT(grid.getNt(),grid.getMinT(),grid.getMaxT()),
-    m_t(grid.getNt()), m_st(grid.getNst())
+    m_nst(grid.getNst()),
+    m_minST(grid.getMinST()),
+    m_maxST(grid.getMaxST()),
+    m_minI(grid.getMinI()),
+    m_maxI(grid.getMaxI()),
+    m_t(grid.getNt()), 
+    m_st(grid.getNst())
 {
-    m_minI = grid.getMinI();
-    m_maxI = grid.getMaxI();
     const std::vector<double>& t = grid.getT();
     const std::vector<double>& st = grid.getST();
     std::copy(std::cbegin(t),std::cend(t),std::begin(m_t));
     std::copy(std::cbegin(st),std::cend(st),std::begin(m_st));
 }
 
-
-UniformGridT::UniformGridT(int nt,double minT,double maxT) : 
+UniformGridT::UniformGridT(unsigned int nt,double minT,double maxT) : 
     GridT(nt,minT,maxT),
-    m_t(nt), m_st(nt/2+1), m_minI(0), m_maxI(nt/2)
+    m_nst(nt/2+1),
+    m_minST(indxToFreq(0)),
+    m_maxST(indxToFreq(nt/2)),
+    m_minI(0),
+    m_maxI(nt/2)
 {
-    setUniformT(minT,maxT,m_t);
-    double minST = convertIndxToFreq(m_minI);
-    double maxST = convertIndxToFreq(m_maxI);
-    setUniformST(minST,maxST,m_st);
-    checkGrid();
+    m_t = buildUniformT(nt,minT,maxT);
+    m_st = buildUniformST(nt,minT,maxT);
 }
 
 
-UniformGridT::UniformGridT(int nt,double minT,double maxT,\
+UniformGridT::UniformGridT(unsigned int nt,double minT,double maxT,\
         double minST,double maxST) : 
-    GridT(nt,minT,maxT),
-    m_t(nt)
+    GridT(nt,minT,maxT)
 {
-    setUniformT(minT,maxT,m_t);
-    m_minI = convertFreqToIndx(minST);
-    m_maxI = convertFreqToIndx(maxST);
-    m_st.resize(m_maxI-m_minI+1,0.0);
-    setUniformST(minST,maxST,m_st);
-    checkGrid();
+    verifyFrequencyRange(minST,maxST);
+    m_t = buildUniformT(nt,minT,maxT);
+    std::vector<double> full_st = buildUniformST(nt,minT,maxT);
+    m_minI = pw::nearestIndex(full_st,minST);
+    m_maxI = pw::nearestIndex(full_st,maxST);
+    m_nst = m_maxI-m_minI+1;
+    m_st.resize(m_nst,0.0);
+    for(auto i = m_minI; i <= m_maxI; i++)
+        m_st[i-m_minI] = full_st[i-m_minI];
+    m_minST = m_st[0];
+    m_maxST = m_st.back();
 }
 
-void UniformGridT::checkMinFreq(double minST)
-{
-  if(minST < 0.0) {
-      std::string msg = "Not a valid minimum frequency of " + std::to_string(getMinST()) +\
-          ". Frequencies must be positive.";
-      throw pw::Exception(msg);
-  }
+double UniformGridT::maxPossibleFreq() const {
+    return indxToFreq(getNt()/2);
 }
 
-void UniformGridT::checkMaxFreq(double maxST)
+unsigned int UniformGridT::freqToIndx(double omeg) const
 {
-    // Temporal grid restriction on the maximum frequency (The numerical grid
-    // can resolve frequencies up to a certain maximum cutoff based on the # of points in
-    // the grid)
-    double gridMaxFreq = (2.0*PI/getLT())*(getNt()/2);
-    if(maxST > gridMaxFreq)
+    if(omeg < 0.0){
+        std::string msg = "freqToIndx only processes positive frequencies ";
+        throw std::domain_error(msg);
+    } else if (omeg > maxPossibleFreq()){
+        std::string msg = "freqToIndx(double omeg) error: The provided frequency of " \
+                   + std::to_string(omeg) + " is bigger than the maximum specified frequency of "\
+                   + std::to_string(maxPossibleFreq());
+        throw std::domain_error(msg);
+    }
+    double dst = 2.0*PI/getLT();
+    return round(omeg/dst);
+}
+
+double UniformGridT::indxToFreq(unsigned int indx) const
+{
+    if(indx > getNt()/2){
+        std::string msg = "indxToFreq(indx) error: Specified index of " + std::to_string(indx) +\
+                           " which is bigger than nt/2 of " + std::to_string(getNt()/2);
+        throw std::domain_error(msg);
+    }
+    double dst = 2.0*PI/getLT();
+    return dst*indx;
+}
+
+void UniformGridT::verifyFrequencyRange(double minST,double maxST) const
+{
+
+    if(minST >= maxST){
+        throw std::domain_error("UniformGridT minST of " + std::to_string(minST) +\
+                " is greater than or equal to the specified maxST of " + std::to_string(maxST));
+    }
+    else if(minST < 0.0) {
+        throw std::domain_error("UniformGridT minST of " + std::to_string(minST) +\
+                " is less than zero, please increase to a non-negative value.");
+    }
+    if(maxST > maxPossibleFreq())
     {
-        auto str1 = std::to_string(gridMaxFreq);
-        auto str2 = std::to_string(static_cast<int>(getLT()*maxST/PI)+1);
+        auto str1 = std::to_string(maxPossibleFreq());
+        auto str2 = std::to_string(static_cast<int>((getMaxT()-getMinT())*maxST/PI)+1);
         std::string msg = "Temporal grid spacing not small enough to accomodate the maximum"\
                            " grid frequency of " + str1 + ". Increase NT to more than " + str2;
-        throw pw::Exception(msg);
+        throw std::domain_error(msg);
     }
 }
 
-void UniformGridT::checkRangeFreq(double minST,double maxST)
-{
-  if(maxST <= minST)
-  {
-      std::string msg = "Not a valid frequency range: The minimum frequency must be less than"\
-             " the maximum frequency.";
-      throw pw::Exception(msg);
-  }
-}
 
-void UniformGridT::checkNumSpectralPoints(int nt,int nST)
-{
-  // Spectral restriction for real fields (maximum number spectral points
-  // is nt/2-1 without any zero padding) 
-  if(nST > nt/2+1)
-  {
-      std::string msg = "Frequency Range Too Large. Number of spectral points, "\
-          + std::to_string(nST) + ", must less than or equal to " + std::to_string(nt/2+1) \
-          + ". Try increasing Nt or reducing the frequency range.";
-      throw pw::Exception(msg);
-  }
-}
 
-void UniformGridT::checkGrid()
-{
-    checkMinFreq(getMinST());
-    checkMaxFreq(getMaxST());
-    checkRangeFreq(getMinST(),getMaxST());
-    checkNumSpectralPoints(getNt(),getNst());
-}
-
-int UniformGridT::convertFreqToIndx(double omeg) const
-{
-  if(omeg >= 0.0) {
-    double dst = 2.0*PI/getLT();
-    return round(omeg/dst);
-  } else{ 
-      std::string msg = "convertFreqToIndxT only processes positive frequencies ";
-      throw pw::Exception(msg);
-  }
-}
-
-double UniformGridT::convertIndxToFreq(int indx) const
-{
-  if(indx >= 0) {
-    double dst = 2.0*PI/getLT();
-    return dst*indx;
-  } else{ 
-      std::string msg = "convertIndxToFreq index must be greater than or equal to 0";
-      throw pw::Exception(msg);
-
-  }
-}
 
 
 

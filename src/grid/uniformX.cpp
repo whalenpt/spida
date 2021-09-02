@@ -7,33 +7,35 @@
 
 namespace spida{
 
-void setUniformX(double minX,double maxX,std::vector<double>& x)
+std::vector<double> buildUniformX(unsigned int nx,double minX,double maxX)
 {
     if(minX >= maxX){
         std::string msg = "Error in setUniformX: minX must be less than maxX.";
         throw std::invalid_argument(msg);
     }
-    int nx = x.size();
+    std::vector<double> x(nx);
     double dx = (maxX - minX)/(nx-1);
     for(int i = 0; i < nx; i++) x[i] = minX + i*dx; 
+    return x;
 }
 
-void setUniformSX(double minX,double maxX,std::vector<double>& sx)
+std::vector<double> buildUniformSX(unsigned int nx,double minX,double maxX)
 {
     if(minX >= maxX){
         std::string msg = "Error in setUniformSX: minX must be less than maxX.";
         throw std::invalid_argument(msg);
     }
-    int nsx = sx.size();
+    std::vector<double> sx(nx);
     double dsx = 2.0*spida::PI/(maxX - minX);
-    for(int k = 0; k < nsx; k++) sx[k] = (k-nsx/2.0)*dsx; 
+    for(int k = 0; k < nx; k++) sx[k] = (k-nx/2.0)*dsx; 
+    return sx;
 }
 
-UniformGridX::UniformGridX(int nx,double min,double max) : GridX(nx,min,max),
+UniformGridX::UniformGridX(unsigned int nx,double minX,double maxX) : GridX(nx,minX,maxX),
     m_x(nx), m_sx(nx)
 {
-    setUniformX(min,max,m_x);
-    setUniformSX(min,max,m_sx);
+    m_x = buildUniformX(nx,minX,maxX);
+    m_sx = buildUniformSX(nx,minX,maxX);
 }
 
 }
