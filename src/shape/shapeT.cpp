@@ -13,7 +13,7 @@ namespace spida{
 
 ShapeT::ShapeT(const GridT& grid,double A,double tp) :
             Shape(grid),
-            m_grid(grid),
+            m_t(grid.getT()),
             m_A(A),m_tp(tp),
             m_offset(0.0),
             m_chirp(0.0),
@@ -43,29 +43,26 @@ std::vector<dcmplx> ShapeT::envelope() const
 
 void ShapeT::shapeCV(std::vector<dcmplx>& v) const
 {
-    const auto& t = m_grid.getT();
     v.clear();
-    v.resize(t.size());
-    for(auto i = 0; i < t.size(); i++)
-        v[i] = computeShape(t[i]);
+    v.resize(m_t.size());
+    for(auto i = 0; i < m_t.size(); i++)
+        v[i] = computeShape(m_t[i]);
 }
 
 void ShapeT::shapeRV(std::vector<double>& v) const
 {
-    const auto& t = m_grid.getT();
     v.clear();
-    v.resize(t.size());
-    for(auto i = 0; i < t.size(); i++)
-        v[i] = computeShapeReal(t[i]);
+    v.resize(m_t.size());
+    for(auto i = 0; i < m_t.size(); i++)
+        v[i] = computeShapeReal(m_t[i]);
 }
 
 void ShapeT::envelope(std::vector<dcmplx>& v) const
 {
-    const auto& t = m_grid.getT();
     v.clear();
-    v.resize(t.size());
-    for(auto i = 0; i < t.size(); i++)
-        v[i] = computeEnvelope(t[i]);
+    v.resize(m_t.size());
+    for(auto i = 0; i < m_t.size(); i++)
+        v[i] = computeEnvelope(m_t[i]);
 }
 
 dcmplx ShapeT::slowPhaseFactor(double t) const {
