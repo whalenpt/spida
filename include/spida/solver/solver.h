@@ -36,11 +36,11 @@ class SolverCV
       ModelCV& model() {return m_model;}
       int size() const;
 
-      void setFileReport(PropagatorCV& propagator,const std::filesystem::path& dirpath);
+      void setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath);
       void setTargetDirectory(const std::filesystem::path& dirpath);
       bool fileReportOn() const {return (m_report_center ? true : false);}
-      ReportCenter* reportCenter() {return m_report_center.get();}
 
+      ReportCenter* reportCenter() {return m_report_center.get();}
       void setStatFrequency(int val) {m_stat.setReportFrequency(val);}
       void setLogProgress(bool val); 
       void setCurrentTime(double t) {m_tcurrent = t;}

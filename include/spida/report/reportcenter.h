@@ -15,7 +15,7 @@ class Propagator;
 
 class ReportCenter{
     public:
-        ReportCenter(Propagator* pr,const std::filesystem::path& dir_path,int max_report);
+        ReportCenter(std::unique_ptr<Propagator> pr,const std::filesystem::path& dir_path,int max_report);
         virtual ~ReportCenter() {}; 
         std::filesystem::path dirPath() const {return m_dir_path;}
         void setDirPath(const std::filesystem::path& dir_path);
@@ -24,15 +24,15 @@ class ReportCenter{
         virtual void report(double dist) = 0;
         virtual void setStepsPerOutput1D(int val) = 0;
         virtual void setStepsPerOutput2D(int val) = 0;
-        void setPropagator(Propagator* pr) {m_pr = pr;}
-        Propagator* getPropagator() {return m_pr;}
+        void setPropagator(std::unique_ptr<Propagator> pr);
+        Propagator* propagator() {return m_pr.get();}
         bool fileReportOn() const {return (m_pr ? true : false);}
 
         void setMaxReports(int val) {m_max_reports = val;}
         void setLogProgress(bool val) {m_log_progress = val;}
 
     protected:
-        Propagator* m_pr;
+        std::unique_ptr<Propagator> m_pr;
         pw::StatCenter m_stat;
         int m_steps_taken;
         int m_max_reports;
@@ -43,7 +43,7 @@ class ReportCenter{
 class ReportCenter1D : public ReportCenter
 {
     public:
-        ReportCenter1D(Propagator* pr,const std::filesystem::path& dir_path,int step_per1D = 1,
+        ReportCenter1D(std::unique_ptr<Propagator> pr,const std::filesystem::path& dir_path,int step_per1D = 1,
                  int max_report = 1000); 
         virtual ~ReportCenter1D() {}; 
         bool stepUpdate(double dist);
@@ -60,7 +60,7 @@ class ReportCenter1D : public ReportCenter
 class ReportCenter2D : public ReportCenter1D
 {
     public:
-        ReportCenter2D(Propagator* pr,const std::filesystem::path& dir_path,int step_per1D = 1,int step_per2D=1,\
+        ReportCenter2D(std::unique_ptr<Propagator> pr,const std::filesystem::path& dir_path,int step_per1D = 1,int step_per2D=1,\
                 int max_report = 250); 
         bool stepUpdate(double dist);
         void report(double dist);
