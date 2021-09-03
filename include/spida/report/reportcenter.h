@@ -19,7 +19,6 @@ class ReportCenter{
         virtual ~ReportCenter() {}; 
         std::filesystem::path dirPath() const {return m_dir_path;}
         void setDirPath(const std::filesystem::path& dir_path);
-
         virtual bool stepUpdate(double dist) = 0;
         virtual void report(double dist) = 0;
         virtual void setStepsPerOutput1D(int val) = 0;

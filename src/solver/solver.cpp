@@ -43,6 +43,14 @@ int SolverCV::size() const
     return m_model->linOp().size();
 }
 
+void SolverCV::evolve(double t0,double tf,double& dt)
+{
+    if(!m_pr)
+        throw std::domain_error("SolverCV::evolve(double t0,double tf,double& dt) error:\
+                fileReport must be set for this function to work. Please use\
+                SolverCV::evolve(std::vector<dcmplx>& in,double t0,double tf,double& dt).");
+    evolve(m_pr->propagator(),t0,tf,dt);
+}
 
 void SolverCV::computeCo(double dt)
 {
@@ -75,15 +83,18 @@ void SolverCV::reportStats()
     m_stat.report(std::cout);
 }
 
-void SolverCV::setFileReport(PropagatorCV* pr,const std::filesystem::path& dirpath)
+void SolverCV::setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath)
 {
     if(m_report_center)
         m_report_center.reset();
+    if(m_pr)
+        m_pr.reset();
 
+    m_pr = std::move(pr);
     if(m_model->dimension() == Dimension::D1){
-        m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(pr,dirpath,1,10000));
+        m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(m_pr.get(),dirpath,1,10000));
     } else if(m_model->dimension() == Dimension::D2) {
-        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(pr,dirpath,1,1,250));
+        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(m_pr.get(),dirpath,1,1,250));
     } else{
         throw pw::Exception("SolverCV::setFileReport","SolverAS can only handle"\
                 "1 or 2 dimensions. ");

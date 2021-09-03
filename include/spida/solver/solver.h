@@ -32,15 +32,18 @@ class SolverCV
       virtual ~SolverCV();
 
       virtual void evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) = 0;
+      void evolve(double t0,double tf,double& dt);
+
       void computeCo(double dt);
       ModelCV& model() {return *m_model;}
       int size() const;
 
-      void setFileReport(PropagatorCV* pr,const std::filesystem::path& dirpath);
+      void setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath);
       void setTargetDirectory(const std::filesystem::path& dirpath);
       bool fileReportOn() const {return (m_report_center ? true : false);}
-
+      PropagatorCV* propagatorCV() {return m_pr.get();}
       ReportCenter* reportCenter() {return m_report_center.get();}
+
       void setStatFrequency(int val) {m_stat.setReportFrequency(val);}
       void setLogProgress(bool val); 
       void setCurrentTime(double t) {m_tcurrent = t;}
@@ -55,6 +58,7 @@ class SolverCV
   private:
       virtual void updateCoefficients([[maybe_unused]] double dt) {};
       ModelCV* m_model;
+      std::unique_ptr<PropagatorCV> m_pr;
       std::unique_ptr<ReportCenter> m_report_center;
       StatCenter m_stat;
       double m_tcurrent;
