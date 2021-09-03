@@ -75,15 +75,15 @@ void SolverCV::reportStats()
     m_stat.report(std::cout);
 }
 
-void SolverCV::setFileReport(PropagatorCV* pr,const std::filesystem::path& dirpath)
+void SolverCV::setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath)
 {
     if(m_report_center)
         m_report_center.reset();
 
     if(m_model->dimension() == Dimension::D1){
-        m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(pr,dirpath,1,10000));
+        m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(std::move(pr),dirpath,1,10000));
     } else if(m_model->dimension() == Dimension::D2) {
-        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(pr,dirpath,1,1,250));
+        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(std::move(pr),dirpath,1,1,250));
     } else{
         throw pw::Exception("SolverCV::setFileReport","SolverAS can only handle"\
                 "1 or 2 dimensions. ");

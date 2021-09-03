@@ -36,7 +36,7 @@ class SolverCV
       ModelCV& model() {return *m_model;}
       int size() const;
 
-      void setFileReport(PropagatorCV* pr,const std::filesystem::path& dirpath);
+      void setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath);
       void setTargetDirectory(const std::filesystem::path& dirpath);
       bool fileReportOn() const {return (m_report_center ? true : false);}
 

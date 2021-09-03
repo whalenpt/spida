@@ -4,8 +4,8 @@
 
 namespace spida{
 
-ReportCenter::ReportCenter(Propagator* pr,const std::filesystem::path& dir_path,int max_report) :
-    m_pr(pr),
+ReportCenter::ReportCenter(std::unique_ptr<Propagator> pr,const std::filesystem::path& dir_path,int max_report) :
+    m_pr(std::move(pr)),
     m_dir_path(dir_path)
 {
     m_steps_taken = 0;
@@ -18,13 +18,14 @@ void ReportCenter::setDirPath(const std::filesystem::path& dir_path)
     m_dir_path = dir_path;
 }
 
-void ReportCenter::setPropagator(Propagator* pr)
+void ReportCenter::setPropagator(std::unique_ptr<Propagator> pr)
 {
-    m_pr = pr;
+    m_pr.reset();
+    m_pr = std::move(pr);
 }
 
-ReportCenter1D::ReportCenter1D(Propagator* pr,const std::filesystem::path& dir_path,int step_per1D,int max_report) :
-    ReportCenter(pr,dir_path,max_report)
+ReportCenter1D::ReportCenter1D(std::unique_ptr<Propagator> pr,const std::filesystem::path& dir_path,int step_per1D,int max_report) :
+    ReportCenter(std::move(pr),dir_path,max_report)
 {
     m_reportCount1D = 0;
     m_stepsPerOutput1D = step_per1D;
@@ -66,8 +67,8 @@ void ReportCenter1D::report(double t)
 }
 
 
-ReportCenter2D::ReportCenter2D(Propagator* pr,const std::filesystem::path& dir_path,int step_per1D,int step_per2D,int max_report) :
-    ReportCenter1D(pr,dir_path,step_per1D,max_report)
+ReportCenter2D::ReportCenter2D(std::unique_ptr<Propagator> pr,const std::filesystem::path& dir_path,int step_per1D,int step_per2D,int max_report) :
+    ReportCenter1D(std::move(pr),dir_path,step_per1D,max_report)
 {
     m_reportCount2D = 0;
     m_stepsPerOutput2D = step_per2D;
