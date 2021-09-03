@@ -43,7 +43,6 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/model/model.h"
    "${INCL_DIR}/model/modelT.h"
    "${INCL_DIR}/propagator/propagator.h"
-   "${INCL_DIR}/propagator/propagatorT.h"
    "${INCL_DIR}/report/reportcenter.h"
    "${INCL_DIR}/report/reporthandler.h"
    "${INCL_DIR}/shape/shape.h"
