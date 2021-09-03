@@ -39,7 +39,7 @@ class ShapeT : public Shape
         const GridT& getGridT() const {return m_grid;}
 
     private:
-        const GridT& m_grid;
+        const GridT m_grid;
         double m_A;
         double m_tp;
         double m_offset;
