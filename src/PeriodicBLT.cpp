@@ -20,6 +20,15 @@ namespace spida{
       delete m_gr;
   }
 
+  const UniformGridT& PeriodicBLT::getGridT() const { return *m_gr; }
+  const FFTBLT& PeriodicBLT::getTransformT() const { return *m_tr; }
+  const std::vector<double>& PeriodicBLT::getT() const {return m_gr->getT();}
+  const std::vector<double>& PeriodicBLT::getST() const {return m_gr->getST();}
+  void PeriodicBLT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out) {m_tr->T_To_ST(in,out);} 
+  void PeriodicBLT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out) {m_tr->ST_To_T(in,out);} 
+  void PeriodicBLT::T_To_ST_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) {m_tr->T_To_ST_c(in,out);} 
+  void PeriodicBLT::ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) {m_tr->ST_To_T_c(in,out);} 
+
 
   void PeriodicBLT::dT(const std::vector<double>& in,std::vector<double>& out,int n) 
   {
