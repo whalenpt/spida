@@ -20,5 +20,7 @@ void PropagatorBLT::initFields(const spida::ShapeT& shape)
     spida().T_To_ST(m_real_field,m_spectral_field);
 }
 
+PeriodicBLT& PropagatorBLT::spida() {return m_md.spida();}
+
 }
 
