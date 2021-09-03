@@ -13,7 +13,7 @@ class PropagatorCV;
 class SolverCS_ETD : public SolverCV_CS
 {
     public:
-        SolverCS_ETD(ModelCV& cmodel);
+        SolverCS_ETD(ModelCV* cmodel);
         virtual ~SolverCS_ETD() {}; 
         void setModeCutoff(double val) {m_mode_cutoff = val;}
         void setContourRadius(double val) {m_contour_radi = val;}
@@ -32,7 +32,7 @@ class SolverCS_ETD : public SolverCV_CS
 class ETD4 : public SolverCS_ETD
 {
     public:
-        ETD4(ModelCV& cmodel);
+        ETD4(ModelCV* cmodel);
         ~ETD4() {};
     private:
         void updateCoefficients(double dt);

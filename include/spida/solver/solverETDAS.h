@@ -13,7 +13,7 @@ namespace spida{
 class SolverAS_ETD : public SolverCV_AS
 {
     public:
-        SolverAS_ETD(ModelCV& cmodel,double sf,double qv);
+        SolverAS_ETD(ModelCV* cmodel,double sf,double qv);
         virtual ~SolverAS_ETD() {}; 
         void setModeCutoff(double val) {m_mode_cutoff = val;}
         void setContourRadius(double val) {m_contour_radi = val;}
@@ -33,7 +33,7 @@ class SolverAS_ETD : public SolverCV_AS
 class ETD34 : public SolverAS_ETD
 {
     public:
-        ETD34(ModelCV& cmodel);
+        ETD34(ModelCV* cmodel);
         ~ETD34() {};
     private:
         void updateCoefficients(double dt);
@@ -60,7 +60,7 @@ class ETD34 : public SolverAS_ETD
 class ETD35: public SolverAS_ETD
 {
     public:
-        ETD35(ModelCV& cmodel);
+        ETD35(ModelCV* cmodel);
         ~ETD35() {};
     private:
         void updateCoefficients(double dt);

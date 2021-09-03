@@ -18,7 +18,7 @@
 
 namespace spida{
 
-SolverCV::SolverCV(ModelCV& model)
+SolverCV::SolverCV(ModelCV* model)
  :  m_model(model),
     m_report_center(nullptr)
 { 
@@ -35,11 +35,12 @@ SolverCV::SolverCV(ModelCV& model)
     m_stat.addCounter("Coefficient Evals",1);
 }
 
+
 SolverCV::~SolverCV() {}
 
 int SolverCV::size() const
 {
-    return m_model.linOp().size();
+    return m_model->linOp().size();
 }
 
 
@@ -79,9 +80,9 @@ void SolverCV::setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesys
     if(m_report_center)
         m_report_center.reset();
 
-    if(m_model.dimension() == Dimension::D1){
+    if(m_model->dimension() == Dimension::D1){
         m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(std::move(pr),dirpath,1,10000));
-    } else if(m_model.dimension() == Dimension::D2) {
+    } else if(m_model->dimension() == Dimension::D2) {
         m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(std::move(pr),dirpath,1,1,250));
     } else{
         throw pw::Exception("SolverCV::setFileReport","SolverAS can only handle"\
@@ -103,7 +104,7 @@ void SolverCV::setLogProgress(bool val) {
         m_report_center->setLogProgress(val);
 }
 
-SolverCV_AS::SolverCV_AS(ModelCV& model,double sf,double qv)
+SolverCV_AS::SolverCV_AS(ModelCV* model,double sf,double qv)
  :  SolverCV(model), m_yv(SolverCV::size()), m_errv(SolverCV::size())
 {
     m_accept = false;
@@ -201,7 +202,7 @@ void SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt)
         reportCenter()->report(SolverCV::currentTime());
 }
 
-SolverCV_CS::SolverCV_CS(ModelCV& model) :
+SolverCV_CS::SolverCV_CS(ModelCV* model) :
     SolverCV(model)
 {
     m_count_time = true;

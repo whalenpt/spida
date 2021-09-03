@@ -5,7 +5,7 @@
 
 namespace spida{
 
-SolverAS_ETD::SolverAS_ETD(ModelCV& model,double sf,double qv)
+SolverAS_ETD::SolverAS_ETD(ModelCV* model,double sf,double qv)
  :  SolverCV_AS(model,sf,qv)
 {
     m_mode_cutoff = 0.01;
@@ -13,13 +13,13 @@ SolverAS_ETD::SolverAS_ETD(ModelCV& model,double sf,double qv)
     m_contourM = 32;
 }
 
-ETD34::ETD34(ModelCV& model)
+ETD34::ETD34(ModelCV* model)
   : SolverAS_ETD(model,0.84,4),m_sz(SolverCV::size()),
-    L(model.linOp()),EL(m_sz), EL2(m_sz), 
+    L(model->linOp()),EL(m_sz), EL2(m_sz), 
     N1(m_sz), N2(m_sz), N3(m_sz), N4(m_sz), N5(m_sz), 
     tempK(m_sz), a21(m_sz), a31(m_sz), a32(m_sz),
     a41(m_sz), a43(m_sz), a51(m_sz), a52(m_sz), a54(m_sz), r1(m_sz),
-    thmgt(model.threadManager())
+    thmgt(model->threadManager())
 {
     c1 = 0.0; c2 = 1.0/2; c3 = 1.0/2; c4 = 1.0; c5 = 1.0;
     N1_init = false;
@@ -120,14 +120,14 @@ void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew
         errVec[i] = a54[i]*(N4[i] - N5[i]);
 }
 
-ETD35::ETD35(ModelCV& model)
+ETD35::ETD35(ModelCV* model)
   : SolverAS_ETD(model,0.84,4),m_sz(SolverCV::size()),
-    L(model.linOp()),EL(m_sz),EL2(m_sz),EL4(m_sz),EL5(m_sz),
+    L(model->linOp()),EL(m_sz),EL2(m_sz),EL4(m_sz),EL5(m_sz),
     N1(m_sz),N2(m_sz),N3(m_sz),N4(m_sz),N5(m_sz),N6(m_sz),N7(m_sz),
     tempK(m_sz),a21(m_sz),a31(m_sz),a32(m_sz),a41(m_sz),a43(m_sz),
     a51(m_sz),a52(m_sz),a54(m_sz),a61(m_sz),a62(m_sz),a63(m_sz),a65(m_sz),
     a71(m_sz),a73(m_sz),a74(m_sz),a75(m_sz),a76(m_sz),
-    thmgt(model.threadManager())
+    thmgt(model->threadManager())
 {
     c1 = 0.0; c2 = 1.0/4.0; c3 = 1.0/4.0; c4 = 1.0/2.0;  
     c5 = 3.0/4.0; c6 = 1.0; c7 = 1.0; 

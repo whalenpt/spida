@@ -11,11 +11,12 @@ namespace spida{
 class ModelPeriodicBLT : public ModelCV
 {
   public:
-      ModelPeriodicBLT(const UniformGridT& grid); 
-      virtual ~ModelPeriodicBLT();
+      ModelPeriodicBLT(const UniformGridT& grid) :
+          ModelCV(1), m_spi(new PeriodicBLT(grid)) {}
+      virtual ~ModelPeriodicBLT() {}
       virtual const std::vector<dcmplx>& linOp() = 0;
       virtual void nonLinResponse(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) = 0;
-      PeriodicBLT& spida();
+      PeriodicBLT& spida() {return *m_spi;}
       virtual Dimension dimension() {return Dimension::D1;}
   private:
       std::unique_ptr<spida::PeriodicBLT> m_spi;

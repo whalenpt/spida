@@ -12,10 +12,6 @@ set(SRC_FILES
 	grid/uniformT.cpp
 	grid/besselR.cpp
     grid/grid.cpp
-	model/modelT.cpp
-	propagator/propagatorRT_RC.cpp
-	propagator/propagatorRTp_RC.cpp
-	propagator/propagatorBLT.cpp
 	report/reportcenter.cpp
 	report/reporthandler.cpp
 	shape/shapeT.cpp

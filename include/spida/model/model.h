@@ -17,10 +17,11 @@ class ModelCV
       virtual ~ModelCV() {};
       virtual void nonLinResponse(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) = 0;
       virtual const std::vector<dcmplx>& linOp() = 0;
+      virtual Dimension dimension() = 0;
+
       unsigned int numThreads() {return thmgt.getNumThreads();}
       void setNumThreads(unsigned int val) {thmgt.setNumThreads(val);}
       pw::ThreadManager& threadManager() {return thmgt;}
-      virtual Dimension dimension() = 0;
   private:
       pw::ThreadManager thmgt;
 

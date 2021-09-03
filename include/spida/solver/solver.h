@@ -21,19 +21,19 @@ namespace spida{
 const int MAX_LOOP = 100;
 using pw::StatCenter;
 
-class ModelCV;
 class PropagatorCV;
 class ReportCenter;
+class ModelCV;
 
 class SolverCV
 {
   public:
-      SolverCV(ModelCV& model);
+      SolverCV(ModelCV* model);
       virtual ~SolverCV();
 
       virtual void evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) = 0;
       void computeCo(double dt);
-      ModelCV& model() {return m_model;}
+      ModelCV& model() {return *m_model;}
       int size() const;
 
       void setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath);
@@ -54,7 +54,7 @@ class SolverCV
 
   private:
       virtual void updateCoefficients([[maybe_unused]] double dt) {};
-      ModelCV& m_model;
+      ModelCV* m_model;
       std::unique_ptr<ReportCenter> m_report_center;
       StatCenter m_stat;
       double m_tcurrent;
@@ -101,7 +101,7 @@ class Control{
 class SolverCV_AS : public SolverCV
 {
   public:
-      SolverCV_AS(ModelCV& cmodel,double sf,double qv);
+      SolverCV_AS(ModelCV* cmodel,double sf,double qv);
       virtual ~SolverCV_AS(); 
       void evolve(std::vector<dcmplx>& u,double t0,double tf,double& h_next);
       void step(std::vector<dcmplx>& u,double& h,double& h_next);
@@ -128,7 +128,7 @@ class SolverCV_AS : public SolverCV
 class SolverCV_CS : public SolverCV 
 {
   public:
-      SolverCV_CS(ModelCV& cmodel);
+      SolverCV_CS(ModelCV* cmodel);
       virtual ~SolverCV_CS() {};
       void step(std::vector<dcmplx>& u,double h);
       void evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt);
