@@ -73,7 +73,7 @@ UniformGridT::UniformGridT(unsigned int nt,double minT,double maxT,\
     m_nst = m_maxI-m_minI+1;
     m_st.resize(m_nst,0.0);
     for(auto i = m_minI; i <= m_maxI; i++)
-        m_st[i-m_minI] = full_st[i-m_minI];
+        m_st[i-m_minI] = full_st[i];
     m_minST = m_st[0];
     m_maxST = m_st.back();
 }
