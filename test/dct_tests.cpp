@@ -5,7 +5,7 @@
 #include <spida/shape/shapeT.h>
 #include <spida/grid/chebX.h>
 #include <spida/transform/chebX.h>
-#include <spida/ChebX.h>
+#include <spida/SpidaCHEBX.h>
 #include <nayukidct/FastDctLee.hpp>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
@@ -71,7 +71,7 @@ TEST(DCT_TEST,DERIVATIVE_EXP)
     for(auto i = 0; i < x.size(); i++)
         in[i] = exp(x[i]);
 
-    spida::ChebX spidaX(grid);
+    spida::SpidaCHEBX spidaX(grid);
     spidaX.dX(in,out);
     EXPECT_LT(pw::relative_error(in,out),1e-6);
 }
