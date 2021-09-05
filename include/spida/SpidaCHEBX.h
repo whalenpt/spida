@@ -10,12 +10,12 @@ class ChebTransformX;
 class ChebRootGridX;
 class GridX;
 
-class ChebX 
+class SpidaCHEBX 
 {
     public:
-        ChebX(const ChebRootGridX& grid);
-        ChebX() = delete;
-        ~ChebX();
+        SpidaCHEBX(const ChebRootGridX& grid);
+        SpidaCHEBX() = delete;
+        ~SpidaCHEBX();
         void X_To_SX(const std::vector<double>& in,std::vector<double>& out); 
         void SX_To_X(const std::vector<double>& in,std::vector<double>& out);
         void dX(const std::vector<double>& in,std::vector<double>& out,int n); 

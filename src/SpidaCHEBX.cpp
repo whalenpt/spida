@@ -1,6 +1,6 @@
 
 
-#include "spida/ChebX.h"
+#include "spida/SpidaCHEBX.h"
 #include "spida/grid/chebX.h"
 #include "spida/transform/chebX.h"
 #include "spida/helper/constants.h"
@@ -13,7 +13,7 @@
 
 namespace spida{
 
-  ChebX::ChebX(const ChebRootGridX& grid) :
+  SpidaCHEBX::SpidaCHEBX(const ChebRootGridX& grid) :
     m_gr(new ChebRootGridX(grid)),
     m_tr(new ChebTransformX(grid)),
     m_sp(grid.getNx()), 
@@ -21,52 +21,52 @@ namespace spida{
   {
   }
 
-  ChebX::~ChebX()
+  SpidaCHEBX::~SpidaCHEBX()
   {
       delete m_tr;
       delete m_gr;
   }
 
-  const GridX& ChebX::getGridX() {
+  const GridX& SpidaCHEBX::getGridX() {
       return *m_gr;
   }
-  const ChebTransformX& ChebX::getTransformX() {
+  const ChebTransformX& SpidaCHEBX::getTransformX() {
       return *m_tr;
   }
 
-  void ChebX::X_To_SX(const std::vector<double>& in,std::vector<double>& out) {
+  void SpidaCHEBX::X_To_SX(const std::vector<double>& in,std::vector<double>& out) {
       m_tr->X_To_SX(in,out);
   } 
-  void ChebX::SX_To_X(const std::vector<double>& in,std::vector<double>& out) {
+  void SpidaCHEBX::SX_To_X(const std::vector<double>& in,std::vector<double>& out) {
       m_tr->SX_To_X(in,out);
   } 
 
-  void ChebX::dX(const std::vector<double>& in,std::vector<double>& out,int n) 
+  void SpidaCHEBX::dX(const std::vector<double>& in,std::vector<double>& out,int n) 
   {
       X_To_SX(in,m_sp);
       dSX(m_sp,n);
       SX_To_X(m_sp,out);
   }
 
-  void ChebX::dX(const std::vector<double>& in,std::vector<double>& out) 
+  void SpidaCHEBX::dX(const std::vector<double>& in,std::vector<double>& out) 
   {
-      ChebX::dX(in,out,1);
+      SpidaCHEBX::dX(in,out,1);
   }
 
-  void ChebX::dSX(std::vector<double>& a,int n)
+  void SpidaCHEBX::dSX(std::vector<double>& a,int n)
   {
       if(n < 0){ 
-          throw std::invalid_argument("ChebX::dSX(std::vector<double>& a,int n) \
+          throw std::invalid_argument("SpidaCHEBX::dSX(std::vector<double>& a,int n) \
                   n must be a non-negative integer");
       } else if(n > 8){
-          throw std::invalid_argument("ChebX::dSX(std::vector<double>& a,int n) \
+          throw std::invalid_argument("SpidaCHEBX::dSX(std::vector<double>& a,int n) \
                   n must be less than or equal to 8");
       }
       for(int i = 0; i < n; i++)
-          ChebX::dSX(a);
+          SpidaCHEBX::dSX(a);
   }
 
-  void ChebX::dSX(std::vector<double>& a)
+  void SpidaCHEBX::dSX(std::vector<double>& a)
   {
       int N = m_gr->getNsx();
       double sf = 2.0/m_gr->getL();
@@ -77,13 +77,13 @@ namespace spida{
       std::copy(std::begin(m_dsp),std::end(m_dsp),std::begin(a));
   }
 
-  void ChebX::dSX(const std::vector<double>& a,std::vector<double>& b,int n) 
+  void SpidaCHEBX::dSX(const std::vector<double>& a,std::vector<double>& b,int n) 
   {
       std::copy(std::cbegin(a),std::cend(a),std::begin(b));
       dSX(b,n);
   }
 
-  void ChebX::dSX(const std::vector<double>& a,std::vector<double>& b) 
+  void SpidaCHEBX::dSX(const std::vector<double>& a,std::vector<double>& b) 
   {
       std::copy(std::cbegin(a),std::cend(a),std::begin(b));
       dSX(b);
@@ -93,12 +93,12 @@ namespace spida{
 
 
 
-//  void ChebX::dSX(std::vector<double>& a,int n)
+//  void SpidaCHEBX::dSX(std::vector<double>& a,int n)
 //  {
 //      if(n == 0)
 //          return;
 //      if(n < 0){ 
-//          throw std::invalid_argument("ChebX::dSX(std::vector<double>& a,int n) \
+//          throw std::invalid_argument("SpidaCHEBX::dSX(std::vector<double>& a,int n) \
 //                  n must be a non-negative integer");
 //      }
 //      if(m_gr.gridType() == ChebGridType::EXTREMA){

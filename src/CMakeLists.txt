@@ -3,8 +3,8 @@
 cmake_minimum_required(VERSION 3.19.1)
 
 set(SRC_FILES
-    PeriodicBLT.cpp
-    ChebX.cpp
+    SpidaBLT.cpp
+    SpidaCHEBX.cpp
     ChebInterpX.cpp
 	helper/interp.cpp
     grid/chebX.cpp
@@ -28,8 +28,8 @@ set(SRC_FILES
 set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
 set(SPIDA_INCLUDES
    "${INCL_DIR}/ChebInterpX.h"
-   "${INCL_DIR}/ChebX.h"
-   "${INCL_DIR}/PeriodicBLT.h"
+   "${INCL_DIR}/SpidaCHEBX.h"
+   "${INCL_DIR}/SpidaBLT.h"
    "${INCL_DIR}/helper/constants.h"
    "${INCL_DIR}/helper/interp.h"
    "${INCL_DIR}/grid/grid.h"
