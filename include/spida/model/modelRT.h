@@ -17,7 +17,7 @@ class ModelRBLT : public ModelCV
       virtual ~ModelRBLT() {}
       virtual const std::vector<dcmplx>& linOp() = 0;
       virtual void nonLinResponse(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) = 0;
-      HankelPeriodicBLT& spida() {return *m_spi;}
+      SpidaRBLT& spida() {return *m_spi;}
       virtual Dimension dimension() {return Dimension::D2;}
   private:
       std::unique_ptr<spida::SpidaRBLT> m_spi;
