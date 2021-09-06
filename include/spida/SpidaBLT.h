@@ -16,7 +16,7 @@ namespace spida{
       //SpidaBLT(int nt,double minT,double maxT,double minST,double maxST);
       SpidaBLT(const UniformGridT& grid);
       SpidaBLT() = delete;
-      ~SpidaBLT() {};
+      ~SpidaBLT();
       void dT(const std::vector<double>& in,std::vector<double>& out,int n = 1); 
       const std::vector<double>& getT() const;
       const std::vector<double>& getST() const;

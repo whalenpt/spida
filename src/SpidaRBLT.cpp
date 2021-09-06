@@ -12,9 +12,9 @@ namespace spida{
   SpidaRBLT::SpidaRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads) :
       m_gridR(std::make_unique<BesselRootGridR>(gridR)),
       m_gridT(std::make_unique<UniformGridT>(gridT)),
-      m_tr(std::make_unique<HankelFFTRBLT>(gridR,gridT,threads))
-  {
-  }
+      m_tr(std::make_unique<HankelFFTRBLT>(gridR,gridT,threads)) { }
+  
+  SpidaRBLT::~SpidaRBLT() {}
 
   const BesselRootGridR& SpidaRBLT::getGridR() const { return *m_gridR; }
   const UniformGridT& SpidaRBLT::getGridT() const { return *m_gridT; }

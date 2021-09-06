@@ -16,7 +16,7 @@ namespace spida{
     public:
       SpidaRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads=1);
       SpidaRBLT() = delete;
-      ~SpidaRBLT() {};
+      ~SpidaRBLT();
       const BesselRootGridR& getGridR() const;
       const UniformGridT& getGridT() const;
       const HankelFFTRBLT& getTransformRT() const;

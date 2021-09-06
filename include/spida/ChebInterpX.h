@@ -13,7 +13,7 @@ class ChebInterpX
     public:
         ChebInterpX(int ninterp,double minx,double maxx); 
         ChebInterpX() = delete;
-        ~ChebInterpX() {};
+        ~ChebInterpX();
         void dXInterp(const std::vector<double>& xin,const std::vector<double>& yin,
                 const std::vector<double>& xout,std::vector<double>& dyout,int n = 1);
         void dXInterp(const std::vector<double>& xin,const std::vector<double>& yin,
