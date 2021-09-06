@@ -24,7 +24,8 @@ class UniformGridT : public GridT
       double getMaxST() const {return m_st.back();}
       unsigned int getMinI() const {return m_minI;}
       unsigned int getMaxI() const {return m_maxI;}
-      double getDST() const {return getLST()/(getNst()-1.0);}
+      double getDST() const {return getLST()/(getNst()-1);}
+      double getDT() const {return getLT()/(getNt()-1);}
       double getLST() const {return m_maxST-m_minST;}
       double maxPossibleFreq() const;
       unsigned int freqToIndx(double omeg) const;

@@ -19,7 +19,6 @@ class GridT : public Grid
       double getMinT() const {return m_minT;}
       double getMaxT() const {return m_maxT;}
       double getLT() const {return m_maxT-m_minT;}
-      double getDT() const {return getLT()/(getNt()-1);}
   private:
       unsigned int m_nt;
       double m_minT;
