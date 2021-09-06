@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.19.1)
 
 set(SRC_FILES
     SpidaBLT.cpp
+    SpidaRBLT.cpp
     SpidaCHEBX.cpp
     ChebInterpX.cpp
 	helper/interp.cpp
@@ -30,18 +31,20 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/ChebInterpX.h"
    "${INCL_DIR}/SpidaCHEBX.h"
    "${INCL_DIR}/SpidaBLT.h"
+   "${INCL_DIR}/SpidaRBLT.h"
    "${INCL_DIR}/helper/constants.h"
    "${INCL_DIR}/helper/interp.h"
    "${INCL_DIR}/grid/grid.h"
-   "${INCL_DIR}/grid/uniformT.h"
    "${INCL_DIR}/grid/gridX.h"
    "${INCL_DIR}/grid/gridT.h"
-   "${INCL_DIR}/grid/chebX.h"
-   "${INCL_DIR}/grid/uniformX.h"
    "${INCL_DIR}/grid/gridR.h"
+   "${INCL_DIR}/grid/uniformX.h"
+   "${INCL_DIR}/grid/uniformT.h"
+   "${INCL_DIR}/grid/chebX.h"
    "${INCL_DIR}/grid/besselR.h"
    "${INCL_DIR}/model/model.h"
    "${INCL_DIR}/model/modelT.h"
+   "${INCL_DIR}/model/modelRT.h"
    "${INCL_DIR}/propagator/propagator.h"
    "${INCL_DIR}/report/reportcenter.h"
    "${INCL_DIR}/report/reporthandler.h"
