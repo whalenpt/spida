@@ -13,7 +13,7 @@ class ModelRBLT : public ModelCV
 {
   public:
       ModelRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads=1) :
-          ModelCV(threads), m_spi(std::make_unique<HankelPeriodicRBLT>(gridR,gridT,threads)) {}
+          ModelCV(threads), m_spi(std::make_unique<SpidaRBLT>(gridR,gridT,threads)) {}
       virtual ~ModelRBLT() {}
       virtual const std::vector<dcmplx>& linOp() = 0;
       virtual void nonLinResponse(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) = 0;
