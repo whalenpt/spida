@@ -21,11 +21,14 @@ class FFTBLT
         FFTBLT& operator=(const FFTBLT& sp)=delete;
 
         void T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out); 
-        void T_To_ST(const double* in,dcmplx* out); 
         void ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out); 
+        void ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
+        void CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
+
+        void T_To_ST(const double* in,dcmplx* out); 
         void ST_To_T(const dcmplx* in,double* out); 
-        void ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
-        void T_To_ST_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
+        void ST_To_CVT(const dcmplx* in,dcmplx* out); 
+        void CVT_To_ST(const dcmplx* in,dcmplx* out); 
     private:
         int m_nt;
         int m_nst;

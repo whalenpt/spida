@@ -36,9 +36,13 @@ class HankelFFTRBLT
 
         void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
+        void CVRT_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
+        void SRST_To_CVRT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
 
         void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
+        void CVRT_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
         void RST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
+        void RST_To_CVRT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
 
         void RST_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
         void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
@@ -65,6 +69,10 @@ class HankelFFTRBLT
 
         void worker_T_To_ST(unsigned int tid,const double* in,dcmplx* out);
         void worker_ST_To_T(unsigned int tid,const dcmplx* in,double* out);
+
+        void worker_ST_To_CVT(unsigned int tid,const dcmplx* in,dcmplx* out);
+        void worker_CVT_To_ST(unsigned int tid,const dcmplx* in,dcmplx* out);
+
         void worker_R_To_SR(unsigned int tid,const double* in,double* out);
         void worker_SR_To_R(unsigned int tid,const double* in,double* out);
         void workerCMP_R_To_SR(unsigned int tid,const dcmplx* in,dcmplx* out);

@@ -25,6 +25,8 @@ namespace spida{
   const std::vector<double>& SpidaRBLT::getST() const {return m_gridT->getST();}
   void SpidaRBLT::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) {m_tr->RT_To_SRST(in,out);} 
   void SpidaRBLT::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) {m_tr->SRST_To_RT(in,out);} 
+  void SpidaRBLT::CVRT_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) {m_tr->CVRT_To_SRST(in,out);}
+  void SpidaRBLT::SRST_To_CVRT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) {m_tr->SRST_To_CVRT(in,out);}
 
 
 //  void SpidaRBLT::dT(const std::vector<double>& in,std::vector<double>& out,int n) 

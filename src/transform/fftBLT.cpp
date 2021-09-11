@@ -99,15 +99,22 @@ void FFTBLT::ST_To_T(const dcmplx* in,double* out)
       out[j] = m_rFFTr[m_nt-j-1];
 }
 
-
-void FFTBLT::T_To_ST_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+void FFTBLT::CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
 {
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in.data()),\
             reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()));
     std::copy(std::begin(m_cFFT)+m_minI,std::begin(m_cFFT)+m_maxI+1,std::begin(out));
 }
 
-void FFTBLT::ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+void FFTBLT::CVT_To_ST(const dcmplx* in,dcmplx* out)
+{
+    kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in),\
+            reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()));
+    for(unsigned int j = m_minI; j<=m_maxI; j++)
+        out[j-m_minI] = m_cFFT[j];
+}
+
+void FFTBLT::ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
 {
     std::fill(m_cFFT.begin(),m_cFFT.begin()+m_minI,dcmplx(0,0));
     for(auto j = m_minI; j <= m_maxI; j++) 
@@ -117,6 +124,17 @@ void FFTBLT::ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
     kiss_fft(m_cfg_reverse,reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()),\
             reinterpret_cast<kiss_fft_cpx*>(out.data()));
 }
+
+void FFTBLT::ST_To_CVT(const dcmplx* in,dcmplx* out)
+{
+    std::fill(m_cFFT.begin(),m_cFFT.begin()+m_minI,dcmplx(0,0));
+    for(auto j = m_minI; j <= m_maxI; j++) 
+        m_cFFT[j] = in[j-m_minI]/static_cast<double>(m_nt); 
+    std::fill(m_cFFT.begin()+m_maxI+1,m_cFFT.end(),dcmplx(0,0));
+    kiss_fft(m_cfg_reverse,reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()),\
+            reinterpret_cast<kiss_fft_cpx*>(out));
+}
+
 
 
 

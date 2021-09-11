@@ -35,26 +35,6 @@ namespace spida {
           delete item;
   }
 
-  void HankelFFTRBLT::hSTR_To_STSR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
-  {
-      std::vector<std::thread> workers;
-      for(auto tid = 0; tid < m_threads; tid++){
-          workers.push_back(std::thread(&HankelFFTRBLT::workerCMP_R_To_SR,this,\
-                      tid,in.data(),out.data()));
-      }
-      wait_for_workers(workers);
-  }                                  
-
-  void HankelFFTRBLT::hSTSR_To_STR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
-  {
-      std::vector<std::thread> workers;
-      for(auto tid = 0; tid < m_threads; tid++){
-          workers.push_back(std::thread(&HankelFFTRBLT::workerCMP_SR_To_R,this,\
-                      tid,in.data(),out.data()));
-      }
-      wait_for_workers(workers);
-  }
-
   void HankelFFTRBLT::worker_T_To_ST(unsigned int tid,const double* in,dcmplx* out){
       for(unsigned int i = tid; i < m_nr; i+= m_threads)
           m_transformT[tid]->T_To_ST(in+m_nt*i,out+m_nst*i);
@@ -64,6 +44,17 @@ namespace spida {
   {
       for (unsigned int i = tid; i < m_nr; i+= m_threads)
           m_transformT[tid]->ST_To_T(in+m_nst*i,out+m_nt*i);
+  }
+
+  void HankelFFTRBLT::worker_CVT_To_ST(unsigned int tid,const dcmplx* in,dcmplx* out){
+      for(unsigned int i = tid; i < m_nr; i+= m_threads)
+          m_transformT[tid]->CVT_To_ST(in+m_nt*i,out+m_nst*i);
+  }
+
+  void HankelFFTRBLT::worker_ST_To_CVT(unsigned int tid,const dcmplx* in,dcmplx* out)
+  {
+      for (unsigned int i = tid; i < m_nr; i+= m_threads)
+          m_transformT[tid]->ST_To_CVT(in+m_nst*i,out+m_nt*i);
   }
 
   void HankelFFTRBLT::worker_R_To_SR(unsigned int tid,const double* in,double* out){
@@ -105,6 +96,17 @@ namespace spida {
       wait_for_workers(workers);
   }                                  
 
+  void HankelFFTRBLT::CVRT_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+  {
+      std::vector<std::thread> workers;
+      for(auto tid = 0; tid < m_threads; tid++){
+          workers.push_back(std::thread(&HankelFFTRBLT::worker_CVT_To_ST,this,\
+                      tid,in.data(),out.data()));
+      }
+      wait_for_workers(workers);
+  }                              
+
+
   void HankelFFTRBLT::RST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out)
   {
       std::vector<std::thread> workers;
@@ -114,6 +116,17 @@ namespace spida {
       }
       wait_for_workers(workers);
   }                                  
+
+  void HankelFFTRBLT::RST_To_CVRT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+  {
+      std::vector<std::thread> workers;
+      for(auto tid = 0; tid < m_threads; tid++){
+          workers.push_back(std::thread(&HankelFFTRBLT::worker_ST_To_CVT,this,\
+                      tid,in.data(),out.data()));
+      }
+      wait_for_workers(workers);
+  }                                  
+
 
   void HankelFFTRBLT::RST_To_SRST(const std::vector<dcmplx>& in, std::vector<dcmplx>& out){
       // Transpose from RST orientation to STR orientation
@@ -140,6 +153,15 @@ namespace spida {
       HankelFFTRBLT::hSTR_To_STSR(m_ss,m_rs);
       transpose(m_rs.data(),out.data(),m_nst,m_nr);
   }                                  
+
+  void HankelFFTRBLT::CVRT_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+  {
+      HankelFFTRBLT::CVRT_To_RST(in,m_rs);
+      transpose(m_rs.data(),m_ss.data(),m_nr,m_nst);
+      HankelFFTRBLT::hSTR_To_STSR(m_ss,m_rs);
+      transpose(m_rs.data(),out.data(),m_nst,m_nr);
+  }                                  
+
 
   void HankelFFTRBLT::RT_To_SRT(const std::vector<double>& in,std::vector<double>& out) 
   {
@@ -191,6 +213,34 @@ namespace spida {
       HankelFFTRBLT::hSTSR_To_STR(m_ss,m_rs);
       transpose(m_rs.data(),m_ss.data(),m_nst,m_nr);
       HankelFFTRBLT::RST_To_RT(m_ss,out);
+  }
+
+  void HankelFFTRBLT::SRST_To_CVRT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+  {
+      transpose(in.data(),m_ss.data(),m_nr,m_nst);
+      HankelFFTRBLT::hSTSR_To_STR(m_ss,m_rs);
+      transpose(m_rs.data(),m_ss.data(),m_nst,m_nr);
+      HankelFFTRBLT::RST_To_CVRT(m_ss,out);
+  }
+
+  void HankelFFTRBLT::hSTR_To_STSR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+  {
+      std::vector<std::thread> workers;
+      for(auto tid = 0; tid < m_threads; tid++){
+          workers.push_back(std::thread(&HankelFFTRBLT::workerCMP_R_To_SR,this,\
+                      tid,in.data(),out.data()));
+      }
+      wait_for_workers(workers);
+  }                                  
+
+  void HankelFFTRBLT::hSTSR_To_STR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+  {
+      std::vector<std::thread> workers;
+      for(auto tid = 0; tid < m_threads; tid++){
+          workers.push_back(std::thread(&HankelFFTRBLT::workerCMP_SR_To_R,this,\
+                      tid,in.data(),out.data()));
+      }
+      wait_for_workers(workers);
   }
 
 

@@ -101,8 +101,8 @@ TEST(PERIODICT_TRANSFORM_TEST,COMPLEX_GAUSST)
     std::vector<dcmplx> ysp(grid.getNst());
     shape.shapeCV(y);
 
-    transform.T_To_ST_c(y,ysp);
-    transform.ST_To_T_c(ysp,yinv);
+    transform.CVT_To_ST(y,ysp);
+    transform.ST_To_CVT(ysp,yinv);
 
     auto maxval = pw::max(ysp);
     auto maxpos = pw::argmax(ysp);

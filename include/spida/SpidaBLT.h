@@ -22,8 +22,8 @@ namespace spida{
       const std::vector<double>& getST() const;
       void T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out); 
       void ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out);
-      void T_To_ST_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
-      void ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
+      void CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
+      void ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
       const UniformGridT& getGridT() const;
       const FFTBLT& getTransformT() const;
     private:

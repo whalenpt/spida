@@ -26,6 +26,8 @@ namespace spida{
       const std::vector<double>& getST() const;
       void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
       void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
+      void CVRT_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
+      void SRST_To_CVRT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
 //      void dT(const std::vector<double>& in,std::vector<double>& out,unsigned int n = 1); 
 
     private:

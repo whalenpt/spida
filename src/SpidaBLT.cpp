@@ -20,9 +20,8 @@ namespace spida{
   const std::vector<double>& SpidaBLT::getST() const {return m_gr->getST();}
   void SpidaBLT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out) {m_tr->T_To_ST(in,out);} 
   void SpidaBLT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out) {m_tr->ST_To_T(in,out);} 
-  void SpidaBLT::T_To_ST_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) {m_tr->T_To_ST_c(in,out);} 
-  void SpidaBLT::ST_To_T_c(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) {m_tr->ST_To_T_c(in,out);} 
-
+  void SpidaBLT::CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) {m_tr->CVT_To_ST(in,out);} 
+  void SpidaBLT::ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) {m_tr->ST_To_CVT(in,out);} 
 
   void SpidaBLT::dT(const std::vector<double>& in,std::vector<double>& out,int n) 
   {
