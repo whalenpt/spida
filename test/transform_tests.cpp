@@ -253,7 +253,7 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,GAUSSTGAUSSR)
     std::vector<double> u0t(nt);
     shapeT.shapeRV(u0t);
     std::vector<double> u0r(nr);
-    shapeR.shape(u0r);
+    shapeR.shapeRV(u0r);
     std::vector<double> u(nr*nt);
 
     for(auto i = 0; i < nr; i++)
@@ -331,7 +331,11 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,MULTITHREAD)
     std::vector<double> u0t(nt);
     shapeT.shapeRV(u0t);
     std::vector<double> u0r(nr);
-    shapeR.shape(u0r);
+    shapeR.shapeRV(u0r);
+
+    pw::DataIO dataio("outfolder");
+    dataio.writeFile("rshape.dat",u0r);
+
     std::vector<double> u(nr*nt);
 
     for(auto i = 0; i < nr; i++)

@@ -75,24 +75,24 @@ dcmplx ShapeT::fastPhaseFactor(double t) const {
 
 double GaussT::compute(double t) const
 {
-    return ShapeT::amplitude()*exp(-pow((t-ShapeT::offset())/ShapeT::width(),2));
+    return exp(-pow((t-ShapeT::offset())/ShapeT::width(),2));
 }
 
 double SechT::compute(double t) const
 {
-    return ShapeT::amplitude()*(1.0/cosh((t-ShapeT::offset()\
+    return (1.0/cosh((t-ShapeT::offset()\
                         )/ShapeT::width()));
 }
 
 double SuperGaussT::compute(double t) const {
-    return ShapeT::amplitude()*exp(-pow((t-ShapeT::offset())/ShapeT::width(),2*m_M));
+    return exp(-pow((t-ShapeT::offset())/ShapeT::width(),2*m_M));
 }
 
 double AiryT::compute(double t) const
 {
 	double airy = boost::math::airy_ai<double>((t-ShapeT::offset())/ShapeT::width());
     double apodization = exp(-pow(m_apod*(t-ShapeT::offset())/ShapeT::width(),2));
-    return ShapeT::amplitude()*airy*apodization;
+    return airy*apodization;
 }
 
 BesselT::BesselT(const GridT& grid,double A,double tp,double apod) : 
@@ -105,7 +105,7 @@ double  BesselT::compute(double t) const
 {
     double bessel = boost::math::cyl_bessel_j<double>(0,m_j1*fabs(t-ShapeT::offset())/ShapeT::width());
     double apodization = exp(-pow(m_apod*(t-ShapeT::offset())/ShapeT::width(),2));
-    return ShapeT::amplitude()*bessel*apodization;
+    return bessel*apodization;
 }
 
 

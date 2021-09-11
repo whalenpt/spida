@@ -33,7 +33,7 @@ int main()
     spida::GaussR shapeR(gridR,std::sqrt(I0),w0);
 
     std::vector<double> u(nr);
-    shapeR.shape(u);
+    shapeR.shapeRV(u);
     std::vector<double> v(nr);
 
     spida::HankelTransformR transform(gridR);

@@ -11,16 +11,18 @@
 namespace spida{
 
 // Interface class
+// ShapeT in form of A0*shape((t-t_offset)/tp)*exp(-iC*(t-t_offset)^2 + i*slow_phase)*exp(-i*fast_phase*(t-t_offset))
+//               ->  A0*shape(...)*exp(slowPhaseFactor)*exp(fastPhaseFactor)
 class ShapeT : public Shape
 {
     public:
         ShapeT(const GridT& grid,double A,double tp);
         virtual ~ShapeT() {};
+        void setAmplitude(double v) {m_A = v;}
+        void setWidth(double v) {m_tp = v;}
         void setChirp(double v) {m_chirp = v;}
         void setOffset(double v) {m_offset = v;}
         void setSlowPhase(double v) {m_slow_phase = v;}
-        void setAmplitude(double v) {m_A = v;}
-        void setWidth(double v) {m_tp = v;}
         void setFastPhase(double v) {m_omega0 = v;}
 
         double amplitude() const {return m_A;}
@@ -50,10 +52,9 @@ class ShapeT : public Shape
         dcmplx fastPhaseFactor(double t) const; 
         dcmplx slowPhaseFactor(double t) const; 
 
+        dcmplx computeEnvelope(double t) const {return m_A*compute(t)*slowPhaseFactor(t);}
         dcmplx computeShape(double t) const {return computeEnvelope(t)*fastPhaseFactor(t);}
         double computeShapeReal(double t) const {return computeShape(t).real();}
-        dcmplx computeEnvelope(double t) const {return compute(t)*slowPhaseFactor(t);}
-
         // compute, will compute base shape
         virtual double compute(double t) const = 0;
 };

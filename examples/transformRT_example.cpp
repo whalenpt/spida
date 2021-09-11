@@ -50,7 +50,7 @@ int main()
     std::vector<double> u0t(nt);
     shapeT.shapeRV(u0t);
     std::vector<double> u0r(nr);
-    shapeR.shape(u0r);
+    shapeR.shapeRV(u0r);
     std::vector<double> u(nr*nt);
 
     for(auto i = 0; i < nr; i++)
