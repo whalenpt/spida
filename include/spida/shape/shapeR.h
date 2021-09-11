@@ -28,6 +28,8 @@ class ShapeR : public Shape
         void shapeCV(std::vector<dcmplx>& v) const;
         void shapeRV(std::vector<double>& v) const;
         const std::vector<double>& getR() const {return m_r;} 
+        dcmplx shapeCV(double r) const; 
+        double shapeRV(double r) const {return shapeCV(r).real();}
 
     private:
         std::vector<double> m_r;
@@ -37,8 +39,6 @@ class ShapeR : public Shape
         double m_f;
         virtual double compute(double r) const = 0;
         dcmplx focusPhaseFactor(double r) const;
-        dcmplx computeShape(double r) const; 
-        double computeShapeReal(double r) const {return computeShape(r).real();}
 };
 
 class GaussR : public ShapeR

@@ -38,6 +38,8 @@ class ShapeT : public Shape
         std::vector<dcmplx> shapeCV() const;
         std::vector<double> shapeRV() const;
         std::vector<dcmplx> envelope() const;
+        dcmplx shapeCV(double t) const {return computeEnvelope(t)*fastPhaseFactor(t);}
+        double shapeRV(double t) const {return shapeCV(t).real();}
         const std::vector<double>& getT() const {return m_t;} 
 
     private:
@@ -51,10 +53,7 @@ class ShapeT : public Shape
 
         dcmplx fastPhaseFactor(double t) const; 
         dcmplx slowPhaseFactor(double t) const; 
-
         dcmplx computeEnvelope(double t) const {return m_A*compute(t)*slowPhaseFactor(t);}
-        dcmplx computeShape(double t) const {return computeEnvelope(t)*fastPhaseFactor(t);}
-        double computeShapeReal(double t) const {return computeShape(t).real();}
         // compute, will compute base shape
         virtual double compute(double t) const = 0;
 };

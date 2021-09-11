@@ -46,7 +46,7 @@ void ShapeT::shapeCV(std::vector<dcmplx>& v) const
     v.clear();
     v.resize(m_t.size());
     for(auto i = 0; i < m_t.size(); i++)
-        v[i] = computeShape(m_t[i]);
+        v[i] = shapeCV(m_t[i]);
 }
 
 void ShapeT::shapeRV(std::vector<double>& v) const
@@ -54,7 +54,7 @@ void ShapeT::shapeRV(std::vector<double>& v) const
     v.clear();
     v.resize(m_t.size());
     for(auto i = 0; i < m_t.size(); i++)
-        v[i] = computeShapeReal(m_t[i]);
+        v[i] = shapeRV(m_t[i]);
 }
 
 void ShapeT::envelope(std::vector<dcmplx>& v) const

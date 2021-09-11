@@ -27,7 +27,7 @@ dcmplx ShapeR::focusPhaseFactor(double r) const {
     return 1.0;
 }
 
-dcmplx ShapeR::computeShape(double r) const {
+dcmplx ShapeR::shapeCV(double r) const {
     if(m_bool_focus)
         return m_A*compute(r)*focusPhaseFactor(r);
     return m_A*compute(r);
@@ -52,7 +52,7 @@ void ShapeR::shapeCV(std::vector<dcmplx>& v) const
     v.clear();
     v.resize(m_r.size());
     for(auto i = 0; i < m_r.size(); i++)
-        v[i] = computeShape(m_r[i]);
+        v[i] = shapeCV(m_r[i]);
 }
 
 void ShapeR::shapeRV(std::vector<double>& v) const
@@ -60,7 +60,7 @@ void ShapeR::shapeRV(std::vector<double>& v) const
     v.clear();
     v.resize(m_r.size());
     for(auto i = 0; i < m_r.size(); i++)
-        v[i] = computeShapeReal(m_r[i]);
+        v[i] = shapeRV(m_r[i]);
 }
 
 double GaussR::compute(double r) const
