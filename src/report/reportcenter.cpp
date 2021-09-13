@@ -28,8 +28,8 @@ ReportCenter1D::ReportCenter1D(Propagator* pr,const std::filesystem::path& dir_p
 {
     m_reportCount1D = 0;
     m_stepsPerOutput1D = step_per1D;
-    m_stat.addCounter("Number Reports1D",1);
-    m_stat.addTimer("Time Reports1D");
+    m_stat.addCounter("Number Report1D",1);
+    m_stat.addTimer("Time Report1D");
     m_stat.addTracker("Time Elapsed",0.0);
 }
 
@@ -51,11 +51,13 @@ void ReportCenter1D::report1D(double t)
         return;
 
     m_pr->updateFields(t);
-    m_stat.startTimer("Time Reports1D");
-    m_pr->reportHandler().report1D(m_dir_path,m_reportCount1D,t);
-    m_stat.endTimer("Time Reports1D");
+    m_stat.startTimer("Time Report1D");
+    m_pr->reportHandler().setItem("sim_duration",t);
+    m_pr->reportHandler().report1D(m_dir_path,m_reportCount1D);
+    m_pr->reportHandler().reportTrack(m_dir_path,t);
+    m_stat.endTimer("Time Report1D");
     m_reportCount1D++;
-    m_stat.incrementCounter("Number Reports1D");
+    m_stat.incrementCounter("Number Report1D");
     if(m_log_progress)
         m_stat.report();
 }
@@ -71,8 +73,8 @@ ReportCenter2D::ReportCenter2D(Propagator* pr,const std::filesystem::path& dir_p
 {
     m_reportCount2D = 0;
     m_stepsPerOutput2D = step_per2D;
-    m_stat.addCounter("Number Reports2D",1);
-    m_stat.addTimer("Time Reports2D");
+    m_stat.addCounter("Number Report2D",1);
+    m_stat.addTimer("Time Report2D");
 }
 
 bool ReportCenter2D::stepUpdate(double t)
@@ -102,11 +104,12 @@ void ReportCenter2D::report2D(double t)
         return;
 
     m_pr->updateFields(t);
-    m_stat.startTimer("Time Reports2D");
-    m_pr->reportHandler().report2D(m_dir_path,m_reportCount2D,t);
-    m_stat.endTimer("Time Reports2D");
+    m_stat.startTimer("Time Report2D");
+    m_pr->reportHandler().setItem("sim_duration",t);
+    m_pr->reportHandler().report2D(m_dir_path,m_reportCount2D);
+    m_stat.endTimer("Time Report2D");
     m_reportCount2D++;
-    m_stat.incrementCounter("Number Reports2D");
+    m_stat.incrementCounter("Number Report2D");
     if(m_log_progress)
         m_stat.report();
 }
@@ -119,18 +122,20 @@ void ReportCenter2D::report1D2D(double t)
 
     m_pr->updateFields(t);
 
-    m_stat.startTimer("Time Reports1D");
-    m_pr->reportHandler().report1D(m_dir_path,m_reportCount1D,t);
-    m_stat.endTimer("Time Reports1D");
+    m_pr->reportHandler().setItem("sim_duration",t);
+    m_stat.startTimer("Time Report1D");
+    m_pr->reportHandler().report1D(m_dir_path,m_reportCount1D);
+    m_pr->reportHandler().reportTrack(m_dir_path,t);
+    m_stat.endTimer("Time Report1D");
 
-    m_stat.startTimer("Time Reports2D");
-    m_pr->reportHandler().report2D(m_dir_path,m_reportCount2D,t);
-    m_stat.endTimer("Time Reports2D");
+    m_stat.startTimer("Time Report2D");
+    m_pr->reportHandler().report2D(m_dir_path,m_reportCount2D);
+    m_stat.endTimer("Time Report2D");
 
     m_reportCount1D++;
     m_reportCount2D++;
-    m_stat.incrementCounter("Number Reports1D");
-    m_stat.incrementCounter("Number Reports2D");
+    m_stat.incrementCounter("Number Report1D");
+    m_stat.incrementCounter("Number Report2D");
     if(m_log_progress)
         m_stat.report();
 }
