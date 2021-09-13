@@ -1,13 +1,7 @@
 
 #include "spida/report/reporthandler.h"
-#include <pwutils/report/basereport.h>
-#include <memory>
-#include <iomanip>
 #include <fstream>
 #include <iostream>
-#include <vector>
-#include <string>
-#include <filesystem>
 
 namespace spida{
 
@@ -28,25 +22,21 @@ void ReportHandler::addReport(std::unique_ptr<pw::TrackData> def)
 
 void ReportHandler::setItem(const std::string& key,double val)
 {
-    std::vector<std::unique_ptr<pw::ReportData1D>>::const_iterator it; 
-    for(it = m_defs_1D.begin(); it != m_defs_1D.end(); it++)
+    for(auto it = m_defs_1D.begin(); it != m_defs_1D.end(); it++)
         (*it)->setItem(key,val);
-    std::vector<std::unique_ptr<pw::ReportData2D>>::const_iterator it2; 
-    for(it2 = m_defs_2D.begin(); it2 != m_defs_2D.end(); it2++)
-        (*it2)->setItem(key,val);
-    std::vector<std::unique_ptr<pw::TrackData>>::const_iterator it3; 
-    for(it3 = m_tracker_defs.begin(); it3 != m_tracker_defs.end(); it3++)
-        (*it3)->setItem(key,val);
+    for(auto it = m_defs_2D.begin(); it != m_defs_2D.end(); it++)
+        (*it)->setItem(key,val);
+    for(auto it = m_tracker_defs.begin(); it != m_tracker_defs.end(); it++)
+        (*it)->setItem(key,val);
 }
 
 void ReportHandler::report1D(const std::filesystem::path& dir_path,int repNum) const
 {
     std::ofstream os;
-    std::vector<std::unique_ptr<pw::ReportData1D>>::const_iterator it; 
-    for(it = m_defs_1D.begin(); it != m_defs_1D.end(); it++){
-        std::filesystem::path file_path = (*it)->generatePath(dir_path,repNum);
+    for(vec1D::const_iterator it = m_defs_1D.cbegin(); it != m_defs_1D.cend(); it++){
+        auto file_path = (*it)->generatePath(dir_path,repNum);
         try{
-            os.open(file_path.string());
+            os.open(file_path);
             (*it)->report(os);
             os.close();
         } catch(...){
@@ -58,12 +48,11 @@ void ReportHandler::report1D(const std::filesystem::path& dir_path,int repNum) c
 void ReportHandler::report2D(const std::filesystem::path& dir_path,int repNum) const
 {
     std::ofstream os;
-    std::vector<std::unique_ptr<pw::ReportData2D>>::const_iterator it; 
-    for(it = m_defs_2D.begin(); it != m_defs_2D.end(); it++){
-        std::filesystem::path file_path = (*it)->generatePath(dir_path,repNum);
+    for(vec2D::const_iterator it = m_defs_2D.cbegin(); it != m_defs_2D.cend(); it++){
+        auto file_path = (*it)->generatePath(dir_path,repNum);
         try{
-            os.open(file_path.string());
-            os << *it;
+            os.open(file_path);
+            (*it)->report(os);
             os.close();
         } catch(...){
             std::cout << "Failed to report file: " << file_path.string() << std::endl;
@@ -74,12 +63,11 @@ void ReportHandler::report2D(const std::filesystem::path& dir_path,int repNum) c
 void ReportHandler::reportTrack(const std::filesystem::path& dir_path,double t) const
 {
     std::ofstream os;
-    std::vector<std::unique_ptr<pw::TrackData>>::const_iterator it; 
-    for(it = m_tracker_defs.begin(); it != m_tracker_defs.end(); it++){
-        std::filesystem::path file_path = (*it)->generatePath(dir_path);
+    for(vecTrack::const_iterator it = m_tracker_defs.cbegin(); it != m_tracker_defs.cend(); it++){
+        auto file_path = (*it)->generatePath(dir_path);
         (*it)->updateTracker(t);
         try{
-            os.open(file_path.string());
+            os.open(file_path);
             (*it)->report(os);
             os.close();
         } catch(...){

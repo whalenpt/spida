@@ -1,15 +1,19 @@
 
-#ifndef REPORTHANDLER_H_
-#define REPORTHANDLER_H_ 
+#pragma once
 
 #include <vector> 
 #include <filesystem>
 #include <memory>
-#include <pwutils/report/basedata.hpp>
+#include <string>
+#include <pwutils/report/basereport.h>
+// basereport has defintions for ReportData1D, ReportData2D, and TrackData
 
 namespace spida{
 
 class ReportHandler{
+    using vec1D = std::vector<std::unique_ptr<pw::ReportData1D>>;
+    using vec2D = std::vector<std::unique_ptr<pw::ReportData2D>>;
+    using vecTrack = std::vector<std::unique_ptr<pw::TrackData>>;
     public:
         ReportHandler() {}; 
         void report1D(const std::filesystem::path& dir_path,int repNum) const;
@@ -21,15 +25,14 @@ class ReportHandler{
 		void addReport(std::unique_ptr<pw::TrackData> def);
 		void setItem(const std::string& key,double val);
     private:
-        std::vector<std::unique_ptr<pw::ReportData1D>> m_defs_1D;
-        std::vector<std::unique_ptr<pw::ReportData2D>> m_defs_2D;
-        std::vector<std::unique_ptr<pw::TrackData>> m_tracker_defs;
+        vec1D m_defs_1D;
+        vec2D m_defs_2D;
+        vecTrack m_tracker_defs;
 };
 
 
 }
 
-#endif
 
 
 
