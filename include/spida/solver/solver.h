@@ -30,7 +30,7 @@ class SolverCV
       virtual ~SolverCV();
 
       virtual bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept = 0;
-      bool evolve(double t0,double tf,double& dt);
+      bool evolve(double t0,double tf,double& dt) noexcept;
 
       void computeCo(double dt) noexcept;
       ModelCV& model() {return *m_model;}

@@ -43,7 +43,7 @@ int SolverCV::size() const
     return m_model->linOp().size();
 }
 
-bool SolverCV::evolve(double t0,double tf,double& dt)
+bool SolverCV::evolve(double t0,double tf,double& dt) noexcept
 {
     if(!m_pr)
         return false;
