@@ -8,6 +8,7 @@
 #include <memory>
 #include <exception>
 #include <filesystem>
+#include <functional>
 #include <pwutils/pwstats.h>
 #include <pwutils/pwmath.hpp>
 #include <pwutils/pwthreads.h>
@@ -16,25 +17,29 @@
 
 namespace spida{
 
-const int MAX_LOOP = 100;
+constexpr auto MAX_LOOP = 100;
+
 using pw::StatCenter;
 
 class PropagatorCV;
 class ReportCenter;
-class ModelCV;
+//class ModelCV;
+using NLfunc = std::function<void(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)>; 
+using LinOp = std::vector<dcmplx>;
 
 class SolverCV
 {
   public:
-      SolverCV(ModelCV* model);
+      //SolverCV(ModelCV* model);
+      SolverCV(const LinOp& L,const NLfunc& NL);
       virtual ~SolverCV();
-
       virtual bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept = 0;
       bool evolve(double t0,double tf,double& dt) noexcept;
 
       void computeCo(double dt) noexcept;
-      ModelCV& model() {return *m_model;}
-      int size() const;
+      LinOp& L() {return m_L;}
+      NLfunc& NL() {return m_NL;}
+      unsigned size() const;
 
       void setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath);
       void setTargetDirectory(const std::filesystem::path& dirpath);
@@ -45,6 +50,11 @@ class SolverCV
       void setStatFrequency(int val) {m_stat.setReportFrequency(val);}
       void setLogProgress(bool val); 
       void setCurrentTime(double t) {m_tcurrent = t;}
+
+      void setNumThreads(unsigned val) {m_thmgt.setNumThreads(val);}
+      unsigned numThreads() const {return m_thmgt.getNumThreads();}
+      pw::ThreadManager& threadManager() {return m_thmgt;}
+
       double currentTime() {return m_tcurrent;}
       double dtLast() {return m_dt_last;}
       bool logProgress() {return m_log_progress;}
@@ -55,13 +65,16 @@ class SolverCV
 
   private:
       virtual void updateCoefficients([[maybe_unused]] double dt) noexcept {};
-      ModelCV* m_model;
+      LinOp m_L;
+      NLfunc m_NL;
+
       std::unique_ptr<PropagatorCV> m_pr;
       std::unique_ptr<ReportCenter> m_report_center;
       StatCenter m_stat;
       double m_tcurrent;
       double m_dt_last;
       bool m_log_progress;
+      pw::ThreadManager m_thmgt;
 };
 
 void norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,double* esum_val,double* ysum_val);
@@ -103,7 +116,7 @@ class Control{
 class SolverCV_AS : public SolverCV
 {
   public:
-      SolverCV_AS(ModelCV* cmodel,double sf,double qv);
+      SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv);
       virtual ~SolverCV_AS(); 
       bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& h_next) noexcept;
       bool step(std::vector<dcmplx>& u,double& h,double& h_next) noexcept;
@@ -130,7 +143,7 @@ class SolverCV_AS : public SolverCV
 class SolverCV_CS : public SolverCV 
 {
   public:
-      SolverCV_CS(ModelCV* cmodel);
+      SolverCV_CS(const LinOp& L,const NLfunc& NL);
       virtual ~SolverCV_CS() {};
       void step(std::vector<dcmplx>& u,double h) noexcept;
       bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept;

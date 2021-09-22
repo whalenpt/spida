@@ -4,7 +4,9 @@
 
 namespace spida{
 
-ReportCenter::ReportCenter(Propagator* pr,const std::filesystem::path& dir_path,int max_report) :
+ReportCenter::ReportCenter(Propagator* pr,\
+        const std::filesystem::path& dir_path,\
+        unsigned max_report) :
     m_pr(pr),
     m_dir_path(dir_path)
 {
@@ -23,7 +25,9 @@ void ReportCenter::setPropagator(Propagator* pr)
     m_pr = pr;
 }
 
-ReportCenter1D::ReportCenter1D(Propagator* pr,const std::filesystem::path& dir_path,int step_per1D,int max_report) :
+ReportCenter1D::ReportCenter1D(Propagator* pr,const std::filesystem::path& dir_path,\
+        unsigned step_per1D,\
+        unsigned max_report) :
     ReportCenter(pr,dir_path,max_report)
 {
     m_reportCount1D = 0;
@@ -68,7 +72,10 @@ void ReportCenter1D::report(double t)
 }
 
 
-ReportCenter2D::ReportCenter2D(Propagator* pr,const std::filesystem::path& dir_path,int step_per1D,int step_per2D,int max_report) :
+ReportCenter2D::ReportCenter2D(Propagator* pr,const std::filesystem::path& dir_path,\
+        unsigned step_per1D,\
+        unsigned step_per2D,
+        unsigned max_report) :
     ReportCenter1D(pr,dir_path,step_per1D,max_report)
 {
     m_reportCount2D = 0;

@@ -46,7 +46,7 @@ int main()
     transform.T_To_ST(u,v);
 
     dat::ReportData1D<double,double> in_report("T",gridT.getT(),u);
-    dat::ReportComplexData1D<double> out_report("ST",gridT.getST(),v);
+    dat::ReportComplexData1D<double,double> out_report("ST",gridT.getST(),v);
 
     std::ofstream os;
     os << std::scientific << std::setprecision(5);

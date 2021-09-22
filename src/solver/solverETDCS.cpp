@@ -1,25 +1,23 @@
 
-
 #include "spida/solver/solverETDCS.h"
-#include "spida/model/model.h"
 #include "spida/propagator/propagator.h"
 #include <cmath>
 
 namespace spida{
 
-SolverCS_ETD::SolverCS_ETD(ModelCV* cmodel)
- :  SolverCV_CS(cmodel)
+SolverCS_ETD::SolverCS_ETD(const LinOp& Lop,const NLfunc& NL)
+ :  SolverCV_CS(Lop,NL)
 {
     m_mode_cutoff = 0.01;
     m_contour_radi = 1.0;
     m_contourM = 32;
 }
 
-ETD4::ETD4(ModelCV* model) :
-  SolverCS_ETD(model),sz(SolverCV::size()),
-    L(model->linOp()), EL(sz), EL2(sz), N1(sz), N2(sz),
-    N3(sz), N4(sz), tempK(sz), a21(sz), a31(sz), a32(sz), a41(sz), a43(sz),
-    a51(sz), a52(sz), a54(sz)
+ETD4::ETD4(const LinOp& Lop,const NLfunc& NL) :
+  SolverCS_ETD(Lop,NL),m_sz(SolverCV::size()),
+    L(SolverCV::L()), EL(m_sz), EL2(m_sz), N1(m_sz), N2(m_sz),
+    N3(m_sz), N4(m_sz), tempK(m_sz), a21(m_sz), a31(m_sz), a32(m_sz), a41(m_sz), a43(m_sz),
+    a51(m_sz), a52(m_sz), a54(m_sz)
 {
     c1 = 0.0; c2 = 1.0/2; c3 = 1.0/2; c4 = 1.0;
 }
@@ -32,7 +30,7 @@ void ETD4::updateCoefficients(double dt) noexcept
         r[j] = contourRadius()*exp(ii*expv);
     }
 
-    for(int i = 0; i < sz; i++) {
+    for(int i = 0; i < m_sz; i++) {
         dcmplx Lval(dt*L[i]);
         EL[i] = exp(Lval);
         EL2[i] = exp(c2*Lval);
@@ -71,20 +69,20 @@ void ETD4::updateCoefficients(double dt) noexcept
 
 void ETD4::updateStages(std::vector<dcmplx>& in) noexcept
 {
-    SolverCV::model().nonLinResponse(in,N1);
-    for(int i = 0; i < sz; i++)
+    SolverCV::NL()(in,N1);
+    for(int i = 0; i < m_sz; i++)
         tempK[i] = EL2[i]*in[i] + a21[i]*N1[i];
   
-    SolverCV::model().nonLinResponse(tempK,N2);
-    for(int i = 0; i < sz; i++)
+    SolverCV::NL()(tempK,N2);
+    for(int i = 0; i < m_sz; i++)
         tempK[i] = EL2[i]*in[i] + a31[i]*N1[i] + a32[i]*N2[i];
 
-    SolverCV::model().nonLinResponse(tempK,N3);
-    for(int i = 0; i < sz; i++)
+    SolverCV::NL()(tempK,N3);
+    for(int i = 0; i < m_sz; i++)
         tempK[i] = EL[i]*in[i] + a41[i]*N1[i] + a43[i]*N3[i];
 
-    SolverCV::model().nonLinResponse(tempK,N4);
-    for(int i = 0; i < sz; i++) 
+    SolverCV::NL()(tempK,N4);
+    for(int i = 0; i < m_sz; i++) 
         in[i] = EL[i]*in[i] + a51[i]*N1[i] + a52[i]*(N2[i]+N3[i]) + a54[i]*N4[i];
 }
 

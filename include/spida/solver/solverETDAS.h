@@ -1,19 +1,16 @@
-#ifndef SOLVERETDAS_H_
-#define SOLVERETDAS_H_
+// solverETDAS.h
+#pragma once
 
-#include "spida/model/model.h"
 #include "spida/solver/solver.h"
-#include "spida/propagator/propagator.h"
 #include "spida/helper/constants.h"
 #include <iostream>
 
-//class Model;
 namespace spida{
 
 class SolverAS_ETD : public SolverCV_AS
 {
     public:
-        SolverAS_ETD(ModelCV* cmodel,double sf,double qv);
+        SolverAS_ETD(const LinOp& Lop,const NLfunc& NL,double sf,double qv);
         virtual ~SolverAS_ETD() {}; 
         void setModeCutoff(double val) {m_mode_cutoff = val;}
         void setContourRadius(double val) {m_contour_radi = val;}
@@ -33,7 +30,7 @@ class SolverAS_ETD : public SolverCV_AS
 class ETD34 : public SolverAS_ETD
 {
     public:
-        ETD34(ModelCV* cmodel);
+        ETD34(const LinOp& Lop,const NLfunc& NL);
         ~ETD34() {};
     private:
         void updateCoefficients(double dt) noexcept;
@@ -52,7 +49,6 @@ class ETD34 : public SolverAS_ETD
         std::vector<dcmplx> r1; 
         double c1,c2,c3,c4,c5;
         bool N1_init;
-        pw::ThreadManager& thmgt;
         void worker_coeff(double ds,int tid);
 };
 
@@ -60,7 +56,7 @@ class ETD34 : public SolverAS_ETD
 class ETD35: public SolverAS_ETD
 {
     public:
-        ETD35(ModelCV* cmodel);
+        ETD35(const LinOp& Lop,const NLfunc& NL);
         ~ETD35() {};
     private:
         void updateCoefficients(double dt) noexcept;
@@ -82,7 +78,6 @@ class ETD35: public SolverAS_ETD
         std::vector<dcmplx> a71; std::vector<dcmplx> a73; std::vector<dcmplx> a74; std::vector<dcmplx> a75; std::vector<dcmplx> a76;
         double c1,c2,c3,c4,c5,c6,c7;
         bool N1_init;
-        pw::ThreadManager& thmgt;
         void worker_coeff(double ds,int tid);
         void worker_stage2(const std::vector<dcmplx>& in,int sti,int endi);
         void worker_stage3(const std::vector<dcmplx>& in,int sti,int endi);
@@ -97,7 +92,6 @@ class ETD35: public SolverAS_ETD
 
 }
 
-#endif
 
 
 

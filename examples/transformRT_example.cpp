@@ -82,7 +82,7 @@ int main()
     transform.RT_To_SRST(u,v);
     transform.SRST_To_RT(v,uop);
 
-    dat::ReportComplexData2D<double,double> out_report("SRST",gridR.getSR(),gridT.getST(),v);
+    dat::ReportComplexData2D<double,double,double> out_report("SRST",gridR.getSR(),gridT.getST(),v);
     out_report.setLabelX("kr");
     out_report.setLabelY("omega");
 
@@ -109,7 +109,7 @@ int main()
     transform.SRST_To_SRT(v,zeta2);
 
 
-    dat::ReportComplexData2D<double,double> rst_report("RST",gridR.getR(),gridT.getST(),w);
+    dat::ReportComplexData2D<double,double,double> rst_report("RST",gridR.getR(),gridT.getST(),w);
     rst_report.setLabelX("r");
     rst_report.setLabelY("omega");
     std::cout << rst_report.path() << std::endl;
@@ -121,7 +121,7 @@ int main()
     std::cout << srt_report.path() << std::endl;
     os << srt_report;
 
-    dat::ReportComplexData2D<double,double> rst_report2("RSTb",gridR.getR(),gridT.getST(),w2);
+    dat::ReportComplexData2D<double,double,double> rst_report2("RSTb",gridR.getR(),gridT.getST(),w2);
     rst_report2.setLabelX("r");
     rst_report2.setLabelY("omega");
     os << rst_report2;

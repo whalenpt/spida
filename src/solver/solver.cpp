@@ -1,6 +1,5 @@
 
 #include "spida/solver/solver.h"
-#include "spida/model/model.h"
 #include "spida/report/reportcenter.h"
 #include "spida/helper/constants.h"
 #include "spida/propagator/propagator.h"
@@ -18,9 +17,12 @@
 
 namespace spida{
 
-SolverCV::SolverCV(ModelCV* model)
- :  m_model(model),
-    m_report_center(nullptr)
+//SolverCV::SolverCV(ModelCV* model)
+SolverCV::SolverCV(const LinOp& L,const NLfunc& NL)
+ :  m_L(L),
+    m_NL(NL),
+    m_report_center(nullptr),
+    m_thmgt(1)
 { 
     m_tcurrent = 0.0;
     m_dt_last = 0.0;
@@ -38,9 +40,9 @@ SolverCV::SolverCV(ModelCV* model)
 
 SolverCV::~SolverCV() {}
 
-int SolverCV::size() const
+unsigned SolverCV::size() const
 {
-    return m_model->linOp().size();
+    return m_L.size();
 }
 
 bool SolverCV::evolve(double t0,double tf,double& dt) noexcept
@@ -70,9 +72,8 @@ void SolverCV::fileReportStats() {
         return;
 
 	std::filesystem::path local_path("solver_stat.dat");
-    std::filesystem::path dir_path = m_report_center->dirPath();
-    std::filesystem::path full_path = dir_path / local_path;
-    std::ofstream fout(full_path.c_str());
+    std::filesystem::path full_path = m_report_center->dirPath() / local_path;
+    std::ofstream fout(full_path);
     m_stat.report(fout);
     fout.close();
 }
@@ -90,14 +91,14 @@ void SolverCV::setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesys
         m_pr.reset();
 
     m_pr = std::move(pr);
-    if(m_model->dimension() == Dimension::D1){
-        m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(m_pr.get(),dirpath,1,10000));
-    } else if(m_model->dimension() == Dimension::D2) {
-        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(m_pr.get(),dirpath,1,1,250));
-    } else{
-        throw pw::Exception("SolverCV::setFileReport","SolverAS can only handle"\
-                "1 or 2 dimensions. ");
-    }
+//    if(m_model->dimension() == Dimension::D1){
+    m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(m_pr.get(),dirpath,1,10000));
+//    } else if(m_model->dimension() == Dimension::D2) {
+//        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(m_pr.get(),dirpath,1,1,250));
+//    } else{
+//        throw pw::Exception("SolverCV::setFileReport","SolverAS can only handle"\
+//                "1 or 2 dimensions. ");
+//    }
     m_report_center->setLogProgress(m_log_progress);
 }
 
@@ -114,12 +115,12 @@ void SolverCV::setLogProgress(bool val) {
         m_report_center->setLogProgress(val);
 }
 
-SolverCV_AS::SolverCV_AS(ModelCV* model,double sf,double qv)
- :  SolverCV(model), m_yv(SolverCV::size()), m_errv(SolverCV::size())
+SolverCV_AS::SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv)
+ :  SolverCV(L,NL), m_yv(SolverCV::size()), m_errv(SolverCV::size())
 {
     m_accept = false;
     m_control = std::unique_ptr<Control>(new Control(sf,qv,1.0e-3,1.25,0.85,SolverCV::size(),\
-                SolverCV::model().threadManager()));
+                SolverCV::threadManager()));
     SolverCV::statCenter().addCounter("Step Size Reductions",1);
     SolverCV::statCenter().addCounter("Step Size Increases",1);
 }
@@ -220,8 +221,9 @@ bool SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) 
     return true;
 }
 
-SolverCV_CS::SolverCV_CS(ModelCV* model) :
-    SolverCV(model)
+//SolverCV_CS::SolverCV_CS(ModelCV* model) :
+SolverCV_CS::SolverCV_CS(const LinOp& L,const NLfunc& NL) :
+    SolverCV(L,NL)
 {
     m_count_time = true;
 }

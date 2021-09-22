@@ -57,7 +57,7 @@ int main()
     std::vector<dcmplx> vcmplx(nr);
 
     transform.R_To_SR(ucmplx,vcmplx);
-    dat::ReportComplexData1D<double> cmplx_report("SRcmplx",gridR.getSR(),vcmplx);
+    dat::ReportComplexData1D<double,double> cmplx_report("SRcmplx",gridR.getSR(),vcmplx);
     cmplx_report.setLabelX("kr");
     std::cout << cmplx_report.path() << std::endl;
     os << cmplx_report;
