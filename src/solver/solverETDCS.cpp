@@ -24,7 +24,7 @@ ETD4::ETD4(ModelCV* model) :
     c1 = 0.0; c2 = 1.0/2; c3 = 1.0/2; c4 = 1.0;
 }
 
-void ETD4::updateCoefficients(double dt)
+void ETD4::updateCoefficients(double dt) noexcept
 {
     std::vector<dcmplx> r(contourPoints(),0.0);
     for(int j = 0; j < contourPoints(); j++){
@@ -69,7 +69,7 @@ void ETD4::updateCoefficients(double dt)
     }
 }
 
-void ETD4::updateStages(std::vector<dcmplx>& in)
+void ETD4::updateStages(std::vector<dcmplx>& in) noexcept
 {
     SolverCV::model().nonLinResponse(in,N1);
     for(int i = 0; i < sz; i++)

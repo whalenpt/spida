@@ -1,7 +1,5 @@
-
-#ifndef SOLVER_H_
-#define SOLVER_H_
-
+// solver.h
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -31,10 +29,10 @@ class SolverCV
       SolverCV(ModelCV* model);
       virtual ~SolverCV();
 
-      virtual void evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) = 0;
-      void evolve(double t0,double tf,double& dt);
+      virtual bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept = 0;
+      bool evolve(double t0,double tf,double& dt);
 
-      void computeCo(double dt);
+      void computeCo(double dt) noexcept;
       ModelCV& model() {return *m_model;}
       int size() const;
 
@@ -56,7 +54,7 @@ class SolverCV
       StatCenter& statCenter() {return m_stat;}
 
   private:
-      virtual void updateCoefficients([[maybe_unused]] double dt) {};
+      virtual void updateCoefficients([[maybe_unused]] double dt) noexcept {};
       ModelCV* m_model;
       std::unique_ptr<PropagatorCV> m_pr;
       std::unique_ptr<ReportCenter> m_report_center;
@@ -78,9 +76,9 @@ class Control{
       void setNorm(std::string);
       void setNumThreads(int numThreads) {th_manage.setNumThreads(numThreads);}
       double computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew);
-      double computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew);
-      void checkLoopCount(int num_loops);
-      void checkStepSize(double step_size);
+      double computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) noexcept;
+      bool checkLoopCount(unsigned num_loops) noexcept;
+      bool checkStepSize(double step_size) noexcept;
 
   private:
       double safeFact;
@@ -107,8 +105,8 @@ class SolverCV_AS : public SolverCV
   public:
       SolverCV_AS(ModelCV* cmodel,double sf,double qv);
       virtual ~SolverCV_AS(); 
-      void evolve(std::vector<dcmplx>& u,double t0,double tf,double& h_next);
-      void step(std::vector<dcmplx>& u,double& h,double& h_next);
+      bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& h_next) noexcept;
+      bool step(std::vector<dcmplx>& u,double& h,double& h_next) noexcept;
   
       void setIncrementThreshold(double val); 
       void setDecrementThreshold(double val);
@@ -120,8 +118,8 @@ class SolverCV_AS : public SolverCV
       std::vector<dcmplx>& getErr() {return m_errv;}
 
   private:
-      virtual void updateCoefficients([[maybe_unused]] double dt) {};
-      virtual void updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& y,std::vector<dcmplx>& err) = 0;
+      virtual void updateCoefficients([[maybe_unused]] double dt) noexcept {};
+      virtual void updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& y,std::vector<dcmplx>& err) noexcept = 0;
       std::unique_ptr<Control> m_control;
       std::vector<dcmplx> m_yv;
       std::vector<dcmplx> m_errv;
@@ -134,12 +132,12 @@ class SolverCV_CS : public SolverCV
   public:
       SolverCV_CS(ModelCV* cmodel);
       virtual ~SolverCV_CS() {};
-      void step(std::vector<dcmplx>& u,double h);
-      void evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt);
+      void step(std::vector<dcmplx>& u,double h) noexcept;
+      bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept;
       void setCountTime(bool val) {m_count_time = val;}
   private:
-      virtual void updateCoefficients([[maybe_unused]] double dt) {};
-      virtual void updateStages(std::vector<dcmplx>& in) = 0;
+      virtual void updateCoefficients([[maybe_unused]] double dt) noexcept {};
+      virtual void updateStages(std::vector<dcmplx>& in) noexcept = 0;
       bool m_count_time;
 };
 
@@ -195,6 +193,5 @@ class LoopException : public SolverException
 
 }
 
-#endif
 
 

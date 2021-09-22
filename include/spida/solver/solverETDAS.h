@@ -22,9 +22,9 @@ class SolverAS_ETD : public SolverCV_AS
         double contourRadius() {return m_contour_radi;}
         int contourPoints() {return m_contourM;}
     private:
-        virtual void updateCoefficients(double dt) = 0;
+        virtual void updateCoefficients(double dt) noexcept = 0;
         virtual void updateStages(const std::vector<dcmplx>& in,\
-                std::vector<dcmplx>& y,std::vector<dcmplx>& err) = 0;
+                std::vector<dcmplx>& y,std::vector<dcmplx>& err) noexcept = 0;
         double m_mode_cutoff;
         int m_contourM;
         double m_contour_radi;
@@ -36,9 +36,9 @@ class ETD34 : public SolverAS_ETD
         ETD34(ModelCV* cmodel);
         ~ETD34() {};
     private:
-        void updateCoefficients(double dt);
+        void updateCoefficients(double dt) noexcept;
         void updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& y,\
-                 std::vector<dcmplx>& err);
+                 std::vector<dcmplx>& err) noexcept;
         int m_sz;
         const std::vector<dcmplx>& L;
         std::vector<dcmplx> EL; std::vector<dcmplx> EL2; 
@@ -63,8 +63,9 @@ class ETD35: public SolverAS_ETD
         ETD35(ModelCV* cmodel);
         ~ETD35() {};
     private:
-        void updateCoefficients(double dt);
-        void updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& y,std::vector<dcmplx>& err);
+        void updateCoefficients(double dt) noexcept;
+        void updateStages(const std::vector<dcmplx>& in,\
+                std::vector<dcmplx>& y,std::vector<dcmplx>& err) noexcept;
 
         int m_sz;
         const std::vector<dcmplx>& L;

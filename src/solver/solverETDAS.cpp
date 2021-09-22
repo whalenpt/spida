@@ -73,7 +73,7 @@ void ETD34::worker_coeff(double dstep,int tid){
     }
 }
 
-void ETD34::updateCoefficients(double dt)
+void ETD34::updateCoefficients(double dt) noexcept
 {
     std::vector<std::thread> threads;
     for(unsigned int i = 1; i < thmgt.getNumThreads(); i++)
@@ -85,7 +85,7 @@ void ETD34::updateCoefficients(double dt)
 
 
 void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew,\
-        std::vector<dcmplx>& errVec)
+        std::vector<dcmplx>& errVec) noexcept
 {
     if(!N1_init){
         SolverCV::model().nonLinResponse(in,N1);
@@ -221,7 +221,7 @@ void ETD35::worker_coeff(double dstep,int tid){
   }
 }
 
-void ETD35::updateCoefficients(double dt)
+void ETD35::updateCoefficients(double dt) noexcept
 {
   std::vector<std::thread> threads;
   for(unsigned int i = 1; i < thmgt.getNumThreads(); i++)
@@ -273,7 +273,7 @@ void ETD35::worker_stage7(const std::vector<dcmplx>& in,std::vector<dcmplx>& yne
 
 
 void ETD35::updateStages(const std::vector<dcmplx>& in,\
-        std::vector<dcmplx>& ynew,std::vector<dcmplx>& errVec)
+        std::vector<dcmplx>& ynew,std::vector<dcmplx>& errVec) noexcept
 {
     if(!N1_init){
         SolverCV::model().nonLinResponse(in,N1);

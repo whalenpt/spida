@@ -43,16 +43,15 @@ int SolverCV::size() const
     return m_model->linOp().size();
 }
 
-void SolverCV::evolve(double t0,double tf,double& dt)
+bool SolverCV::evolve(double t0,double tf,double& dt)
 {
     if(!m_pr)
-        throw std::domain_error("SolverCV::evolve(double t0,double tf,double& dt) error:\
-                fileReport must be set for this function to work. Please use\
-                SolverCV::evolve(std::vector<dcmplx>& in,double t0,double tf,double& dt).");
-    evolve(m_pr->propagator(),t0,tf,dt);
+        return false;
+    bool success = evolve(m_pr->propagator(),t0,tf,dt);
+    return success;
 }
 
-void SolverCV::computeCo(double dt)
+void SolverCV::computeCo(double dt) noexcept
 {
     if(fabs(dt-m_dt_last) > NEAR_ZERO) {
         m_dt_last = dt;
@@ -137,18 +136,22 @@ void SolverCV_AS::setEpsRel(double val)
 {m_control->setEpsRel(val);}
 
 
-void SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext)
+bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
+    
 {
     statCenter().startClock("Clock Computer Time");
     statCenter().startTimer("Computer Time");
     double h_cur = h;
-    m_control->checkStepSize(h_cur);
+    if(!(m_control->checkStepSize(h_cur)))
+        return false;
+            
     double s = 1.0;
     int num_loops = 0;
     bool bigError = true;
     while(bigError){
         num_loops++;
-        m_control->checkLoopCount(num_loops);
+        if(!(m_control->checkLoopCount(num_loops)))
+            return false;
         computeCo(h_cur);
         statCenter().startTimer("Solver Stepping");
         statCenter().startClock("Clock Stepping");
@@ -181,14 +184,16 @@ void SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext)
             bigError = false;
             m_accept = true;
         }
-        m_control->checkStepSize(h_cur);
+        if(!(m_control->checkStepSize(h_cur)))
+            return false;
     }
     statCenter().endClock("Clock Computer Time");
     statCenter().endTimer("Computer Time");
     statCenter().statUpdate();
+    return true;
 }
 
-void SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt)
+bool SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept
 {
     if(fileReportOn())
         SolverCV::reportCenter()->report(t0);
@@ -200,7 +205,8 @@ void SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt)
     double dt_next;
     bool report = true;
     while(SolverCV::currentTime() < tf && report){
-        SolverCV_AS::step(u,dt,dt_next);
+        if(!SolverCV_AS::step(u,dt,dt_next))
+            return false;
         if(fileReportOn())
             report = SolverCV::reportCenter()->stepUpdate(SolverCV::currentTime());
 
@@ -211,6 +217,7 @@ void SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt)
     }
     if(fileReportOn())
         reportCenter()->report(SolverCV::currentTime());
+    return true;
 }
 
 SolverCV_CS::SolverCV_CS(ModelCV* model) :
@@ -219,7 +226,7 @@ SolverCV_CS::SolverCV_CS(ModelCV* model) :
     m_count_time = true;
 }
 
-void SolverCV_CS::step(std::vector<dcmplx>& in,double dt) 
+void SolverCV_CS::step(std::vector<dcmplx>& in,double dt) noexcept
 {
     statCenter().startClock("Clock Computer Time");
     statCenter().startTimer("Computer Time");
@@ -239,7 +246,7 @@ void SolverCV_CS::step(std::vector<dcmplx>& in,double dt)
     statCenter().statUpdate();
 }
 
-void SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt)
+bool SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept
 {
     SolverCV::setCurrentTime(t0);
     if(fileReportOn())
@@ -254,6 +261,7 @@ void SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt)
     }
     if(fileReportOn())
         reportCenter()->report(SolverCV::currentTime());
+    return true;
 }
 
 
@@ -364,7 +372,7 @@ void norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,\
     }
 }
 
-double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew)
+double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) noexcept
 {
     std::fill(esum.begin(),esum.end(),0.0);
     std::fill(ysum.begin(),ysum.end(),0.0);
@@ -378,8 +386,9 @@ double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& yne
         norm2(errVec,ynew,bounds[parts-1],bounds[parts],&esum[parts-1],&ysum[parts-1]);
     }
     else{
-        throw pw::Exception("Control::computeRawS","Did not recognize error "\
-                "control Norm metric (1-norm,2-norm,inf-norm,...)");
+        for(unsigned int i = 0; i < parts-1; i++)
+            threads.push_back(new std::thread(norm2,std::ref(errVec),std::ref(ynew),bounds[i],bounds[i+1],&esum[i],&ysum[i]));
+        norm2(errVec,ynew,bounds[parts-1],bounds[parts],&esum[parts-1],&ysum[parts-1]);
     }
     for(auto t : threads)
         t->join();
@@ -393,25 +402,27 @@ double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& yne
         enet = sqrt(enet);
         ynet = sqrt(ynet);
     } else{
-        throw pw::Exception("Control::computeRawS","Did not recognize error "\
-                "control Norm metric (1-norm,2-norm,inf-norm,...)");
+        enet = sqrt(enet);
+        ynet = sqrt(ynet);
     }
     double errTol= epsRel*ynet;
     return errTol/enet;
 }
 
-void Control::checkLoopCount(int num_loops)
+bool Control::checkLoopCount(unsigned num_loops) noexcept
 {
     if(num_loops >= MAX_LOOP){
-        throw LoopException(num_loops);
+        return false;
     }
+    return true;
 }
 
-void Control::checkStepSize(double step_size)
+bool Control::checkStepSize(double step_size) noexcept
 {
     if(step_size < MIN_H){
-        throw StepSizeException(step_size,MIN_H);
+        return false;
     }
+    return true;
 }
 
 
