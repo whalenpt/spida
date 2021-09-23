@@ -10,7 +10,7 @@
 
 TEST(FFT_TEST,INVERSES)
 {
-	unsigned N = 64;
+	unsigned N = 32;
     pw::DataIO dataio("outfolder");
     using spida::dcmplx;
 
@@ -30,24 +30,28 @@ TEST(FFT_TEST,INVERSES)
     EXPECT_LT(pw::relative_error(in,expect),1e-6);
 }
 
-TEST(FFT_TEST,DERIVATIVE_EXP)
+TEST(FFT_TEST,DERIVATIVE_SIN)
 {
 	unsigned N = 32;
     pw::DataIO dataio("outfolder");
 
     using spida::dcmplx;
+    using spida::PI;
     std::vector<dcmplx> in(N);
     std::vector<dcmplx> out(N);
+    std::vector<dcmplx> expect(N);
 
-    spida::UniformGridX grid(N,-1,5);
+    spida::UniformGridX grid(N,0,2*PI);
     const std::vector<double> x = grid.getX();
     for(auto i = 0; i < x.size(); i++)
-        in[i] = exp(x[i]);
+        in[i] = sin(x[i]);
+    for(auto i = 0; i < x.size(); i++)
+        expect[i] = cos(x[i]);
 
     spida::SpidaX spidaX{grid};
     spidaX.dX(in,out);
-    dataio.writeFile("fft_der_exp.dat",in,out);
-    EXPECT_LT(pw::relative_error(in,out),1e-6);
+    dataio.writeFile("fft_der_sin.dat",expect,out);
+    EXPECT_LT(pw::relative_error(expect,out),1e-6);
 }
 
 TEST(FFT_TEST,DERIVATIVE_GAUSS)
