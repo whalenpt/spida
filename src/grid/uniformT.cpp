@@ -1,7 +1,6 @@
 
 #include "spida/grid/gridT.h"
 #include "spida/grid/uniformT.h"
-#include "spida/grid/uniformX.h"
 #include "spida/helper/constants.h"
 #include <string>
 #include <iostream>
@@ -10,16 +9,19 @@
 
 namespace spida{
 
-std::vector<double> buildUniformT(unsigned int nt,double minT,double maxT)
+std::vector<double> buildUniformT(unsigned nt,double minT,double maxT)
 {
     if(minT >= maxT){
         std::string msg = "Error in buildUniformT: minT must be less than maxT.";
         throw std::invalid_argument(msg);
     }
-    return buildUniformX(nt,minT,maxT);
+    std::vector<double> t(nt);
+    double dt = (maxT - minT)/static_cast<double>(nt-1);
+    for(auto i = 0; i < nt; i++) t[i] = minT + i*dt; 
+    return t;
 }
 
-std::vector<double> buildUniformST(unsigned int nt,double minT,double maxT)
+std::vector<double> buildUniformST(unsigned nt,double minT,double maxT)
 {
     if(minT >= maxT){
         std::string msg = "Error in buildUniformST: minT must be less than maxT.";

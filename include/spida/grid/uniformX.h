@@ -1,6 +1,5 @@
-
-#ifndef SPIDA_GRID_UNIFORMX_H_
-#define SPIDA_GRID_UNIFORMX_H_
+// uniformX.h
+#pragma once
 
 #include <vector>
 #include "spida/grid/gridX.h"
@@ -14,7 +13,7 @@ std::vector<double> buildUniformSX(unsigned int nx,double minX,double maxX);
 class UniformGridX : public GridX
 {
     public:
-        UniformGridX(unsigned int nx,double min,double max);
+        UniformGridX(unsigned nx,double min,double max);
         ~UniformGridX() {}; 
         const std::vector<double>& getX() const {return m_x;}
         const std::vector<double>& getSX() const {return m_sx;}
@@ -27,6 +26,5 @@ class UniformGridX : public GridX
 
 }
 
-#endif
 
 
