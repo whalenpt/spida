@@ -3,10 +3,11 @@ cmake_minimum_required(VERSION 3.8)
 set(THIS mytests)
 set(SRC_FILES
 	kiss_tests.cpp
-	transform_tests.cpp
-	dct_tests.cpp
-	shape_tests.cpp
 	nayukidct_tests.cpp
+	dct_tests.cpp
+	fft_tests.cpp
+	transform_tests.cpp
+	shape_tests.cpp
 	grid_tests.cpp
 )
 

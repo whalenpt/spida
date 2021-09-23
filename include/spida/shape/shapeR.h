@@ -1,6 +1,5 @@
-
-#ifndef SPIDA_SHAPER_H_
-#define SPIDA_SHAPER_H_
+// shapeR.h
+#pragma once
 
 #include <string>
 #include <complex>
@@ -52,7 +51,6 @@ class GaussR : public ShapeR
 
 }
 
-#endif
 
 
 

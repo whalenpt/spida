@@ -1,6 +1,5 @@
-
-#ifndef SPIDA_TRANSFORMFFTBLT_H_
-#define SPIDA_TRANSFORMFFTBLT_H_ 
+// fftBLT.h
+#pragma once
 
 #include <vector>
 #include <thread>
@@ -50,6 +49,5 @@ class FFTBLT
 }
 
 
-#endif
 
 

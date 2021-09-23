@@ -76,34 +76,6 @@ TEST(DCT_TEST,DERIVATIVE_EXP)
     EXPECT_LT(pw::relative_error(in,out),1e-6);
 }
 
-//TEST(DCT_TEST,COMP_SPECTRA)
-//{
-//	int N = 64;
-//    pw::DataIO dataio("outfolder");
-//
-//    std::vector<double> in(N);
-//    std::vector<double> out(N);
-//
-//    spida::ChebRootGridX grid(N,-1,1);
-//    const std::vector<double> x = grid.getX();
-//    for(auto i = 0; i < x.size(); i++)
-//        in[i] = exp(x[i]);
-//    std::copy(std::cbegin(in),std::cend(in),std::begin(out));
-//    FastDctLee::transform(out);
-//
-//    std::vector<double> out2(N);
-//    fftw_plan forward_plan = fftw_plan_r2r_1d(N,in.data(),out2.data(),FFTW_REDFT10,FFTW_ESTIMATE);
-//    fftw_execute(forward_plan);
-//    fftw_destroy_plan(forward_plan);
-//
-//    for(auto& item : out)
-//        item *= 2.0;
-//
-//    EXPECT_LT(pw::relative_error(out,out2),1e-6);
-//    dataio.writeFile("spectra_compare.dat",out,out2);
-//}
-
-
 TEST(DCT_TEST,NAYUKI_ROOT_DERS)
 {
 	int N = 16;

@@ -1,6 +1,5 @@
-
-#ifndef TRANSFORM_CHEBX_H_
-#define TRANSFORM_CHEBX_H_ 
+// chebX.h
+#pragma once
 
 #include <complex>
 #include <vector>
@@ -25,6 +24,5 @@ namespace spida{
 }
 
 
-#endif
 
 

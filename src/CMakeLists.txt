@@ -21,6 +21,7 @@ set(SRC_FILES
 	solver/solverETDAS.cpp
 	solver/solverETDCS.cpp
     transform/fftBLT.cpp
+    transform/fftX.cpp
 	transform/chebX.cpp
 	transform/hankelR.cpp
     transform/hankelfftRBLT.cpp
@@ -53,6 +54,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/solver/solverETDCS.h"
    "${INCL_DIR}/transform/fftBLT.h"
    "${INCL_DIR}/transform/chebX.h"
+   "${INCL_DIR}/transform/fftX.h"
    "${INCL_DIR}/transform/hankelR.h"
    "${INCL_DIR}/transform/hankelfftRBLT.h"
 )
