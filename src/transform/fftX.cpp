@@ -26,19 +26,19 @@ FFTX::~FFTX()
     kiss_fft_free(m_cfg_reverse);
 }
 
-void FFTX::X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+void FFTX::X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept
 {
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(out.data()));
 }
 
-void FFTX::X_To_SX(const dcmplx* in,dcmplx* out)
+void FFTX::X_To_SX(const dcmplx* in,dcmplx* out) noexcept
 {
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in),\
                   reinterpret_cast<kiss_fft_cpx*>(out));
 }
 
-void FFTX::SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+void FFTX::SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept
 {
     kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(in.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(out.data()));
@@ -46,7 +46,7 @@ void FFTX::SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
         out[i] /= static_cast<double>(m_nx);
 }
 
-void FFTX::SX_To_X(const dcmplx* in,dcmplx* out)
+void FFTX::SX_To_X(const dcmplx* in,dcmplx* out) noexcept
 {
     kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(in),\
                   reinterpret_cast<kiss_fft_cpx*>(out));

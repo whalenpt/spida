@@ -18,10 +18,10 @@ class FFTX
         FFTX(const FFTX& sp)=delete;
         FFTX& operator=(const FFTX& sp)=delete;
 
-        void X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
-        void SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
-        void X_To_SX(const dcmplx* in,dcmplx* out); 
-        void SX_To_X(const dcmplx* in,dcmplx* out); 
+        void X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept; 
+        void SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept; 
+        void X_To_SX(const dcmplx* in,dcmplx* out) noexcept; 
+        void SX_To_X(const dcmplx* in,dcmplx* out) noexcept; 
     private:
         int m_nx;
         kiss_fft_cfg m_cfg_forward;

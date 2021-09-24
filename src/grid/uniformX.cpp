@@ -35,6 +35,7 @@ std::vector<double> buildUniformSX(unsigned nx,double minX,double maxX)
     return sx;
 }
 
+
 UniformGridX::UniformGridX(unsigned nx,double minX,double maxX) : GridX(nx,minX,maxX),
     m_x(nx), m_sx(nx)
 {
