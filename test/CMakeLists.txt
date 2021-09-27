@@ -25,6 +25,7 @@ target_link_libraries(${THIS} PUBLIC
 	gtest_main
     pw::pwutils
     SPIDA::spida
+    fftw3
 )
 
 set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")

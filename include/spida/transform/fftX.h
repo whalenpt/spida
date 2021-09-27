@@ -24,6 +24,8 @@ class FFTX
         void SX_To_X(const dcmplx* in,dcmplx* out) noexcept; 
     private:
         int m_nx;
+        double m_minx;
+        double m_L;
         kiss_fft_cfg m_cfg_forward;
         kiss_fft_cfg m_cfg_reverse;
 };

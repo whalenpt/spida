@@ -6,6 +6,7 @@
 #include <spida/SpidaX.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
+#include <fftw3.h>
 #include <random>
 
 TEST(FFT_TEST,INVERSES)
@@ -30,9 +31,10 @@ TEST(FFT_TEST,INVERSES)
     EXPECT_LT(pw::relative_error(in,expect),1e-6);
 }
 
+
 TEST(FFT_TEST,GAUSS)
 {
-	unsigned N = 256;
+	unsigned N = 32;
     pw::DataIO dataio("outfolder");
     using spida::dcmplx;
     using spida::PI;
@@ -42,17 +44,25 @@ TEST(FFT_TEST,GAUSS)
     std::vector<dcmplx> expect(N,0.0);
 
     spida::UniformGridX grid(N,-6,6);
+    double L = grid.getLX();
     const std::vector<double> x = grid.getX();
     const std::vector<double> kx = grid.getSX();
-    double alpha = 1.0;
+    
+    double alpha = 2.0;
     for(auto i = 0; i < x.size(); i++)
         in[i] = exp(-alpha*pow(x[i],2));
     for(auto i = 0; i < kx.size(); i++)
-        expect[i] = sqrt(PI/alpha)*exp(-pow(PI*kx[i],2)/alpha);
-    dataio.writeFile("fft_gauss.dat",in);
+        expect[i] = (N/L)*sqrt(PI/alpha)*exp(-pow(kx[i],2)/(4*alpha));
+
+        //expect[i] = (N/L)*sqrt(PI/alpha)*exp(-2.88202*pow(PI*L*kx[i]/static_cast<double>(N),2)/alpha);
+
 
     spida::FFTX tr(grid);
     tr.X_To_SX(in,out);
+
+    dataio.writeFile("fft_gauss.dat",expect,out);
+
+    EXPECT_LT(pw::relative_error(out,expect),1e-5);
 
     std::vector<double> reals_out(N);
     for(auto i = 0; i < out.size(); i++)
@@ -61,8 +71,47 @@ TEST(FFT_TEST,GAUSS)
     for(auto i = 0; i < expect.size(); i++)
         reals_expect[i] = expect[i].real();
 
+    std::vector<dcmplx> outfftw(N,0.0);
+    fftw_plan forward_plan = fftw_plan_dft_1d(in.size(),\
+            reinterpret_cast<fftw_complex*>(in.data()),\
+            reinterpret_cast<fftw_complex*>(outfftw.data()),\
+            FFTW_FORWARD,\
+            FFTW_ESTIMATE);
+    fftw_execute(forward_plan);
+    fftw_destroy_plan(forward_plan);
+
+//    backward_plan = fftw_plan_dft_1d(in.size(),reinterpret_cast<fftw_complex*>(out.data()),\
+
+    std::vector<double> fftw_real(N);
+    for(auto i = 0; i < outfftw.size(); i++)
+        fftw_real[i] = outfftw[i].real();
+
     dataio.writeFile("fft_gauss_check.dat",reals_expect,reals_out);
-    EXPECT_LT(pw::relative_error(out,expect),1e-6);
+    dataio.writeFile("fft_gauss_check_fftw.dat",reals_expect,fftw_real);
+    dataio.writeFile("fft_gauss_check_dcmplx.dat",expect,out);
+    dataio.writeFile("fft_gauss_check_fftw_dcmplx.dat",expect,outfftw);
+
+    std::vector<dcmplx> in2(N,0.0);
+    std::vector<double> orderedx(N,0.0);
+    //for(auto i = 0; i < x.size(); i++)
+    for(auto i = 0; i < x.size()/2; i++)
+        orderedx[i] = x[i+x.size()/2];
+    for(auto i = x.size()/2; i< x.size(); i++)
+        orderedx[i] = x[i-x.size()/2];
+    for(auto i = 0; i < orderedx.size(); i++)
+        in2[i] = exp(-alpha*pow(orderedx[i],2));
+    dataio.writeFile("fft_gauss_ordered_x.dat",orderedx,x);
+
+    std::vector<dcmplx> outfftw2(N,0.0);
+    fftw_plan forward_plan2 = fftw_plan_dft_1d(in2.size(),\
+            reinterpret_cast<fftw_complex*>(in2.data()),\
+            reinterpret_cast<fftw_complex*>(outfftw2.data()),\
+            FFTW_FORWARD,\
+            FFTW_ESTIMATE);
+    fftw_execute(forward_plan2);
+    fftw_destroy_plan(forward_plan2);
+    dataio.writeFile("fft_gauss_check_ordered.dat",expect,outfftw2);
+    EXPECT_LT(pw::relative_error(outfftw2,expect),1e-5);
 }
 
 TEST(FFT_TEST,COS)

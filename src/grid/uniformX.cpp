@@ -27,7 +27,9 @@ std::vector<double> buildUniformSX(unsigned nx,double minX,double maxX)
         throw std::invalid_argument(msg);
     }
     std::vector<double> sx(nx);
-    double dsx = 2.0*spida::PI/(maxX - minX);
+    double L = maxX - minX;
+    double dsx = 1.0/L;
+
     for(auto i = 0; i <= nx/2; i++)
         sx[i] = i*dsx;
     for(auto i = nx/2+1; i < nx; i++)

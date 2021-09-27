@@ -12,6 +12,8 @@ namespace spida{
 FFTX::FFTX(const UniformGridX& grid) 
 {
     m_nx = grid.getNx();
+    m_minx = grid.getMinX();
+    m_L = grid.getLX();
     if(!((m_nx%2)==0))
         throw std::invalid_argument("Kiss fft requires even integer size");
 
@@ -30,6 +32,8 @@ void FFTX::X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexc
 {
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(out.data()));
+//    for(auto& item : out)
+//        item
 }
 
 void FFTX::X_To_SX(const dcmplx* in,dcmplx* out) noexcept

@@ -5,7 +5,9 @@
 #include <cmath>
 #include <random>
 #include <pwutils/report/dataio.hpp>
+#include <pwutils/pwmath.hpp>
 #include <spida/helper/constants.h>
+#include <spida/grid/uniformX.h>
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
 
@@ -284,6 +286,93 @@ TEST(KISS_TEST,COS_TRIG_WAVE_REAL)
 	EXPECT_NEAR(out2[3].imag(),0.4098236995245791,1e-8);
 	EXPECT_NEAR(out2[N/2].real(),0.06667213305344744,1e-8);
 }
+
+TEST(KISS_TEST,GAUSS)
+{
+	unsigned N = 64;
+    pw::DataIO dataio("outfolder");
+    using spida::dcmplx;
+    using spida::PI;
+    using spida::ii;
+
+    std::vector<dcmplx> in(N,0.0);
+    std::vector<dcmplx> out(N,0.0);
+    std::vector<dcmplx> phase_adj(N,0.0);
+    std::vector<dcmplx> out_phase_adj(N,0.0);
+    std::vector<dcmplx> expect(N,0.0);
+
+    double xmin = -6;
+    double xmax = 6;
+    spida::UniformGridX grid(N,xmin,xmax);
+    double L = grid.getLX();
+    const std::vector<double> x = grid.getX();
+    const std::vector<double> kx = grid.getSX();
+    
+    double alpha = 2.0;
+    for(auto i = 0; i < x.size(); i++)
+        in[i] = exp(-alpha*pow(x[i],2));
+    for(auto i = 0; i < kx.size(); i++)
+        expect[i] = (1.0/L)*sqrt(PI/alpha)*exp(-pow(PI*kx[i],2)/alpha);
+
+	kiss_fft_cfg cfg_forward = kiss_fft_alloc(N,0,nullptr,nullptr);
+	kiss_fft(cfg_forward,reinterpret_cast<kiss_fft_cpx*>(in.data()),\
+	        reinterpret_cast<kiss_fft_cpx*>(out.data()));
+
+    for(auto& item : out)
+        item /= static_cast<double>(N);
+
+	for(auto i = 0; i < out.size(); i++)
+	    out_phase_adj[i] = out[i]*exp(2.0*PI*ii*kx[i]*xmin);
+
+    dataio.writeFile("kissfft_gauss.dat",expect,out_phase_adj);
+    EXPECT_LT(pw::relative_error(expect,out_phase_adj),1e-5);
+}
+
+
+TEST(KISS_TEST,SECH)
+{
+	unsigned N = 64;
+    pw::DataIO dataio("outfolder");
+    using spida::dcmplx;
+    using spida::PI;
+    using spida::ii;
+
+    std::vector<dcmplx> in(N,0.0);
+    std::vector<dcmplx> out(N,0.0);
+    std::vector<dcmplx> expect(N,0.0);
+
+    // make range large enough such that sech is near zero at xmin and xmax (FFT is periodic)
+    double xmin = -6;
+    double xmax = 6;
+    spida::UniformGridX grid(N,xmin,xmax);
+    double L = grid.getLX();
+    const std::vector<double> x = grid.getX();
+    const std::vector<double> kx = grid.getSX();
+    double a = 2.0;
+    // fill sech
+    for(auto i = 0; i < x.size(); i++)
+        in[i] = 1.0/cosh(a*x[i]);
+    // spectrum of sech function
+    for(auto i = 0; i < kx.size(); i++)
+        expect[i] = (1.0/L)*(PI/a)/cosh(pow(PI,2)*kx[i]/a);
+
+	kiss_fft_cfg cfg_forward = kiss_fft_alloc(N,0,nullptr,nullptr);
+	kiss_fft(cfg_forward,reinterpret_cast<kiss_fft_cpx*>(in.data()),\
+	        reinterpret_cast<kiss_fft_cpx*>(out.data()));
+
+    // divide by FFT multiplier
+    for(auto& item : out)
+        item /= static_cast<double>(N);
+
+	for(auto i = 0; i < out.size(); i++)
+	    out[i] = out[i]*exp(2.0*PI*ii*kx[i]*xmin);
+
+    dataio.writeFile("kissfft_sech.dat",expect,out);
+    EXPECT_LT(pw::relative_error(expect,out),1e-5);
+}
+
+
+
 
 
 
