@@ -30,7 +30,17 @@ namespace spida{
     unsigned nx = m_gr->getNx();
     for(auto i = 0; i < nx; i++)
         m_vs[i] = std::pow(ii*kx[i],n)*m_vs[i];
+        //m_vs[i] = std::pow(2.0*PI*ii*kx[i],n)*m_vs[i];
     m_tr->SX_To_X(m_vs,out);
+  }
+
+  void SpidaX::dSX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,int n) noexcept
+  {
+    if(n < 0)
+        return;
+    const std::vector<double>& kx = m_gr->getSX();
+    for(auto i = 0; i < kx.size(); i++)
+        out[i] = std::pow(ii*kx[i],n)*m_vs[i];
   }
 
 }

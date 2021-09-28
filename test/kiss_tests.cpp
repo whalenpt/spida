@@ -204,20 +204,31 @@ TEST(KISS_TEST,ALTERNATING_ONE_NEGONE_REAL)
 /* Inputs to FFT are imaginary e^(8*j*2*pi*i/N) for i = 0,1,2, ...,N-1 */
 TEST(KISS_TEST,EXP_IMAG_TRIG_WAVE)
 {
-	int N = 64;
-    pw::DataIO dataio("outfolder");
-    std::vector<std::complex<double> > in(N, 0.);
-    for(unsigned int i = 0; i < N; i++)
-        in[i] = exp(8.0*spida::ii*2.0*spida::PI*static_cast<double>(i)/static_cast<double>(N));
-    std::vector<std::complex<double> > out(N, 0.);
+	int N = 32;
+    using spida::dcmplx;
+    using spida::PI;
+    using spida::ii;
 
+    double xmin = 0;
+    double xmax = 1;
+    spida::UniformGridX grid(N,xmin,xmax);
+    const std::vector<double> x = grid.getX();
+    const std::vector<double> kx = grid.getSX();
+    std::vector<std::complex<double> > in(N, 0.);
+    std::vector<std::complex<double> > out(N, 0.);
     kiss_fft_cfg cfg_forward = kiss_fft_alloc(N,0,nullptr,nullptr);
-    kiss_fft(cfg_forward,reinterpret_cast<kiss_fft_cpx*>(in.data()),\
-            reinterpret_cast<kiss_fft_cpx*>(out.data()));
+
+    for(unsigned j = 0; j < 8; j++){
+        for(unsigned i = 0; i < N; i++)
+            in[i] = exp(ii*2.0*PI*static_cast<double>(j)*x[i]);
+        kiss_fft(cfg_forward,reinterpret_cast<kiss_fft_cpx*>(in.data()),\
+                reinterpret_cast<kiss_fft_cpx*>(out.data()));
+	    EXPECT_DOUBLE_EQ(out[j].real(),static_cast<double>(N));
+    }
+
     kiss_fft_free(cfg_forward);
-    dataio.writeFile("kiss_exp_trig.dat",in,out);
-	EXPECT_DOUBLE_EQ(out[8].real(),static_cast<double>(N));
 }
+
 
 /* Inputs to FFT are cos(8*2*pi*i/N) for i = 0,1,2, ...,N-1 */
 TEST(KISS_TEST,COS_TRIG_WAVE)
@@ -312,7 +323,7 @@ TEST(KISS_TEST,GAUSS)
     for(auto i = 0; i < x.size(); i++)
         in[i] = exp(-alpha*pow(x[i],2));
     for(auto i = 0; i < kx.size(); i++)
-        expect[i] = (1.0/L)*sqrt(PI/alpha)*exp(-pow(PI*kx[i],2)/alpha);
+        expect[i] = (1.0/L)*sqrt(PI/alpha)*exp(-pow(kx[i],2)/(4.0*alpha));
 
 	kiss_fft_cfg cfg_forward = kiss_fft_alloc(N,0,nullptr,nullptr);
 	kiss_fft(cfg_forward,reinterpret_cast<kiss_fft_cpx*>(in.data()),\
@@ -322,7 +333,8 @@ TEST(KISS_TEST,GAUSS)
         item /= static_cast<double>(N);
 
 	for(auto i = 0; i < out.size(); i++)
-	    out_phase_adj[i] = out[i]*exp(2.0*PI*ii*kx[i]*xmin);
+	    out_phase_adj[i] = out[i]*exp(ii*kx[i]*xmin);
+	    //out_phase_adj[i] = out[i]*exp(2.0*PI*ii*kx[i]*xmin);
 
     dataio.writeFile("kissfft_gauss.dat",expect,out_phase_adj);
     EXPECT_LT(pw::relative_error(expect,out_phase_adj),1e-5);
@@ -354,7 +366,7 @@ TEST(KISS_TEST,SECH)
         in[i] = 1.0/cosh(a*x[i]);
     // spectrum of sech function
     for(auto i = 0; i < kx.size(); i++)
-        expect[i] = (1.0/L)*(PI/a)/cosh(pow(PI,2)*kx[i]/a);
+        expect[i] = (1.0/L)*(PI/a)/cosh(PI*kx[i]/(2.0*a));
 
 	kiss_fft_cfg cfg_forward = kiss_fft_alloc(N,0,nullptr,nullptr);
 	kiss_fft(cfg_forward,reinterpret_cast<kiss_fft_cpx*>(in.data()),\
@@ -365,10 +377,36 @@ TEST(KISS_TEST,SECH)
         item /= static_cast<double>(N);
 
 	for(auto i = 0; i < out.size(); i++)
-	    out[i] = out[i]*exp(2.0*PI*ii*kx[i]*xmin);
+	    out[i] = out[i]*exp(ii*kx[i]*xmin);
 
     dataio.writeFile("kissfft_sech.dat",expect,out);
     EXPECT_LT(pw::relative_error(expect,out),1e-5);
+}
+
+// Test exp_imag_trig_wave 
+TEST(KISS_TEST,EXP_IMAG_TRIG_WAVE2)
+{
+	int N = 32;
+    pw::DataIO dataio("outfolder");
+
+
+    double xmin = 0;
+    double xmax = 4;
+    spida::UniformGridX grid(N,xmin,xmax);
+    const std::vector<double> x = grid.getX();
+    const std::vector<double> kx = grid.getSX();
+
+    std::vector<std::complex<double> > in(N, 0.);
+    for(unsigned int i = 0; i < N; i++)
+        in[i] = exp(4.0*spida::ii*2.0*spida::PI*x[i]);
+    std::vector<std::complex<double> > out(N, 0.);
+
+    kiss_fft_cfg cfg_forward = kiss_fft_alloc(N,0,nullptr,nullptr);
+    kiss_fft(cfg_forward,reinterpret_cast<kiss_fft_cpx*>(in.data()),\
+            reinterpret_cast<kiss_fft_cpx*>(out.data()));
+    kiss_fft_free(cfg_forward);
+    dataio.writeFile("kiss_exp_trig2.dat",kx,out);
+	EXPECT_DOUBLE_EQ(out[16].real(),static_cast<double>(N));
 }
 
 

@@ -28,7 +28,7 @@ std::vector<double> buildUniformSX(unsigned nx,double minX,double maxX)
     }
     std::vector<double> sx(nx);
     double L = maxX - minX;
-    double dsx = 1.0/L;
+    double dsx = 2.0*PI/L;
 
     for(auto i = 0; i <= nx/2; i++)
         sx[i] = i*dsx;

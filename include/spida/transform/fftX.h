@@ -26,6 +26,8 @@ class FFTX
         int m_nx;
         double m_minx;
         double m_L;
+        std::vector<double> m_kx;
+        std::vector<dcmplx> m_temp;
         kiss_fft_cfg m_cfg_forward;
         kiss_fft_cfg m_cfg_reverse;
 };
