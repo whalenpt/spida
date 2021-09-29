@@ -5,12 +5,15 @@ cmake_minimum_required(VERSION 3.19.1)
 set(SRC_FILES
     SpidaBLT.cpp
     SpidaRBLT.cpp
-    SpidaX.cpp
+    SpidaRVX.cpp
+    SpidaCVX.cpp
     SpidaCHEBX.cpp
     ChebInterpX.cpp
 	helper/interp.cpp
     grid/chebX.cpp
     grid/uniformX.cpp
+    grid/uniformRVX.cpp
+    grid/uniformCVX.cpp
 	grid/uniformT.cpp
 	grid/besselR.cpp
     grid/grid.cpp
@@ -18,11 +21,12 @@ set(SRC_FILES
 	report/reporthandler.cpp
 	shape/shapeT.cpp
 	shape/shapeR.cpp
-	solver/solver.cpp
-	solver/solverETDAS.cpp
-	solver/solverETDCS.cpp
+	rkstiff/solver.cpp
+	rkstiff/ETDAS.cpp
+	rkstiff/ETDCS.cpp
     transform/fftBLT.cpp
-    transform/fftX.cpp
+    transform/fftCVX.cpp
+    transform/fftRVX.cpp
 	transform/chebX.cpp
 	transform/hankelR.cpp
     transform/hankelfftRBLT.cpp
@@ -30,9 +34,10 @@ set(SRC_FILES
 
 set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
 set(SPIDA_INCLUDES
-   "${INCL_DIR}/ChebInterpX.h"
-   "${INCL_DIR}/SpidaX.h"
+   "${INCL_DIR}/SpidaRVX.h"
+   "${INCL_DIR}/SpidaCVX.h"
    "${INCL_DIR}/SpidaCHEBX.h"
+   "${INCL_DIR}/ChebInterpX.h"
    "${INCL_DIR}/SpidaBLT.h"
    "${INCL_DIR}/SpidaRBLT.h"
    "${INCL_DIR}/helper/constants.h"
@@ -42,6 +47,8 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/grid/gridT.h"
    "${INCL_DIR}/grid/gridR.h"
    "${INCL_DIR}/grid/uniformX.h"
+   "${INCL_DIR}/grid/uniformRVX.h"
+   "${INCL_DIR}/grid/uniformCVX.h"
    "${INCL_DIR}/grid/uniformT.h"
    "${INCL_DIR}/grid/chebX.h"
    "${INCL_DIR}/grid/besselR.h"
@@ -51,12 +58,13 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/shape/shape.h"
    "${INCL_DIR}/shape/shapeT.h"
    "${INCL_DIR}/shape/shapeR.h"
-   "${INCL_DIR}/solver/solver.h"
-   "${INCL_DIR}/solver/solverETDAS.h"
-   "${INCL_DIR}/solver/solverETDCS.h"
+   "${INCL_DIR}/rkstiff/solver.h"
+   "${INCL_DIR}/rkstiff/ETDAS.h"
+   "${INCL_DIR}/rkstiff/ETDCS.h"
    "${INCL_DIR}/transform/fftBLT.h"
    "${INCL_DIR}/transform/chebX.h"
-   "${INCL_DIR}/transform/fftX.h"
+   "${INCL_DIR}/transform/fftCVX.h"
+   "${INCL_DIR}/transform/fftRVX.h"
    "${INCL_DIR}/transform/hankelR.h"
    "${INCL_DIR}/transform/hankelfftRBLT.h"
 )

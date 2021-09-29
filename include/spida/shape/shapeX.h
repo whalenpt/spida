@@ -3,6 +3,7 @@
 
 #include <string>
 #include <complex>
+#include "spida/helper/constants.h"
 #include "spida/grid/gridX.h"
 #include "spida/shape/shape.h"
 

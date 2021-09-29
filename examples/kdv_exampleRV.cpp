@@ -13,7 +13,7 @@
 #include <spida/grid/uniformRVX.h>
 #include <spida/SpidaRVX.h>
 #include <spida/helper/constants.h>
-#include <spida/solver/solverETDAS.h>
+#include <spida/rkstiff/ETDAS.h>
 #include <pwutils/report/dat.hpp>
 #include <fstream>
 
@@ -34,17 +34,18 @@ class kDV_RV
                 const std::vector<double>& sx = grid.getSX();
                 for(auto i = 0; i < sx.size(); i++)
                     L[i] = ii*pow(sx[i],3);
+                NL = [this](const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
+                    m_spida.SX_To_X(in,m_uphys);
+                    m_spida.dSX(in,m_uxsp);
+                    m_spida.SX_To_X(m_uxsp,m_uxphys);
+                    for(auto i = 0; i < m_grid.getNx(); i++)
+                        m_uphys[i] = -6.0*m_uphys[i]*m_uxphys[i];
+                    m_spida.X_To_SX(m_uphys,out);
+                };
             }
+
         std::vector<dcmplx> L;
-        std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)> NL = [this](\
-                const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
-            m_spida.SX_To_X(in,m_uphys);
-            m_spida.dSX(in,m_uxsp);
-            m_spida.SX_To_X(m_uxsp,m_uxphys);
-            for(auto i = 0; i < m_grid.getNx(); i++)
-                m_uphys[i] = -6.0*m_uphys[i]*m_uxphys[i];
-            m_spida.X_To_SX(m_uphys,out);
-        };
+        std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)> NL;
         SpidaRVX& spida() {return m_spida;}
 
     private:

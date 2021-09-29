@@ -1,5 +1,5 @@
 
-#include "spida/solver/solverETDCS.h"
+#include "spida/rkstiff/ETDCS.h"
 #include "spida/propagator/propagator.h"
 #include <cmath>
 

@@ -1,5 +1,5 @@
 
-#include "spida/solver/solverETDAS.h"
+#include "spida/rkstiff/ETDAS.h"
 #include <cmath>
 #include <thread>
 

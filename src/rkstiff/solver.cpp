@@ -1,5 +1,5 @@
 
-#include "spida/solver/solver.h"
+#include "spida/rkstiff/solver.h"
 #include "spida/report/reportcenter.h"
 #include "spida/helper/constants.h"
 #include "spida/propagator/propagator.h"

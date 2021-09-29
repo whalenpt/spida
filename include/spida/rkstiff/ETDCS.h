@@ -1,7 +1,7 @@
-//solverETDCS.h
+//ETDCS.h
 #pragma once
 
-#include "spida/solver/solver.h"
+#include "spida/rkstiff/solver.h"
 #include "spida/helper/constants.h"
 
 namespace spida{

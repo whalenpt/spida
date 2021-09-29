@@ -9,7 +9,7 @@
 
 namespace spida{
 
-FFTRVX::FFTRVX(const UniformGridX& grid) :
+FFTRVX::FFTRVX(const UniformGridRVX& grid) :
     m_nx(grid.getNx()),
     m_minx(grid.getMinX()),
     m_L(grid.getLX()),
@@ -30,16 +30,16 @@ FFTRVX::~FFTRVX()
 
 void FFTRVX::X_To_SX(const std::vector<double>& in,std::vector<dcmplx>& out) noexcept
 {
-    kiss_fftr(m_rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(in.data()),\
+    kiss_fftr(m_rcfg_forward,reinterpret_cast<const kiss_fft_scalar*>(in.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(out.data()));
     // Divide by FFT multiplier m_nx and adjust phase since physical grid is not assumed to start at 0
     for(auto i = 0; i < out.size(); i++)
         out[i] *= exp(ii*m_kx[i]*m_minx)/static_cast<double>(m_nx);
 }
 
-void FFTRVX::X_To_SX(const dcmplx* in,dcmplx* out) noexcept
+void FFTRVX::X_To_SX(const double* in,dcmplx* out) noexcept
 {
-    kiss_fftr(m_rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(in),\
+    kiss_fftr(m_rcfg_forward,reinterpret_cast<const kiss_fft_scalar*>(in),\
                   reinterpret_cast<kiss_fft_cpx*>(out));
     // Divide by FFT multiplier m_nx and adjust phase since physical grid is not assumed to start at 0
     for(auto i = 0; i < m_nx; i++)

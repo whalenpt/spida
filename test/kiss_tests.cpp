@@ -7,7 +7,7 @@
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <spida/helper/constants.h>
-#include <spida/grid/uniformX.h>
+#include <spida/grid/uniformCVX.h>
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
 
@@ -211,7 +211,7 @@ TEST(KISS_TEST,EXP_IMAG_TRIG_WAVE)
 
     double xmin = 0;
     double xmax = 1;
-    spida::UniformGridX grid(N,xmin,xmax);
+    spida::UniformGridCVX grid(N,xmin,xmax);
     const std::vector<double> x = grid.getX();
     const std::vector<double> kx = grid.getSX();
     std::vector<std::complex<double> > in(N, 0.);
@@ -314,7 +314,7 @@ TEST(KISS_TEST,GAUSS)
 
     double xmin = -6;
     double xmax = 6;
-    spida::UniformGridX grid(N,xmin,xmax);
+    spida::UniformGridCVX grid(N,xmin,xmax);
     double L = grid.getLX();
     const std::vector<double> x = grid.getX();
     const std::vector<double> kx = grid.getSX();
@@ -356,7 +356,7 @@ TEST(KISS_TEST,SECH)
     // make range large enough such that sech is near zero at xmin and xmax (FFT is periodic)
     double xmin = -6;
     double xmax = 6;
-    spida::UniformGridX grid(N,xmin,xmax);
+    spida::UniformGridCVX grid(N,xmin,xmax);
     double L = grid.getLX();
     const std::vector<double> x = grid.getX();
     const std::vector<double> kx = grid.getSX();
@@ -392,7 +392,7 @@ TEST(KISS_TEST,EXP_IMAG_TRIG_WAVE2)
 
     double xmin = 0;
     double xmax = 4;
-    spida::UniformGridX grid(N,xmin,xmax);
+    spida::UniformGridCVX grid(N,xmin,xmax);
     const std::vector<double> x = grid.getX();
     const std::vector<double> kx = grid.getSX();
 

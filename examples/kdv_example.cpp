@@ -4,16 +4,16 @@
  *    Email: whalenpt@gmail.com
  *    Status: Development
  *    Date: 08/27/21
- *    Description: Implementation of kdv PDE
+ *    Description: Implementation of kdv PDE using complex physical space values
  *
 ------------------------------------------------------------------------------*/
 
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
-#include <spida/SpidaX.h>
-#include <spida/grid/uniformX.h>
+#include <spida/grid/uniformCVX.h>
+#include <spida/SpidaCVX.h>
 #include <spida/helper/constants.h>
-#include <spida/solver/solverETDAS.h>
+#include <spida/rkstiff/ETDAS.h>
 #include <pwutils/report/dat.hpp>
 #include <fstream>
 
@@ -23,7 +23,7 @@ using namespace spida;
 class kDV
 {
     public: 
-        kDV(const UniformGridX& grid) : 
+        kDV(const UniformGridCVX& grid) : 
             L(grid.getNsx()),
             m_grid(grid), 
             m_spida(grid), 
@@ -45,11 +45,11 @@ class kDV
                 m_uphys[i] = -6.0*m_uphys[i]*m_uxphys[i];
             m_spida.X_To_SX(m_uphys,out);
         };
-        SpidaX& spida() {return m_spida;}
+        SpidaCVX& spida() {return m_spida;}
 
     private:
-        UniformGridX m_grid;
-        SpidaX m_spida;
+        UniformGridCVX m_grid;
+        SpidaCVX m_spida;
         std::vector<dcmplx> m_uphys;
         std::vector<dcmplx> m_uxphys;
         std::vector<dcmplx> m_uxsp;
@@ -60,9 +60,9 @@ int main()
     unsigned nx = 512;
     double minx = -150.0;
     double maxx = 150.0;
-    std::string outdir("kdv_files");
+    std::string outdir("kdv_files_CV");
 
-    UniformGridX grid(nx,minx,maxx);
+    UniformGridCVX grid(nx,minx,maxx);
     kDV model(grid);
     ETD34 solver(model.L,model.NL);
     solver.setEpsRel(1e-4);
@@ -87,26 +87,21 @@ int main()
 
     std::vector<dcmplx> uphys(nx);
     std::copy(std::cbegin(u0),std::cend(u0),std::begin(uphys));
-    dat::ReportData1D<double,dcmplx> report("X",x,uphys);
+    dat::ReportData1D<double,dcmplx> report("X_0",x,uphys);
     report.setDirPath(outdir);
     report.setItem("t",t0);
-    std::cout << "First physical space report file location: " << report.path(0) << std::endl;
+    std::cout << "First physical space report file location: " << report.path() << std::endl;
 
     std::vector<double> shifted_kx = grid.freqshift(grid.getSX());
     std::vector<dcmplx> shifted_usp = grid.freqshift(usp);
-    dat::ReportData1D<double,dcmplx> reportS("SX",shifted_kx,shifted_usp);
+    dat::ReportData1D<double,dcmplx> reportS("SX_0",shifted_kx,shifted_usp);
     reportS.setDirPath(outdir);
-    std::cout << "First spectral space report file location: " << reportS.path(0) << std::endl;
+    std::cout << "First spectral space report file location: " << reportS.path() << std::endl;
 
     std::ofstream os;
-    os.open(report.path(0));
     os << std::scientific << std::setprecision(8);
-    report.report(os);
-    os.close();
-
-    os.open(reportS.path(0));
-    reportS.report(os);
-    os.close();
+    os << report;
+    os << reportS;
 
     unsigned step_count = 0;
     unsigned report_count = 1;
@@ -118,28 +113,25 @@ int main()
         t += h;
         h = h_next;
         model.spida().SX_To_X(usp,uphys);
-        if(step_count % 4 == 0){
-            os.open(report.path(report_count));
-            report.report(os);
+        if(step_count % 16 == 0){
+            report.setName("X_" + std::to_string(report_count));
+            reportS.setName("SX_" + std::to_string(report_count));
             report.setItem("t",t);
-            os.close();
+            reportS.setItem("t",t);
             grid.freqshift(usp,shifted_usp);
-            os.open(reportS.path(report_count));
-            reportS.report(os);
-            os.close();
+            os << report;
+            os << reportS;
             report_count++;
         }
         step_count++;
     }
-    os.open(report.path(report_count));
-    report.report(os);
+    report.setName("X_" + std::to_string(report_count));
+    reportS.setName("SX_" + std::to_string(report_count));
     report.setItem("t",t);
+    reportS.setItem("t",t);
+    os << report;
+    os << reportS;
     os.close();
-    grid.freqshift(usp,shifted_usp);
-    os.open(reportS.path(report_count));
-    reportS.report(os);
-    os.close();
-
     return 0;
 }
 

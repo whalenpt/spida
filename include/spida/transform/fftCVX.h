@@ -17,7 +17,7 @@ namespace spida{
 class FFTCVX 
 {
     public:
-        explicit FFTCVX(const UniformGridX& grid);
+        explicit FFTCVX(const UniformGridCVX& grid);
         ~FFTCVX();
         FFTCVX()=delete;
         FFTCVX(const FFTCVX& sp)=delete;
