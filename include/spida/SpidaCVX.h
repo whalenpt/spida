@@ -1,4 +1,4 @@
-// SpidaX.h
+// SpidaCVX.h
 /*  
  *  Spectral integration/differentiation algorithms for 
  *  complex data on uniform grids with periodic boundaries. 
@@ -18,27 +18,27 @@
 #include "spida/helper/constants.h"
 
 namespace spida{
-  class UniformGridX;
-  class FFTX;
+  class UniformGridCVX;
+  class FFTCVX;
 
   // Assumes complex data
-  class SpidaX
+  class SpidaCVX
   {
     public:
-      SpidaX(const UniformGridX& grid);
-      SpidaX() = delete;
-      ~SpidaX();
+      SpidaCVX(const UniformGridCVX& grid);
+      SpidaCVX() = delete;
+      ~SpidaCVX();
       void dX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,int n = 1) noexcept; 
       void dSX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,int n = 1) noexcept; 
       const std::vector<double>& getX() const;
       const std::vector<double>& getSX() const;
       void X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept;
       void SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept; 
-      const UniformGridX& getGridX() const;
-      const FFTX& getTransformX() const;
+      const UniformGridCVX& getGridX() const;
+      const FFTCVX& getTransformX() const;
     private:
-      std::unique_ptr<UniformGridX> m_gr;
-      std::unique_ptr<FFTX> m_tr;
+      std::unique_ptr<UniformGridCVX> m_gr;
+      std::unique_ptr<FFTCVX> m_tr;
       std::vector<dcmplx> m_vs;
   };
 }

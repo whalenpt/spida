@@ -1,4 +1,4 @@
-// fftX.h
+// fftCVX.h
 /*
  * Wrappers for Fourier transform applied on a UniformGridX grid.
  * Transforms are non-unitary and assume angular frequency (kx = 2pi/L where L is grid length)
@@ -9,20 +9,19 @@
 #include <vector>
 #include <thread>
 #include "spida/helper/constants.h"
-#include "spida/grid/uniformX.h" 
+#include "spida/grid/uniformCVX.h" 
 #include "kiss_fft.h"
 
 namespace spida{
 
-class FFTX
+class FFTCVX 
 {
     public:
-        explicit FFTX(const UniformGridX& grid);
-        ~FFTX();
-        FFTX()=delete;
-        FFTX(const FFTX& sp)=delete;
-        FFTX& operator=(const FFTX& sp)=delete;
-
+        explicit FFTCVX(const UniformGridX& grid);
+        ~FFTCVX();
+        FFTCVX()=delete;
+        FFTCVX(const FFTCVX& sp)=delete;
+        FFTCVX& operator=(const FFTCVX& sp)=delete;
         void X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept; 
         void SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept; 
         void X_To_SX(const dcmplx* in,dcmplx* out) noexcept; 
