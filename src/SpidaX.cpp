@@ -30,7 +30,6 @@ namespace spida{
     unsigned nx = m_gr->getNx();
     for(auto i = 0; i < nx; i++)
         m_vs[i] = std::pow(ii*kx[i],n)*m_vs[i];
-        //m_vs[i] = std::pow(2.0*PI*ii*kx[i],n)*m_vs[i];
     m_tr->SX_To_X(m_vs,out);
   }
 

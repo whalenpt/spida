@@ -45,5 +45,48 @@ UniformGridX::UniformGridX(unsigned nx,double minX,double maxX) : GridX(nx,minX,
     m_sx = buildUniformSX(nx,minX,maxX);
 }
 
+std::vector<double> UniformGridX::freqshift(const std::vector<double>& in) const
+{
+    std::vector<double> out(in.size());
+    unsigned nx = getNx();
+    for(auto i = nx/2+1; i < nx; i++)
+        out[i-(nx/2+1)] = in[i];
+    for(auto i = 0; i <= nx/2; i++)
+        out[i+(nx/2-1)] = in[i];
+    return out;
 }
+
+std::vector<dcmplx> UniformGridX::freqshift(const std::vector<dcmplx>& in) const
+{
+    std::vector<dcmplx> out(in.size());
+    unsigned sz = in.size();
+    for(auto i = sz/2+1; i < sz; i++)
+        out[i-(sz/2+1)] = in[i];
+    for(auto i = 0; i <= sz/2; i++)
+        out[i+(sz/2-1)] = in[i];
+    return out;
+}
+
+void UniformGridX::freqshift(const std::vector<double>& in,std::vector<double>& out) const
+{
+    unsigned nx = getNx();
+    for(auto i = nx/2+1; i < nx; i++)
+        out[i-(nx/2+1)] = in[i];
+    for(auto i = 0; i <= nx/2; i++)
+        out[i+(nx/2-1)] = in[i];
+}
+
+void UniformGridX::freqshift(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) const
+{
+    unsigned nsx = getNsx();
+    for(auto i = nsx/2+1; i < nsx; i++)
+        out[i-(nsx/2+1)] = in[i];
+    for(auto i = 0; i <= nsx/2; i++)
+        out[i+(nsx/2-1)] = in[i];
+}
+
+
+}
+
+
 

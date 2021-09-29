@@ -78,8 +78,8 @@ void ReportHandler::reportTrack(const std::filesystem::path& dir_path,double t) 
 
 void ReportHandler::reportData(const std::filesystem::path& dir_path,int repNum) const
 {
-  report1D(dir_path,repNum);
-  report2D(dir_path,repNum);
+    report1D(dir_path,repNum);
+    report2D(dir_path,repNum);
 }
 
 

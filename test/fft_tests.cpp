@@ -6,7 +6,6 @@
 #include <spida/SpidaX.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
-#include <fftw3.h>
 #include <random>
 
 TEST(FFT_TEST,INVERSES)
@@ -125,7 +124,6 @@ TEST(FFT_TEST,DERIVATIVE_GAUSS)
         in[i] = exp(-pow(x[i],2));
     for(auto i = 0; i < x.size(); i++)
         expect[i] = -2.0*x[i]*exp(-pow(x[i],2));
-
 
     spida::SpidaX spidaX{grid};
     spidaX.dX(in,out);

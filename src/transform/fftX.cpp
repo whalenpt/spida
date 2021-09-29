@@ -35,6 +35,9 @@ void FFTX::X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexc
     // Divide by FFT multiplier m_nx and adjust phase since physical grid is not assumed to start at 0
     for(auto i = 0; i < out.size(); i++)
         out[i] *= exp(ii*m_kx[i]*m_minx)/static_cast<double>(m_nx);
+//    for(auto i = 0; i < out.size(); i++)
+//        out[i] /= static_cast<double>(m_nx);
+
 }
 
 void FFTX::X_To_SX(const dcmplx* in,dcmplx* out) noexcept
@@ -44,6 +47,9 @@ void FFTX::X_To_SX(const dcmplx* in,dcmplx* out) noexcept
     // Divide by FFT multiplier m_nx and adjust phase since physical grid is not assumed to start at 0
     for(auto i = 0; i < m_nx; i++)
         out[i] *= exp(ii*m_kx[i]*m_minx)/static_cast<double>(m_nx);
+
+//    for(auto i = 0; i < m_nx; i++)
+//        out[i] /= static_cast<double>(m_nx);
 }
 
 void FFTX::SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept
@@ -53,6 +59,10 @@ void FFTX::SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexc
         m_temp[i] = in[i]*exp(-ii*m_kx[i]*m_minx);
     kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_temp.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(out.data()));
+
+//    kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(in.data()),\
+//                  reinterpret_cast<kiss_fft_cpx*>(out.data()));
+
 }
 
 void FFTX::SX_To_X(const dcmplx* in,dcmplx* out) noexcept
@@ -63,6 +73,10 @@ void FFTX::SX_To_X(const dcmplx* in,dcmplx* out) noexcept
 
     kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_temp.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(out));
+
+//    kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(in),\
+//                  reinterpret_cast<kiss_fft_cpx*>(out));
+
 }
 
 
