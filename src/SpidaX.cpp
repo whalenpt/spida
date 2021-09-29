@@ -40,7 +40,7 @@ namespace spida{
         return;
     const std::vector<double>& kx = m_gr->getSX();
     for(auto i = 0; i < kx.size(); i++)
-        out[i] = std::pow(ii*kx[i],n)*m_vs[i];
+        out[i] = std::pow(ii*kx[i],n)*in[i];
   }
 
 }
