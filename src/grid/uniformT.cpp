@@ -9,31 +9,6 @@
 
 namespace spida{
 
-std::vector<double> buildUniformT(unsigned nt,double minT,double maxT)
-{
-    if(minT >= maxT){
-        std::string msg = "Error in buildUniformT: minT must be less than maxT.";
-        throw std::invalid_argument(msg);
-    }
-    std::vector<double> t(nt);
-    double dt = (maxT - minT)/static_cast<double>(nt-1);
-    for(auto i = 0; i < nt; i++) t[i] = minT + i*dt; 
-    return t;
-}
-
-std::vector<double> buildUniformST(unsigned nt,double minT,double maxT)
-{
-    if(minT >= maxT){
-        std::string msg = "Error in buildUniformST: minT must be less than maxT.";
-        throw std::invalid_argument(msg);
-    }
-    std::vector<double> full_st(nt/2+1);
-    double dst = 2.0*PI/(maxT-minT);
-    for(auto i = 0; i <= nt/2; i++)
-        full_st[i] = i*dst;
-    return full_st;
-}
-
 UniformGridT::UniformGridT(const UniformGridT& grid) : 
     GridT(grid.getNt(),grid.getMinT(),grid.getMaxT()),
     m_nst(grid.getNst()),
@@ -50,7 +25,7 @@ UniformGridT::UniformGridT(const UniformGridT& grid) :
     std::copy(std::cbegin(st),std::cend(st),std::begin(m_st));
 }
 
-UniformGridT::UniformGridT(unsigned int nt,double minT,double maxT) : 
+UniformGridT::UniformGridT(unsigned nt,double minT,double maxT) : 
     GridT(nt,minT,maxT),
     m_nst(nt/2+1),
     m_minST(indxToFreq(0)),
@@ -58,18 +33,48 @@ UniformGridT::UniformGridT(unsigned int nt,double minT,double maxT) :
     m_minI(0),
     m_maxI(nt/2)
 {
-    m_t = buildUniformT(nt,minT,maxT);
-    m_st = buildUniformST(nt,minT,maxT);
+    m_t = constructGridT(nt,minT,maxT);
+    m_st = constructGridST(nt,minT,maxT);
+}
+
+std::vector<double> UniformGridT::constructGridT(unsigned nt,double minT,double maxT) const
+{
+    std::vector<double> t(nt);
+    if(minT >= maxT){
+        std::string msg = "Error in constructGridT: minT must be less than maxT.";
+        throw std::invalid_argument(msg);
+    }
+    double dt = (maxT - minT)/static_cast<double>(nt-1);
+    for(auto i = 0; i < nt; i++) t[i] = minT + i*dt; 
+    return t;
+}
+
+std::vector<double> UniformGridT::constructGridST(unsigned nt,double minT,double maxT) const  
+{
+    std::vector<double> st(nt/2+1);
+    if(minT >= maxT){
+        std::string msg = "Error in constructGridST: minT must be less than maxT.";
+        throw std::invalid_argument(msg);
+    }
+    double dst = 2.0*PI/(maxT-minT);
+    for(auto i = 0; i <= nt/2; i++)
+        st[i] = i*dst;
+    return st;
 }
 
 
-UniformGridT::UniformGridT(unsigned int nt,double minT,double maxT,\
+UniformGridT::UniformGridT(unsigned nt,double minT,double maxT,\
         double minST,double maxST) : 
     GridT(nt,minT,maxT)
 {
+    m_t = constructGridT(nt,minT,maxT);
+    constructGridST(nt,minT,maxT,minST,maxST);
+}
+
+void UniformGridT::constructGridST(unsigned nt,double minT,double maxT,double minST,double maxST)  
+{
     verifyFrequencyRange(minST,maxST);
-    m_t = buildUniformT(nt,minT,maxT);
-    std::vector<double> full_st = buildUniformST(nt,minT,maxT);
+    std::vector<double> full_st = constructGridST(nt,minT,maxT);
     m_minI = pw::nearestIndex(full_st,minST);
     m_maxI = pw::nearestIndex(full_st,maxST);
     m_nst = m_maxI-m_minI+1;
