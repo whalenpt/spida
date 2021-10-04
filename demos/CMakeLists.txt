@@ -1,41 +1,30 @@
 
 cmake_minimum_required(VERSION 3.19)
 
-add_executable(interp_ex interp_example.cpp)
-add_executable(grid_ex grid_example.cpp)
-add_executable(hankel_ex hankel_example.cpp)
-add_executable(transformT_ex transformT_example.cpp)
-add_executable(transformR_ex transformR_example.cpp)
-add_executable(transformRT_ex transformRT_example.cpp)
-add_executable(kdvCV_ex kdv_example.cpp)
-add_executable(kdvRV_ex kdv_exampleRV.cpp)
-add_executable(kdvPropagator_ex kdv_example_propagator.cpp)
+add_executable(interp interp_demo.cpp)
+add_executable(grid grid_demo.cpp)
+add_executable(hankel hankel.cpp)
+add_executable(transformT transformT.cpp)
+add_executable(transformR transformR.cpp)
+add_executable(transformRT transformRT.cpp)
+add_executable(kdvCV kdvCV.cpp)
+add_executable(kdvRV kdvRV.cpp)
+add_executable(kdvPropagator kdv_propagator.cpp)
 
-target_link_libraries(interp_ex PUBLIC
+target_link_libraries(interp PUBLIC
     SPIDA::spida
     pw::pwutils
     ParamBin::parambin
 )
 
-target_link_libraries(grid_ex PUBLIC SPIDA::spida)
-target_link_libraries(hankel_ex PUBLIC SPIDA::spida)
-
-target_link_libraries(transformRT_ex PUBLIC 
-    SPIDA::spida
-    pw::pwutils
-)
-target_link_libraries(transformT_ex PUBLIC 
-    SPIDA::spida
-    pw::pwutils
-)
-target_link_libraries(transformR_ex PUBLIC 
-    SPIDA::spida
-    pw::pwutils
-)
-
-target_link_libraries(kdvPropagator_ex PUBLIC SPIDA::spida pw::pwutils)
-target_link_libraries(kdvCV_ex PUBLIC SPIDA::spida pw::pwutils)
-target_link_libraries(kdvRV_ex PUBLIC SPIDA::spida pw::pwutils)
+target_link_libraries(grid PUBLIC SPIDA::spida)
+target_link_libraries(hankel PUBLIC SPIDA::spida)
+target_link_libraries(transformRT PUBLIC SPIDA::spida pw::pwutils)
+target_link_libraries(transformT PUBLIC SPIDA::spida pw::pwutils)
+target_link_libraries(transformR PUBLIC SPIDA::spida pw::pwutils)
+target_link_libraries(kdvPropagator PUBLIC SPIDA::spida pw::pwutils)
+target_link_libraries(kdvCV PUBLIC SPIDA::spida pw::pwutils)
+target_link_libraries(kdvRV PUBLIC SPIDA::spida pw::pwutils)
 
 
 
