@@ -23,7 +23,7 @@ ETD34::ETD34(const LinOp& Lop,const NLfunc& NL)
     c1 = 0.0; c2 = 1.0/2; c3 = 1.0/2; c4 = 1.0; c5 = 1.0;
     N1_init = false;
     statCenter().setHeader("ETD34 STATS");
-    statCenter().addCounter("Nonlinear Function Evaluations",4);
+    statCenter().addCounter("Nonlinear Function Evaluations");
 }
 
 void ETD34::worker_coeff(double dstep,int tid){
@@ -87,9 +87,9 @@ void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew
         std::vector<dcmplx>& errVec) noexcept
 {
     if(!N1_init){
-        //SolverCV::NL().nonLinResponse(in,N1);
         SolverCV::NL()(in,N1);
         N1_init = true;
+        statCenter().incrementCounter("Nonlinear Function Evaluations",1);
     }
     else if(SolverCV_AS::accept()){
         for(int i = 0; i < m_sz; i++) 
@@ -118,6 +118,8 @@ void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew
 
     for (int i = 0; i < m_sz; i++)
         errVec[i] = a54[i]*(N4[i] - N5[i]);
+
+    statCenter().incrementCounter("Nonlinear Function Evaluations",4);
 }
 
 ETD35::ETD35(const LinOp& Lop,const NLfunc& NL)
@@ -132,7 +134,7 @@ ETD35::ETD35(const LinOp& Lop,const NLfunc& NL)
     c5 = 3.0/4.0; c6 = 1.0; c7 = 1.0; 
     N1_init = false;
     statCenter().setHeader("ETD35 STATS");
-    statCenter().addCounter("Nonlinear Function Evaluations",6);
+    statCenter().addCounter("Nonlinear Function Evaluations");
 }
 
 void ETD35::worker_coeff(double dstep,int tid){
@@ -277,9 +279,12 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
     if(!N1_init){
         SolverCV::NL()(in,N1);
         N1_init = true;
+        statCenter().incrementCounter("Nonlinear Function Evaluations",1);
     }
-    if(SolverCV_AS::accept())
+    if(SolverCV_AS::accept()){
         SolverCV::NL()(ynew,N1);
+        statCenter().incrementCounter("Nonlinear Function Evaluations",1);
+    }
 
     unsigned nthreads = SolverCV::threadManager().getNumThreads();
     std::vector<unsigned> bounds = SolverCV::threadManager().getBounds(m_sz);
@@ -347,6 +352,7 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
     for(auto t : threads)
         delete t;
     threads.clear();
+    statCenter().incrementCounter("Nonlinear Function Evaluations",5);
 }
 
 

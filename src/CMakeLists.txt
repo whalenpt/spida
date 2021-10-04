@@ -10,15 +10,15 @@ set(SRC_FILES
     SpidaCHEBX.cpp
     ChebInterpX.cpp
 	helper/interp.cpp
+    grid/grid.cpp
     grid/chebX.cpp
     grid/uniformX.cpp
     grid/uniformRVX.cpp
     grid/uniformCVX.cpp
 	grid/uniformT.cpp
 	grid/besselR.cpp
-    grid/grid.cpp
-	report/reportcenter.cpp
-	report/reporthandler.cpp
+	propagator/propagator.cpp
+	propagator/reporthandler.cpp
 	shape/shapeT.cpp
 	shape/shapeR.cpp
 	rkstiff/solver.cpp
@@ -53,8 +53,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/grid/chebX.h"
    "${INCL_DIR}/grid/besselR.h"
    "${INCL_DIR}/propagator/propagator.h"
-   "${INCL_DIR}/report/reportcenter.h"
-   "${INCL_DIR}/report/reporthandler.h"
+   "${INCL_DIR}/propagator/reporthandler.h"
    "${INCL_DIR}/shape/shape.h"
    "${INCL_DIR}/shape/shapeT.h"
    "${INCL_DIR}/shape/shapeR.h"

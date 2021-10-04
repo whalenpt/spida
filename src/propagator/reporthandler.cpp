@@ -1,9 +1,10 @@
 
-#include "spida/report/reporthandler.h"
+#include "spida/propagator/reporthandler.h"
 #include <fstream>
 #include <iostream>
 
 namespace spida{
+
 
 void ReportHandler::addReport(std::unique_ptr<pw::ReportData1D> def) 
 {
@@ -30,32 +31,30 @@ void ReportHandler::setItem(const std::string& key,double val)
         (*it)->setItem(key,val);
 }
 
-void ReportHandler::report1D(const std::filesystem::path& dir_path,int repNum) const
+void ReportHandler::report1D(const std::filesystem::path& dir_path,int rep_num) const
 {
     std::ofstream os;
     for(vec1D::const_iterator it = m_defs_1D.cbegin(); it != m_defs_1D.cend(); it++){
-        auto file_path = (*it)->generatePath(dir_path,repNum);
+        (*it)->setDirPath(dir_path);
         try{
-            os.open(file_path);
-            (*it)->report(os);
+            (*it)->report(os,rep_num);
             os.close();
         } catch(...){
-            std::cout << "Failed to report file: " << file_path.string() << std::endl;
+            std::cout << "Failed to report file: " << (*it)->path(rep_num) << std::endl;
         }
     }
 }
 
-void ReportHandler::report2D(const std::filesystem::path& dir_path,int repNum) const
+void ReportHandler::report2D(const std::filesystem::path& dir_path,int rep_num) const
 {
     std::ofstream os;
     for(vec2D::const_iterator it = m_defs_2D.cbegin(); it != m_defs_2D.cend(); it++){
-        auto file_path = (*it)->generatePath(dir_path,repNum);
+        (*it)->setDirPath(dir_path);
         try{
-            os.open(file_path);
-            (*it)->report(os);
+            (*it)->report(os,rep_num);
             os.close();
         } catch(...){
-            std::cout << "Failed to report file: " << file_path.string() << std::endl;
+            std::cout << "Failed to report file: " << (*it)->path(rep_num) << std::endl;
         }
     }
 }
@@ -64,14 +63,13 @@ void ReportHandler::reportTrack(const std::filesystem::path& dir_path,double t) 
 {
     std::ofstream os;
     for(vecTrack::const_iterator it = m_tracker_defs.cbegin(); it != m_tracker_defs.cend(); it++){
-        auto file_path = (*it)->generatePath(dir_path);
+        (*it)->setDirPath(dir_path);
         (*it)->updateTracker(t);
         try{
-            os.open(file_path);
             (*it)->report(os);
             os.close();
         } catch(...){
-            std::cout << "Failed to report file: " << file_path.string() << std::endl;
+            std::cout << "Failed to report file: " << (*it)->path() << std::endl;
         }
     }
 }

@@ -38,7 +38,7 @@ int main()
 
     spida::HankelTransformR transform(gridR);
     dat::ReportData1D<double,double> in_report("R",gridR.getR(),u);
-    in_report.setLabelX("r");
+    in_report.setItem("xlabel","r");
     std::cout << in_report.path().string() << std::endl;
 
     std::ofstream os;
@@ -47,7 +47,7 @@ int main()
 
     transform.R_To_SR(u,v);
     dat::ReportData1D<double,double> out_report("SR",gridR.getSR(),v);
-    out_report.setLabelX("kr");
+    out_report.setItem("xlabel","kr");
     os << std::scientific << std::setprecision(8);
     os << out_report;
 
@@ -58,7 +58,7 @@ int main()
 
     transform.R_To_SR(ucmplx,vcmplx);
     dat::ReportComplexData1D<double,double> cmplx_report("SRcmplx",gridR.getSR(),vcmplx);
-    cmplx_report.setLabelX("kr");
+    cmplx_report.setItem("xlabel","kr");
     std::cout << cmplx_report.path() << std::endl;
     os << cmplx_report;
     os.close();

@@ -1,6 +1,5 @@
 
 #include "spida/rkstiff/solver.h"
-#include "spida/report/reportcenter.h"
 #include "spida/helper/constants.h"
 #include "spida/propagator/propagator.h"
 
@@ -17,26 +16,16 @@
 
 namespace spida{
 
-//SolverCV::SolverCV(ModelCV* model)
 SolverCV::SolverCV(const LinOp& L,const NLfunc& NL)
  :  m_L(L),
     m_NL(NL),
-    m_report_center(nullptr),
     m_thmgt(1)
 { 
     m_tcurrent = 0.0;
     m_dt_last = 0.0;
     m_log_progress = false;
-
-    m_stat.addTimer("Computer Time");
-    m_stat.addTimer("Solver Stepping");
-    m_stat.addTimer("Timer Coefficient");
-    m_stat.addClock("Clock Computer Time");
-    m_stat.addClock("Clock Stepping");
-    m_stat.addClock("Clock Coefficient");
-    m_stat.addCounter("Coefficient Evals",1);
+    m_stat.setLogFrequency(1);
 }
-
 
 SolverCV::~SolverCV() {}
 
@@ -45,34 +34,25 @@ unsigned SolverCV::size() const
     return m_L.size();
 }
 
-bool SolverCV::evolve(double t0,double tf,double& dt) noexcept
-{
-    if(!m_pr)
-        return false;
-    bool success = evolve(m_pr->propagator(),t0,tf,dt);
-    return success;
-}
-
 void SolverCV::computeCo(double dt) noexcept
 {
     if(fabs(dt-m_dt_last) > NEAR_ZERO) {
         m_dt_last = dt;
-        m_stat.startClock("Clock Coefficient");
-        m_stat.startTimer("Timer Coefficient");
+        if(m_log_progress){
+            m_stat.startClock("Clock Coefficient");
+            m_stat.startTimer("Timer Coefficient");
+        }
         updateCoefficients(dt);
-        m_stat.endTimer("Timer Coefficient");
-        m_stat.endClock("Clock Coefficient");
-        m_stat.incrementCounter("Coefficient Evals");
+        if(m_log_progress){
+            m_stat.endTimer("Timer Coefficient");
+            m_stat.endClock("Clock Coefficient");
+            m_stat.incrementCounter("Coefficient Evals");
+        }
     }
 }
 
-void SolverCV::fileReportStats() {
-
-    if(!m_report_center)
-        return;
-
-	std::filesystem::path local_path("solver_stat.dat");
-    std::filesystem::path full_path = m_report_center->dirPath() / local_path;
+void SolverCV::fileReportStats(std::filesystem::path& dirpath) {
+    std::filesystem::path full_path = dirpath / std::filesystem::path("solver_stat.dat");
     std::ofstream fout(full_path);
     m_stat.report(fout);
     fout.close();
@@ -83,37 +63,6 @@ void SolverCV::reportStats()
     m_stat.report(std::cout);
 }
 
-void SolverCV::setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath)
-{
-    if(m_report_center)
-        m_report_center.reset();
-    if(m_pr)
-        m_pr.reset();
-
-    m_pr = std::move(pr);
-//    if(m_model->dimension() == Dimension::D1){
-    m_report_center = std::unique_ptr<ReportCenter1D>(new ReportCenter1D(m_pr.get(),dirpath,1,10000));
-//    } else if(m_model->dimension() == Dimension::D2) {
-//        m_report_center = std::unique_ptr<ReportCenter2D>(new ReportCenter2D(m_pr.get(),dirpath,1,1,250));
-//    } else{
-//        throw pw::Exception("SolverCV::setFileReport","SolverAS can only handle"\
-//                "1 or 2 dimensions. ");
-//    }
-    m_report_center->setLogProgress(m_log_progress);
-}
-
-void SolverCV::setTargetDirectory(const std::filesystem::path& dirpath)
-{
-    if(!m_report_center)
-        return;
-    m_report_center->setDirPath(dirpath);
-}
-
-void SolverCV::setLogProgress(bool val) {
-    m_log_progress = val;
-    if(m_report_center)
-        m_report_center->setLogProgress(val);
-}
 
 SolverCV_AS::SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv)
  :  SolverCV(L,NL), m_yv(SolverCV::size()), m_errv(SolverCV::size())
@@ -121,8 +70,6 @@ SolverCV_AS::SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv)
     m_accept = false;
     m_control = std::unique_ptr<Control>(new Control(sf,qv,1.0e-3,1.25,0.85,SolverCV::size(),\
                 SolverCV::threadManager()));
-    SolverCV::statCenter().addCounter("Step Size Reductions",1);
-    SolverCV::statCenter().addCounter("Step Size Increases",1);
 }
 
 SolverCV_AS::~SolverCV_AS() { }
@@ -140,8 +87,10 @@ void SolverCV_AS::setEpsRel(double val)
 bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
     
 {
-    statCenter().startClock("Clock Computer Time");
-    statCenter().startTimer("Computer Time");
+    if(SolverCV::logProgress()){
+        statCenter().startClock("Clock Computer Time");
+        statCenter().startTimer("Computer Time");
+    }
     double h_cur = h;
     if(!(m_control->checkStepSize(h_cur)))
         return false;
@@ -154,20 +103,24 @@ bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
         if(!(m_control->checkLoopCount(num_loops)))
             return false;
         computeCo(h_cur);
-        statCenter().startTimer("Solver Stepping");
-        statCenter().startClock("Clock Stepping");
+        if(SolverCV::logProgress()){
+            statCenter().startTimer("Solver Stepping");
+            statCenter().startClock("Clock Stepping");
+        }
         updateStages(in,m_yv,m_errv);
-        statCenter().endClock("Clock Stepping");
-        statCenter().endTimer("Solver Stepping");
-        statCenter().incrementCounter("Nonlinear Function Evaluations");
+        if(SolverCV::logProgress()){
+            statCenter().endClock("Clock Stepping");
+            statCenter().endTimer("Solver Stepping");
+        }
   
         s = m_control->computeS(m_errv,m_yv);
         if(s < 1.0){
-            if(SolverCV::logProgress())
-                std::cout << "Step rejected with s = " << s << std::endl;
             h_cur = s*h_cur;
             m_accept = false;
-            statCenter().incrementCounter("Step Size Reductions");
+            if(SolverCV::logProgress()){
+                std::cout << "Step rejected with s = " << s << std::endl;
+                statCenter().incrementCounter("Step Size Reductions");
+            }
         }
         else{
             SolverCV::setCurrentTime(SolverCV::currentTime()+h_cur);
@@ -175,9 +128,10 @@ bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
                 in[i] = m_yv[i];
             if(s > 1.0) {
                 hNext = s*h_cur;
-                statCenter().incrementCounter("Step Size Increases");
-                if(SolverCV::logProgress())
+                if(SolverCV::logProgress()){
                     std::cout << "step increased with s = " << s << std::endl;
+                    statCenter().incrementCounter("Step Size Increases");
+                }
             }
             else
                 hNext = h_cur;
@@ -188,40 +142,62 @@ bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
         if(!(m_control->checkStepSize(h_cur)))
             return false;
     }
-    statCenter().endClock("Clock Computer Time");
-    statCenter().endTimer("Computer Time");
-    statCenter().statUpdate();
+    if(SolverCV::logProgress()){
+        statCenter().endClock("Clock Computer Time");
+        statCenter().endTimer("Computer Time");
+        statCenter().statUpdate();
+    }
     return true;
 }
 
-bool SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept
+bool SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double h) noexcept
 {
-    if(fileReportOn())
-        SolverCV::reportCenter()->report(t0);
-
     SolverCV::setCurrentTime(t0);
-    if(dt > (tf-t0))
-        dt = tf-t0;
-
+    if(h > (tf-t0))
+        h = tf-t0;
+    double dt = h;
     double dt_next;
     bool report = true;
     while(SolverCV::currentTime() < tf && report){
         if(!SolverCV_AS::step(u,dt,dt_next))
             return false;
-        if(fileReportOn())
-            report = SolverCV::reportCenter()->stepUpdate(SolverCV::currentTime());
-
         if(SolverCV::currentTime() + dt_next > tf)
             dt = tf - SolverCV::currentTime();
         else
             dt = dt_next;
     }
-    if(fileReportOn())
-        reportCenter()->report(SolverCV::currentTime());
+    if(SolverCV::logProgress())
+        statCenter().report();
     return true;
 }
 
-//SolverCV_CS::SolverCV_CS(ModelCV* model) :
+bool SolverCV_AS::evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept
+{
+    propagator.report(t0);
+    SolverCV::setCurrentTime(t0);
+    if(h > (tf-t0))
+        h = tf-t0;
+    double dt = h;
+    double dt_next;
+    bool report = true;
+    while(SolverCV::currentTime() < tf && report){
+        if(!SolverCV_AS::step(propagator.propagator(),dt,dt_next))
+            return false;
+        report = propagator.stepUpdate(SolverCV::currentTime());
+        if(SolverCV::currentTime() + dt_next > tf)
+            dt = tf - SolverCV::currentTime();
+        else
+            dt = dt_next;
+    }
+    propagator.report(SolverCV::currentTime());
+    if(SolverCV::logProgress())
+        statCenter().report();
+    if(propagator.logProgress())
+        propagator.reportStats();
+    return true;
+}
+
+
 SolverCV_CS::SolverCV_CS(const LinOp& L,const NLfunc& NL) :
     SolverCV(L,NL)
 {
@@ -230,42 +206,64 @@ SolverCV_CS::SolverCV_CS(const LinOp& L,const NLfunc& NL) :
 
 void SolverCV_CS::step(std::vector<dcmplx>& in,double dt) noexcept
 {
-    statCenter().startClock("Clock Computer Time");
-    statCenter().startTimer("Computer Time");
+    if(SolverCV::logProgress()){
+        statCenter().startClock("Clock Computer Time");
+        statCenter().startTimer("Computer Time");
+    }
 
     computeCo(dt);
-    statCenter().startClock("Clock Stepping");
-    statCenter().startTimer("Solver Stepping");
+
+    if(SolverCV::logProgress()){
+        statCenter().startClock("Clock Stepping");
+        statCenter().startTimer("Solver Stepping");
+    }
+
     updateStages(in);
-    statCenter().endTimer("Solver Stepping");
-    statCenter().endClock("Clock Stepping");
-
     SolverCV::setCurrentTime(SolverCV::currentTime()+dt);
-    statCenter().endTimer("Computer Time");
-    statCenter().endClock("Clock Computer Time");
 
-    statCenter().incrementCounter("Nonlinear Function Evaluations");
-    statCenter().statUpdate();
+    if(SolverCV::logProgress()){
+        statCenter().endTimer("Solver Stepping");
+        statCenter().endClock("Clock Stepping");
+        statCenter().endTimer("Computer Time");
+        statCenter().endClock("Clock Computer Time");
+        statCenter().incrementCounter("Nonlinear Function Evaluations");
+        statCenter().statUpdate();
+
+    }
 }
 
-bool SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept
+bool SolverCV_CS::evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept
 {
     SolverCV::setCurrentTime(t0);
-    if(fileReportOn())
-        reportCenter()->report(t0);
+    propagator.report(t0);
     bool report = true;
     while(SolverCV::currentTime() < tf && report){
-        if ((SolverCV::currentTime() + dt) > tf)
-            dt = tf - SolverCV::currentTime();
-        SolverCV_CS::step(u,dt);
-        if(fileReportOn())
-            report = reportCenter()->stepUpdate(SolverCV::currentTime());
+        if ((SolverCV::currentTime() + h) > tf)
+            h = tf - SolverCV::currentTime();
+        SolverCV_CS::step(propagator.propagator(),h);
+        report = propagator.stepUpdate(SolverCV::currentTime());
     }
-    if(fileReportOn())
-        reportCenter()->report(SolverCV::currentTime());
+    propagator.report(SolverCV::currentTime());
+    if(SolverCV::logProgress())
+        statCenter().report();
+    if(propagator.logProgress())
+        propagator.reportStats();
     return true;
 }
 
+bool SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double h) noexcept
+{
+    SolverCV::setCurrentTime(t0);
+    bool report = true;
+    while(SolverCV::currentTime() < tf && report){
+        if ((SolverCV::currentTime() + h) > tf)
+            h = tf - SolverCV::currentTime();
+        SolverCV_CS::step(u,h);
+    }
+    if(SolverCV::logProgress())
+        statCenter().report();
+    return true;
+}
 
 Control::Control(double safetyF,double qv,double epsR,\
         double inF,double decF,int dim,pw::ThreadManager& thmgt)

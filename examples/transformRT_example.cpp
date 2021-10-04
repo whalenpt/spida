@@ -59,8 +59,8 @@ int main()
 
     // Report inputs
     dat::ReportData2D<double,double,double> in_report("RT",gridR.getR(),gridT.getT(),u);
-    in_report.setLabelX("r");
-    in_report.setLabelY("t");
+    in_report.setItem("xlabel","r");
+    in_report.setItem("ylabel","t");
 
     std::ofstream os;
     os << std::scientific << std::setprecision(3);
@@ -83,16 +83,16 @@ int main()
     transform.SRST_To_RT(v,uop);
 
     dat::ReportComplexData2D<double,double,double> out_report("SRST",gridR.getSR(),gridT.getST(),v);
-    out_report.setLabelX("kr");
-    out_report.setLabelY("omega");
+    out_report.setItem("xlabel","kr");
+    out_report.setItem("ylabel","omega");
 
     os << std::scientific << std::setprecision(8);
     std::cout << out_report.path() << std::endl;
     os << out_report;
 
     dat::ReportData2D<double,double,double> rinop("RTb",gridR.getR(),gridT.getT(),uop);
-    rinop.setLabelX("r");
-    rinop.setLabelY("t");
+    rinop.setItem("xlabel","r");
+    rinop.setItem("ylabel","t");
 
     os << std::scientific << std::setprecision(3);
     std::cout << rinop.path() << std::endl;
@@ -108,27 +108,27 @@ int main()
     transform.SRST_To_RST(v,w2);
     transform.SRST_To_SRT(v,zeta2);
 
-
     dat::ReportComplexData2D<double,double,double> rst_report("RST",gridR.getR(),gridT.getST(),w);
-    rst_report.setLabelX("r");
-    rst_report.setLabelY("omega");
+    rst_report.setItem("xlabel","r");
+    rst_report.setItem("ylabel","omega");
     std::cout << rst_report.path() << std::endl;
     os << rst_report;
 
     dat::ReportData2D<double,double,double> srt_report("SRT",gridR.getSR(),gridT.getT(),zeta);
-    srt_report.setLabelX("kr");
-    srt_report.setLabelY("t");
+
+    srt_report.setItem("xlabel","kr");
+    srt_report.setItem("ylabel","t");
     std::cout << srt_report.path() << std::endl;
     os << srt_report;
 
     dat::ReportComplexData2D<double,double,double> rst_report2("RSTb",gridR.getR(),gridT.getST(),w2);
-    rst_report2.setLabelX("r");
-    rst_report2.setLabelY("omega");
+    rst_report2.setItem("xlabel","r");
+    rst_report2.setItem("ylabel","omega");
     os << rst_report2;
 
     dat::ReportData2D<double,double,double> srt_report2("SRTb",gridR.getSR(),gridT.getT(),zeta2);
-    srt_report2.setLabelX("kr");
-    srt_report2.setLabelY("t");
+    srt_report2.setItem("xlabel","kr");
+    srt_report2.setItem("ylabel","t");
     os << srt_report2;
 
     // Multithread speedup

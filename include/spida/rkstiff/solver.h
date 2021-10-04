@@ -22,33 +22,29 @@ constexpr auto MAX_LOOP = 100;
 using pw::StatCenter;
 
 class PropagatorCV;
-class ReportCenter;
-//class ModelCV;
 using NLfunc = std::function<void(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)>; 
 using LinOp = std::vector<dcmplx>;
 
 class SolverCV
 {
   public:
-      //SolverCV(ModelCV* model);
       SolverCV(const LinOp& L,const NLfunc& NL);
       virtual ~SolverCV();
-      virtual bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept = 0;
-      bool evolve(double t0,double tf,double& dt) noexcept;
+
+      // evolve propagates a vector u from t0 to tf using the class LinOp and NLfunc
+      // t0  is initial time, tf is final time, h_init is initial step size
+      virtual bool evolve(std::vector<dcmplx>& u,double t0,double tf,double h_init) noexcept = 0;
+
+      // evolve with a propagator
+      virtual bool evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept = 0;
 
       void computeCo(double dt) noexcept;
       LinOp& L() {return m_L;}
       NLfunc& NL() {return m_NL;}
       unsigned size() const;
 
-      void setFileReport(std::unique_ptr<PropagatorCV> pr,const std::filesystem::path& dirpath);
-      void setTargetDirectory(const std::filesystem::path& dirpath);
-      bool fileReportOn() const {return (m_report_center ? true : false);}
-      PropagatorCV* propagatorCV() {return m_pr.get();}
-      ReportCenter* reportCenter() {return m_report_center.get();}
-
-      void setStatFrequency(int val) {m_stat.setReportFrequency(val);}
-      void setLogProgress(bool val); 
+      void setLogProgress(bool val) { m_log_progress = val; }
+      void setLogFrequency(unsigned val) { m_stat.setLogFrequency(val);};
       void setCurrentTime(double t) {m_tcurrent = t;}
 
       void setNumThreads(unsigned val) {m_thmgt.setNumThreads(val);}
@@ -57,9 +53,9 @@ class SolverCV
 
       double currentTime() {return m_tcurrent;}
       double dtLast() {return m_dt_last;}
-      bool logProgress() {return m_log_progress;}
 
-      void fileReportStats();
+      bool logProgress() {return m_log_progress;}
+      void fileReportStats(std::filesystem::path& dirpath);
       void reportStats();
       StatCenter& statCenter() {return m_stat;}
 
@@ -68,8 +64,6 @@ class SolverCV
       LinOp m_L;
       NLfunc m_NL;
 
-      std::unique_ptr<PropagatorCV> m_pr;
-      std::unique_ptr<ReportCenter> m_report_center;
       StatCenter m_stat;
       double m_tcurrent;
       double m_dt_last;
@@ -118,9 +112,18 @@ class SolverCV_AS : public SolverCV
   public:
       SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv);
       virtual ~SolverCV_AS(); 
-      bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& h_next) noexcept;
+
+      // step takes one numerical step of the vector u with recommended step size h, 
+      // though potentially not h (if h is too large to satisfy the error control).
+      // Next step is recommended to be of size h_next
       bool step(std::vector<dcmplx>& u,double& h,double& h_next) noexcept;
+
+      // numerically propagates u from t0 to tf with initial step size h
+      bool evolve(std::vector<dcmplx>& u,double t0,double tf,double h) noexcept;
   
+      // evolve with a propagator
+      bool evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept;
+
       void setIncrementThreshold(double val); 
       void setDecrementThreshold(double val);
       void setEpsRel(double val);
@@ -145,8 +148,13 @@ class SolverCV_CS : public SolverCV
   public:
       SolverCV_CS(const LinOp& L,const NLfunc& NL);
       virtual ~SolverCV_CS() {};
+      // takes one numerical step with a step of size h
       void step(std::vector<dcmplx>& u,double h) noexcept;
-      bool evolve(std::vector<dcmplx>& u,double t0,double tf,double& dt) noexcept;
+      // steps the vector u from time t0 to time tf with step size h
+      bool evolve(std::vector<dcmplx>& u,double t0,double tf,double h) noexcept;
+      // evolve with a propagator
+      bool evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept;
+
       void setCountTime(bool val) {m_count_time = val;}
   private:
       virtual void updateCoefficients([[maybe_unused]] double dt) noexcept {};
