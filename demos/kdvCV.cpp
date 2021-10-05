@@ -87,21 +87,21 @@ int main()
 
     std::vector<dcmplx> uphys(nx);
     std::copy(std::cbegin(u0),std::cend(u0),std::begin(uphys));
-    dat::ReportData1D<double,dcmplx> report("X_0",x,uphys);
+    dat::ReportData1D<double,dcmplx> report("X",x,uphys);
     report.setDirPath(outdir);
     report.setItem("t",t0);
-    std::cout << "First physical space report file location: " << report.path() << std::endl;
+    std::cout << "First physical space report file location: " << report.path(0) << std::endl;
 
     std::vector<double> shifted_kx = grid.freqshift(grid.getSX());
     std::vector<dcmplx> shifted_usp = grid.freqshift(usp);
-    dat::ReportData1D<double,dcmplx> reportS("SX_0",shifted_kx,shifted_usp);
+    dat::ReportData1D<double,dcmplx> reportS("SX",shifted_kx,shifted_usp);
     reportS.setDirPath(outdir);
-    std::cout << "First spectral space report file location: " << reportS.path() << std::endl;
+    std::cout << "First spectral space report file location: " << reportS.path(0) << std::endl;
 
     std::ofstream os;
     os << std::scientific << std::setprecision(8);
-    os << report;
-    os << reportS;
+    report.report(os,0);
+    reportS.report(os,0);
 
     unsigned step_count = 0;
     unsigned report_count = 1;
@@ -114,23 +114,19 @@ int main()
         h = h_next;
         model.spida().SX_To_X(usp,uphys);
         if(step_count % 16 == 0){
-            report.setName("X_" + std::to_string(report_count));
-            reportS.setName("SX_" + std::to_string(report_count));
             report.setItem("t",t);
             reportS.setItem("t",t);
             grid.freqshift(usp,shifted_usp);
-            os << report;
-            os << reportS;
+            report.report(os,report_count);
+            reportS.report(os,report_count);
             report_count++;
         }
         step_count++;
     }
-    report.setName("X_" + std::to_string(report_count));
-    reportS.setName("SX_" + std::to_string(report_count));
     report.setItem("t",t);
     reportS.setItem("t",t);
-    os << report;
-    os << reportS;
+    report.report(os,report_count);
+    reportS.report(os,report_count);
     os.close();
     return 0;
 }
