@@ -20,9 +20,9 @@ namespace spida {
 
   void HankelTransformR::R_To_SR(const double* in,double* out) 
   {
-      for(unsigned int m = 0; m < m_nr; m++){
+      for(unsigned m = 0; m < m_nr; m++){
           double sum = 0.0;
-          for(unsigned int k = 0; k < m_nr; k++)
+          for(unsigned k = 0; k < m_nr; k++)
               sum += m_Ymk[m*m_nr+k]*in[k];
           out[m] = m_alpha*sum;
       }
@@ -30,9 +30,9 @@ namespace spida {
 
   void HankelTransformR::R_To_SR(const dcmplx* in,dcmplx* out) 
   {
-      for(unsigned int m = 0; m < m_nr; m++){
+      for(unsigned m = 0; m < m_nr; m++){
           dcmplx sum = 0.0;
-          for(unsigned int k = 0; k < m_nr; k++)
+          for(unsigned k = 0; k < m_nr; k++)
               sum += m_Ymk[m*m_nr+k]*in[k];
           out[m] = m_alpha*sum;
       }
@@ -40,9 +40,9 @@ namespace spida {
 
   void HankelTransformR::SR_To_R(const double* in,double* out) 
   {
-      for(unsigned int k = 0; k < m_nr; k++){
+      for(unsigned k = 0; k < m_nr; k++){
           double sum = 0.0;
-          for(unsigned int m = 0; m < m_nr; m++)
+          for(unsigned m = 0; m < m_nr; m++)
               sum += m_Ymk[k*m_nr+m]*in[m];
           out[k] = sum/m_alpha;
       }
@@ -51,9 +51,9 @@ namespace spida {
 
   void HankelTransformR::SR_To_R(const dcmplx* in,dcmplx* out) 
   {
-      for(unsigned int k = 0; k < m_nr; k++){
+      for(unsigned k = 0; k < m_nr; k++){
           dcmplx sum = 0.0;
-          for(unsigned int m = 0; m < m_nr; m++)
+          for(unsigned m = 0; m < m_nr; m++)
               sum += m_Ymk[k*m_nr+m]*in[m];
           out[k] = sum/m_alpha;
       }
@@ -78,7 +78,7 @@ namespace spida {
   }
 
 
-  HankelTransformRb::HankelTransformRb(const BesselRootGridR& grid,unsigned int threads) : 
+  HankelTransformRb::HankelTransformRb(const BesselRootGridR& grid,unsigned threads) : 
       m_threads(threads),
       m_nr(grid.getNr()),
       m_Ymk(grid.getNr()*grid.getNr())
@@ -89,9 +89,9 @@ namespace spida {
 
   void HankelTransformRb::R_To_SR(const double* in,double* out) 
   {
-      for(unsigned int m = 0; m < m_nr; m++){
+      for(unsigned m = 0; m < m_nr; m++){
           double sum = 0.0;
-          for(unsigned int k = 0; k < m_nr; k++)
+          for(unsigned k = 0; k < m_nr; k++)
               sum += m_Ymk[m*m_nr+k]*in[k];
           out[m] = m_alpha*sum;
       }
@@ -100,18 +100,18 @@ namespace spida {
   void HankelTransformRb::R_To_SR(const dcmplx* in,dcmplx* out) 
   {
       std::vector<std::thread> workers;
-      for(unsigned int tid = 0; tid < m_threads; tid++){
+      for(unsigned tid = 0; tid < m_threads; tid++){
           workers.push_back(std::thread([](\
-                          unsigned int tid,\
-                          unsigned int nthreads,\
-                          unsigned int nr,\
+                          unsigned tid,\
+                          unsigned nthreads,\
+                          unsigned nr,\
                           std::vector<double>& Ymk,\
                           double alpha,\
                           const dcmplx* v,\
                           dcmplx* w){
-              for(unsigned int m = tid; m < nr; m+=nthreads){
+              for(unsigned m = tid; m < nr; m+=nthreads){
                   dcmplx sum = 0.0;
-                  for(unsigned int k = 0; k < nr; k++)
+                  for(unsigned k = 0; k < nr; k++)
                       sum += Ymk[m*nr+k]*v[k];
                   w[m] = alpha*sum;
               }
@@ -126,9 +126,9 @@ namespace spida {
   void HankelTransformRb::SR_To_R(const double* in,double* out) 
   {
 
-      for(unsigned int k = 0; k < m_nr; k++){
+      for(unsigned k = 0; k < m_nr; k++){
           double sum = 0.0;
-          for(unsigned int m = 0; m < m_nr; m++)
+          for(unsigned m = 0; m < m_nr; m++)
               sum += m_Ymk[k*m_nr+m]*in[m];
           out[k] = sum/m_alpha;
       }
@@ -138,18 +138,18 @@ namespace spida {
   void HankelTransformRb::SR_To_R(const dcmplx* in,dcmplx* out) 
   {
       std::vector<std::thread> workers;
-      for(unsigned int tid = 0; tid < m_threads; tid++){
+      for(unsigned tid = 0; tid < m_threads; tid++){
           workers.push_back(std::thread([](\
-                          unsigned int tid,\
-                          unsigned int nthreads,\
-                          unsigned int nr,\
+                          unsigned tid,\
+                          unsigned nthreads,\
+                          unsigned nr,\
                           std::vector<double>& Ymk,\
                           double alpha,\
                           const dcmplx* v,\
                           dcmplx* w){
-              for(unsigned int k = tid; k < nr; k+=nthreads){
+              for(unsigned k = tid; k < nr; k+=nthreads){
                   dcmplx sum = 0.0;
-                  for(unsigned int m = 0; m < nr; m++)
+                  for(unsigned m = 0; m < nr; m++)
                       sum += Ymk[k*nr+m]*v[m];
                   w[k] = sum/alpha;
               }

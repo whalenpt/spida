@@ -1,6 +1,5 @@
 
-#ifndef SPIDA_TRANSFORM_HANKELR_H_
-#define SPIDA_TRANSFORM_HANKELR_H_ 
+#pragma once
 
 #include <vector>
 #include <iostream>
@@ -46,7 +45,7 @@ class HankelTransformR
 class HankelTransformRb 
 {
     public:
-        explicit HankelTransformRb(const BesselRootGridR& grid,unsigned int threads=1);
+        explicit HankelTransformRb(const BesselRootGridR& grid,unsigned threads=1);
         ~HankelTransformRb() {};
         HankelTransformRb()=delete;
         HankelTransformRb(const HankelTransformRb& sp)=delete;
@@ -71,7 +70,7 @@ class HankelTransformRb
         const std::vector<double>& getYmk() const {return m_Ymk;}
         int getNr() const {return m_nr;}
     private:
-        unsigned int m_threads;
+        unsigned m_threads;
         int m_nr;
         double m_alpha;
         std::vector<double> m_Ymk; 
@@ -81,11 +80,6 @@ class HankelTransformRb
 
 
 }
-
-
-
-
-#endif // End of SPIDA_TRANSFORM_HANKELR_H_
 
 
 

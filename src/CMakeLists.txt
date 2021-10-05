@@ -8,9 +8,11 @@ set(SRC_FILES
     SpidaRVX.cpp
     SpidaCVX.cpp
     SpidaCHEBX.cpp
+    SpidaR.cpp
     ChebInterpX.cpp
 	helper/interp.cpp
     grid/grid.cpp
+    grid/gridR.cpp
     grid/chebX.cpp
     grid/uniformX.cpp
     grid/uniformRVX.cpp
@@ -39,6 +41,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/SpidaCHEBX.h"
    "${INCL_DIR}/ChebInterpX.h"
    "${INCL_DIR}/SpidaBLT.h"
+   "${INCL_DIR}/SpidaR.h"
    "${INCL_DIR}/SpidaRBLT.h"
    "${INCL_DIR}/helper/constants.h"
    "${INCL_DIR}/helper/interp.h"
@@ -125,11 +128,6 @@ install(DIRECTORY "${BOOST_DIR}/boost"
 	DESTINATION include
 	PATTERN ".DS_Store" EXCLUDE
 )
-
-#install(DIRECTORY "${JSON_DIR}/include"
-#	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-#	PATTERN ".DS_Store" EXCLUDE
-#)
 
 install(EXPORT SpidaTargets
 	FILE SpidaTargets.cmake
