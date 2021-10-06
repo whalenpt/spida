@@ -2,13 +2,16 @@
 #include <gtest/gtest.h>
 #include <spida/shape/shapeX.h>
 #include <spida/transform/fftCVX.h>
+#include <spida/transform/fftCVT.h>
 #include <spida/grid/uniformCVX.h>
+#include <spida/grid/uniformCVT.h>
 #include <spida/SpidaCVX.h>
+#include <spida/SpidaCVT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <random>
 
-TEST(FFT_TEST,INVERSES)
+TEST(FFTCVX_TEST,INVERSES)
 {
 	unsigned N = 32;
     pw::DataIO dataio("outfolder");
@@ -30,7 +33,7 @@ TEST(FFT_TEST,INVERSES)
     EXPECT_LT(pw::relative_error(in,expect),1e-6);
 }
 
-TEST(FFT_TEST,GAUSS)
+TEST(FFTCVX_TEST,GAUSS)
 {
 	unsigned N = 64;
     pw::DataIO dataio("outfolder");
@@ -62,7 +65,7 @@ TEST(FFT_TEST,GAUSS)
     EXPECT_LT(pw::relative_error(expect,out),1e-5);
 }
 
-TEST(FFT_TEST,COS)
+TEST(FFTCVX_TEST,COS)
 {
 	unsigned N = 32;
     pw::DataIO dataio("outfolder");
@@ -84,7 +87,7 @@ TEST(FFT_TEST,COS)
 
 
 
-TEST(FFT_TEST,DERIVATIVE_SIN)
+TEST(FFTCVX_TEST,DERIVATIVE_SIN)
 {
 	unsigned N = 32;
     pw::DataIO dataio("outfolder");
@@ -108,7 +111,7 @@ TEST(FFT_TEST,DERIVATIVE_SIN)
     EXPECT_LT(pw::relative_error(expect,out),1e-6);
 }
 
-TEST(FFT_TEST,DERIVATIVE_GAUSS)
+TEST(FFTCVX_TEST,DERIVATIVE_GAUSS)
 {
 	unsigned N = 32;
     pw::DataIO dataio("outfolder");
@@ -134,8 +137,134 @@ TEST(FFT_TEST,DERIVATIVE_GAUSS)
 
 
 
+TEST(FFTCVT_TEST,INVERSES)
+{
+	unsigned N = 32;
+    pw::DataIO dataio("outfolder");
+    using spida::dcmplx;
+
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(1.0,1.0);
+    std::vector<dcmplx> in(N);
+    std::vector<dcmplx> out(N);
+    std::vector<dcmplx> expect(N);
+    for(unsigned i = 0; i < N; i++)
+        in[i] = distribution(generator);
+
+    spida::FFTCVT tr(spida::UniformGridCVT{N,-1,1});
+    tr.T_To_ST(in,out);
+    tr.ST_To_T(out,expect);
+
+    dataio.writeFile("fftcvt_check.dat",in,expect);
+    EXPECT_LT(pw::relative_error(in,expect),1e-6);
+}
+
+TEST(FFTCVT_TEST,GAUSS)
+{
+	unsigned N = 64;
+    pw::DataIO dataio("outfolder");
+    using spida::dcmplx;
+    using spida::PI;
+    using spida::ii;
+
+    std::vector<dcmplx> in(N,0.0);
+    std::vector<dcmplx> out(N,0.0);
+    std::vector<dcmplx> expect(N,0.0);
+
+    double xmin = -6;
+    double xmax = 6;
+    spida::UniformGridCVT grid(N,xmin,xmax);
+    double L = grid.getLT();
+    const std::vector<double> t = grid.getT();
+    const std::vector<double> omega = grid.getST();
+    
+    double alpha = 2.0;
+    for(auto i = 0; i < t.size(); i++)
+        in[i] = exp(-alpha*pow(t[i],2));
+    for(auto i = 0; i < omega.size(); i++)
+        expect[i] = (1.0/L)*sqrt(PI/alpha)*exp(-pow(omega[i],2)/(4.0*alpha));
+
+    spida::FFTCVT tr(grid);
+    tr.T_To_ST(in,out);
+    dataio.writeFile("fftcvt_gauss.dat",expect,out);
+    EXPECT_LT(pw::relative_error(expect,out),1e-5);
+}
+
+TEST(FFTCVT_TEST,COS)
+{
+	unsigned N = 32;
+    pw::DataIO dataio("outfolder");
+    using spida::dcmplx;
+    using spida::PI;
+
+    std::vector<dcmplx> in(N);
+    std::vector<dcmplx> out(N);
+    spida::UniformGridCVT grid(N,0,1);
+    const std::vector<double> t = grid.getT();
+    for(auto i = 0; i < t.size(); i++)
+        in[i] = cos(8*2.0*PI*t[i]);
+
+    spida::FFTCVT tr(grid);
+    tr.T_To_ST(in,out);
+    dataio.writeFile("fftcvt_cos_check.dat",out);
+	EXPECT_DOUBLE_EQ(out[8].real(),0.5);
+}
+
+
+
+TEST(FFTCVT_TEST,DERIVATIVE_SIN)
+{
+	unsigned N = 32;
+    pw::DataIO dataio("outfolder");
+
+    using spida::dcmplx;
+    using spida::PI;
+    std::vector<dcmplx> in(N);
+    std::vector<dcmplx> out(N);
+    std::vector<dcmplx> expect(N);
+
+    spida::UniformGridCVT grid(N,0,2*PI);
+    const std::vector<double> t = grid.getT();
+    for(auto i = 0; i < t.size(); i++)
+        in[i] = sin(t[i]);
+    for(auto i = 0; i < t.size(); i++)
+        expect[i] = cos(t[i]);
+
+    spida::SpidaCVT spi{grid};
+    spi.dT(in,out);
+    dataio.writeFile("fftcv_der_sin.dat",expect,out);
+    EXPECT_LT(pw::relative_error(expect,out),1e-6);
+}
+
+TEST(FFTCVT_TEST,DERIVATIVE_GAUSS)
+{
+	unsigned N = 32;
+    pw::DataIO dataio("outfolder");
+
+    using spida::dcmplx;
+    std::vector<dcmplx> in(N);
+    std::vector<dcmplx> out(N);
+    std::vector<dcmplx> expect(N);
+
+    spida::UniformGridCVT grid(N,-6,6);
+    const std::vector<double> t = grid.getT();
+    for(auto i = 0; i < t.size(); i++)
+        in[i] = exp(-pow(t[i],2));
+    for(auto i = 0; i < t.size(); i++)
+        expect[i] = -2.0*t[i]*exp(-pow(t[i],2));
+
+    spida::SpidaCVT spi{grid};
+    spi.dT(in,out);
+    dataio.writeFile("fftcv_der_gauss.dat",expect,out);
+    dataio.writeFile("fftcv_t_st.dat",grid.getT(),grid.getST());
+    EXPECT_LT(pw::relative_error(expect,out),1e-6);
+}
+
+
+
+
 /*
-TEST(FFT_TEST,GAUSS)
+TEST(FFTCVT_TEST,GAUSS)
 {
 	unsigned N = 32;
     pw::DataIO dataio("outfolder");

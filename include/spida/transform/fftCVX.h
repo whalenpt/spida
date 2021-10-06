@@ -27,7 +27,7 @@ class FFTCVX
         void X_To_SX(const dcmplx* in,dcmplx* out) noexcept; 
         void SX_To_X(const dcmplx* in,dcmplx* out) noexcept; 
     private:
-        int m_nx;
+        unsigned m_nx;
         double m_minx;
         double m_L;
         std::vector<double> m_kx;

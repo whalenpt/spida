@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.19.1)
 
 set(SRC_FILES
     SpidaBLT.cpp
+    SpidaCVT.cpp
     SpidaRBLT.cpp
     SpidaRVX.cpp
     SpidaCVX.cpp
@@ -29,6 +30,7 @@ set(SRC_FILES
 	rkstiff/ETDAS.cpp
 	rkstiff/ETDCS.cpp
     transform/fftBLT.cpp
+    transform/fftCVT.cpp
     transform/fftCVX.cpp
     transform/fftRVX.cpp
 	transform/chebX.cpp
@@ -42,6 +44,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/SpidaCVX.h"
    "${INCL_DIR}/SpidaCHEBX.h"
    "${INCL_DIR}/ChebInterpX.h"
+   "${INCL_DIR}/SpidaCVT.h"
    "${INCL_DIR}/SpidaBLT.h"
    "${INCL_DIR}/SpidaR.h"
    "${INCL_DIR}/SpidaRBLT.h"
@@ -68,6 +71,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/rkstiff/ETDAS.h"
    "${INCL_DIR}/rkstiff/ETDCS.h"
    "${INCL_DIR}/transform/fftBLT.h"
+   "${INCL_DIR}/transform/fftCVT.h"
    "${INCL_DIR}/transform/chebX.h"
    "${INCL_DIR}/transform/fftCVX.h"
    "${INCL_DIR}/transform/fftRVX.h"
