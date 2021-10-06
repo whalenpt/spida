@@ -4,7 +4,7 @@
 #include <vector>
 #include <thread>
 #include "spida/helper/constants.h"
-#include "spida/grid/uniformT.h" 
+#include "spida/grid/uniformRVT.h" 
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
 
@@ -13,7 +13,7 @@ namespace spida{
 class FFTBLT 
 {
     public:
-        explicit FFTBLT(const UniformGridT& grid);
+        explicit FFTBLT(const UniformGridRVT& grid);
         ~FFTBLT();
         FFTBLT()=delete;
         FFTBLT(const FFTBLT& sp)=delete;

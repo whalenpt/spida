@@ -1,6 +1,5 @@
-
-#ifndef SPIDA_SHAPET_H_
-#define SPIDA_SHAPET_H_
+// shapeT.h
+#pragma once
 
 #include <string>
 #include <complex>
@@ -122,7 +121,6 @@ class BesselT : public ShapeT
 
 }
 
-#endif
 
 
 

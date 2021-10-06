@@ -6,11 +6,12 @@
 #include "spida/transform/fftBLT.h"
 #include "spida/transform/hankelR.h"
 #include "spida/grid/besselR.h" 
-#include "spida/grid/uniformT.h" 
+#include "spida/grid/uniformRVT.h" 
 
 namespace spida {
 
-  HankelFFTRBLT::HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads) :
+  HankelFFTRBLT::HankelFFTRBLT(const BesselRootGridR& gridR,\
+          const UniformGridRVT& gridT,unsigned threads) :
         m_nr(gridR.getNr()),
         m_nt(gridT.getNt()),
         m_nst(gridT.getNst()),

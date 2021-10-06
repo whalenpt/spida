@@ -4,14 +4,14 @@
 #include <algorithm>
 #include <iostream>
 #include "spida/transform/fftBLT.h"
-#include "spida/grid/uniformT.h" 
+#include "spida/grid/uniformRVT.h" 
 #include "spida/helper/constants.h"
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
 
 namespace spida{
 
-FFTBLT::FFTBLT(const UniformGridT& grid) :
+FFTBLT::FFTBLT(const UniformGridRVT& grid) :
     m_rFFTr(grid.getNt(),0.0),
     m_rFFTs(grid.getNt()/2+1,0.0),
     m_cFFT(grid.getNt(),0.0)

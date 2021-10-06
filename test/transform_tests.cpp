@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <spida/helper/constants.h>
-#include <spida/grid/uniformT.h>
+#include <spida/grid/uniformRVT.h>
 #include <spida/grid/besselR.h>
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
@@ -26,14 +26,12 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST)
     double minT = -240e-15;
     double maxT = 240e-15;
 
-    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-
+    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
     std::vector<double> y(nt);
     std::vector<double> yinv(nt);
     std::vector<dcmplx> ysp(grid.getNst());
 
     spida::FFTBLT transform(grid);
-
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
     shape.shapeRV(y);
@@ -43,7 +41,7 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST)
 
     auto maxval = pw::max(ysp);
     auto maxpos = pw::argmax(ysp);
-	EXPECT_DOUBLE_EQ(abs(maxval),33811981379.747528);
+	EXPECT_DOUBLE_EQ(abs(maxval),33820027093.103012);
 	EXPECT_EQ(maxpos,28);
     EXPECT_LT(pw::relative_error(y,yinv),1e-6);
 }
@@ -58,7 +56,7 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST_POINTERS)
     double minT = -240e-15;
     double maxT = 240e-15;
 
-    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
     spida::FFTBLT transform(grid);
 
     spida::GaussT shape(grid,std::sqrt(I0),tp);
@@ -74,7 +72,7 @@ TEST(PERIODICT_TRANSFORM_TEST,GAUSST_POINTERS)
 
     auto maxval = pw::max(ysp);
     auto maxpos = pw::argmax(ysp);
-	EXPECT_DOUBLE_EQ(abs(maxval),33811981379.747528);
+	EXPECT_DOUBLE_EQ(abs(maxval),33820027093.103012);
 	EXPECT_EQ(maxpos,28);
     EXPECT_LT(pw::relative_error(y,yinv),1e-6);
 }
@@ -90,7 +88,7 @@ TEST(PERIODICT_TRANSFORM_TEST,COMPLEX_GAUSST)
     double minT = -240e-15;
     double maxT = 240e-15;
 
-    spida::UniformGridT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
     spida::FFTBLT transform(grid);
 
     spida::GaussT shape(grid,std::sqrt(I0),tp);
@@ -106,7 +104,7 @@ TEST(PERIODICT_TRANSFORM_TEST,COMPLEX_GAUSST)
 
     auto maxval = pw::max(ysp);
     auto maxpos = pw::argmax(ysp);
-	EXPECT_DOUBLE_EQ(abs(maxval),67623962759.495056);
+	EXPECT_DOUBLE_EQ(abs(maxval),2*33820027093.103012);
 	EXPECT_EQ(maxpos,28);
     EXPECT_LT(pw::relative_error(y,yinv),1e-6);
 }
@@ -243,7 +241,7 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,GAUSSTGAUSSR)
     double minST = 1.0e15;
     double maxST = 4.3e15;
 
-    spida::UniformGridT gridT(nt,minT,maxT,minST,maxST);
+    spida::UniformGridRVT gridT(nt,minT,maxT,minST,maxST);
     spida::BesselRootGridR gridR(nr,12*w0);
 
     spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
@@ -322,7 +320,7 @@ TEST(HANKELPERIODICRT_TRANSFORM_TEST,MULTITHREAD)
     double maxST = 4.3e15;
     int NUM_THREADS = 3;
 
-    spida::UniformGridT gridT(nt,minT,maxT,minST,maxST);
+    spida::UniformGridRVT gridT(nt,minT,maxT,minST,maxST);
     spida::BesselRootGridR gridR(nr,12*w0);
     spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
     shapeT.setFastPhase(omega0);

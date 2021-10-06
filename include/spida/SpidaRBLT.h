@@ -1,12 +1,11 @@
-
-#ifndef SPIDARBLT_H_
-#define SPIDARBLT_H_
+// SpidaRBLT.h
+#pragma once
 
 #include <vector>
 #include "spida/helper/constants.h"
 
 namespace spida{
-  class UniformGridT;
+  class UniformGridRVT;
   class BesselRootGridR;
   class HankelFFTRBLT;
 
@@ -14,11 +13,11 @@ namespace spida{
   class SpidaRBLT 
   {
     public:
-      SpidaRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads=1);
+      SpidaRBLT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads=1);
       SpidaRBLT() = delete;
       ~SpidaRBLT();
       const BesselRootGridR& getGridR() const;
-      const UniformGridT& getGridT() const;
+      const UniformGridRVT& getGridT() const;
       const HankelFFTRBLT& getTransformRT() const;
       const std::vector<double>& getR() const;
       const std::vector<double>& getSR() const;
@@ -32,12 +31,10 @@ namespace spida{
 
     private:
       std::unique_ptr<BesselRootGridR> m_gridR;
-      std::unique_ptr<UniformGridT> m_gridT;
+      std::unique_ptr<UniformGridRVT> m_gridT;
       std::unique_ptr<HankelFFTRBLT> m_tr;
 //      std::vector<dcmplx> m_vs;
   };
 }
-
-#endif
 
 

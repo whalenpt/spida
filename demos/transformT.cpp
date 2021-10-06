@@ -10,7 +10,7 @@
 
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
-#include <spida/grid/uniformT.h>
+#include <spida/grid/uniformRVT.h>
 #include <spida/shape/shapeT.h>
 #include <spida/transform/fftBLT.h>
 #include <pwutils/report/dat.hpp>
@@ -33,7 +33,7 @@ int main()
     double minST = 1.0e15;
     double maxST = 4.3e15;
 
-    spida::UniformGridT gridT(nt,minT,maxT,minST,maxST);
+    spida::UniformGridRVT gridT(nt,minT,maxT,minST,maxST);
     spida::FFTBLT transform(gridT);
     spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
     shapeT.setFastPhase(omega0);

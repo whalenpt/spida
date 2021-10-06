@@ -2,22 +2,23 @@
 #include <cmath>
 #include <memory>
 #include "spida/SpidaRBLT.h"
-#include "spida/grid/uniformT.h"
+#include "spida/grid/uniformRVT.h"
 #include "spida/grid/besselR.h"
 #include "spida/transform/hankelfftRBLT.h"
 #include <pwutils/pwexcept.h>
 
 namespace spida{
 
-  SpidaRBLT::SpidaRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads) :
+  SpidaRBLT::SpidaRBLT(const BesselRootGridR& gridR,\
+          const UniformGridRVT& gridT,unsigned threads) :
       m_gridR(std::make_unique<BesselRootGridR>(gridR)),
-      m_gridT(std::make_unique<UniformGridT>(gridT)),
+      m_gridT(std::make_unique<UniformGridRVT>(gridT)),
       m_tr(std::make_unique<HankelFFTRBLT>(gridR,gridT,threads)) { }
   
   SpidaRBLT::~SpidaRBLT() {}
 
   const BesselRootGridR& SpidaRBLT::getGridR() const { return *m_gridR; }
-  const UniformGridT& SpidaRBLT::getGridT() const { return *m_gridT; }
+  const UniformGridRVT& SpidaRBLT::getGridT() const { return *m_gridT; }
   const HankelFFTRBLT& SpidaRBLT::getTransformRT() const { return *m_tr; }
   const std::vector<double>& SpidaRBLT::getR() const {return m_gridR->getR();}
   const std::vector<double>& SpidaRBLT::getSR() const {return m_gridR->getSR();}

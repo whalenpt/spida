@@ -18,6 +18,8 @@ set(SRC_FILES
     grid/uniformRVX.cpp
     grid/uniformCVX.cpp
 	grid/uniformT.cpp
+    grid/uniformRVT.cpp
+    grid/uniformCVT.cpp
 	grid/besselR.cpp
 	propagator/propagator.cpp
 	propagator/reporthandler.cpp
@@ -53,6 +55,8 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/grid/uniformRVX.h"
    "${INCL_DIR}/grid/uniformCVX.h"
    "${INCL_DIR}/grid/uniformT.h"
+   "${INCL_DIR}/grid/uniformRVT.h"
+   "${INCL_DIR}/grid/uniformCVT.h"
    "${INCL_DIR}/grid/chebX.h"
    "${INCL_DIR}/grid/besselR.h"
    "${INCL_DIR}/propagator/propagator.h"

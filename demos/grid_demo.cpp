@@ -11,7 +11,7 @@
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
 #include <spida/grid/besselR.h>
-#include <spida/grid/uniformT.h>
+#include <spida/grid/uniformRVT.h>
 #include <iostream>
 
 //------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ int main()
     double minST = 1.0e15;
     double maxST = 4.3e15;
 
-    spida::UniformGridT gridT(nt,minT,maxT,minST,maxST);
+    spida::UniformGridRVT gridT(nt,minT,maxT,minST,maxST);
     const std::vector<double>& t = gridT.getT();
     const std::vector<double>& st = gridT.getST();
     std::cout << "MinT: " << gridT.getMinT() << std::endl;

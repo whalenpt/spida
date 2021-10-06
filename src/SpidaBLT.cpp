@@ -8,13 +8,13 @@
 
 namespace spida{
 
-  SpidaBLT::SpidaBLT(const UniformGridT& grid) :
-      m_gr(std::make_unique<UniformGridT>(grid)),
+  SpidaBLT::SpidaBLT(const UniformGridRVT& grid) :
+      m_gr(std::make_unique<UniformGridRVT>(grid)),
       m_tr(std::make_unique<FFTBLT>(grid)),
       m_vs(grid.getNst()) {}
 
   SpidaBLT::~SpidaBLT() {}
-  const UniformGridT& SpidaBLT::getGridT() const { return *m_gr; }
+  const UniformGridRVT& SpidaBLT::getGridT() const { return *m_gr; }
   const FFTBLT& SpidaBLT::getTransformT() const { return *m_tr; }
   const std::vector<double>& SpidaBLT::getT() const {return m_gr->getT();}
   const std::vector<double>& SpidaBLT::getST() const {return m_gr->getST();}

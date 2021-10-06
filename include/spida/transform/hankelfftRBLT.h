@@ -1,6 +1,6 @@
-
-#ifndef SPIDA_TRANSFORM_HANKELFFTRBLT_H_
-#define SPIDA_TRANSFORM_HANKELFFTRBLT_H_ 
+// hankelfftRBLT.h
+// Class for 2D functions of radius (R) and band-limited time (BLT)
+#pragma once
 
 #include <vector>
 #include <mutex>
@@ -15,20 +15,20 @@ namespace spida{
 class FFTBLT;
 class HankelTransformR;
 class BesselRootGridR;
-class UniformGridT;
+class UniformGridRVT;
 
 template<typename T>
-void transpose(const T* in,T* out,unsigned int nd1,unsigned int nd2)
+void transpose(const T* in,T* out,unsigned nd1,unsigned nd2)
 {
-    for(unsigned int i = 0; i < nd1; i++)
-        for(unsigned int j = 0; j < nd2; j++)
+    for(unsigned i = 0; i < nd1; i++)
+        for(unsigned j = 0; j < nd2; j++)
             out[j*nd1+i] = in[i*nd2+j];
 }
 
 class HankelFFTRBLT 
 {
     public:
-        explicit HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,unsigned int threads = 1);
+        explicit HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned int threads = 1);
         ~HankelFFTRBLT();
         HankelFFTRBLT()=delete;
         HankelFFTRBLT(const HankelFFTRBLT& sp)=delete;
@@ -215,7 +215,5 @@ class HankelFFTRBLTc
 
 }
 
-
-#endif // SPIDA_TRANSFORM_HANKELPERIODICRT_H_
 
 

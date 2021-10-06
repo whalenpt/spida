@@ -11,7 +11,7 @@
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
 #include <spida/grid/besselR.h>
-#include <spida/grid/uniformT.h>
+#include <spida/grid/uniformRVT.h>
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
 #include <spida/transform/hankelfftRBLT.h>
@@ -40,7 +40,7 @@ int main()
     double minST = 1.0e15;
     double maxST = 4.3e15;
 
-    spida::UniformGridT gridT(nt,minT,maxT,minST,maxST);
+    spida::UniformGridRVT gridT(nt,minT,maxT,minST,maxST);
     spida::BesselRootGridR gridR(nr,6*w0);
 
     spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
