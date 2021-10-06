@@ -17,14 +17,14 @@
 namespace spida{
 
 
-class Propagator
+class BasePropagator
 {
     unsigned DEFAULT_MAX_REPORTS_1D = 500;
     unsigned DEFAULT_MAX_REPORTS_2D = 200;
 
   public:
-      Propagator(const std::filesystem::path& dir_path);
-      virtual ~Propagator() {}; 
+      BasePropagator(const std::filesystem::path& dir_path);
+      virtual ~BasePropagator() {}; 
       // updateFields will update all reporting vectors prior to file output 
       // i.e. transform a vector from spectral space to physical space, or perform some
       // other operation
@@ -78,11 +78,11 @@ class Propagator
       pw::StatCenter m_stat;
 };
 
-class PropagatorCV : public Propagator
+class PropagatorCV : public BasePropagator
 {
   public:
       PropagatorCV(const std::filesystem::path& dir_path) :
-          Propagator(dir_path) {} 
+          BasePropagator(dir_path) {} 
       virtual ~PropagatorCV() {}; 
       virtual void updateFields(double t) = 0;
       virtual std::vector<dcmplx>& propagator() = 0;
