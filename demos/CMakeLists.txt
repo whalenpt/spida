@@ -13,6 +13,7 @@ add_executable(kdvPropagator kdv_propagator.cpp)
 add_executable(ks ks.cpp)
 add_executable(burgers burgers.cpp)
 add_executable(nlsR NLSR.cpp)
+add_executable(nlsRT NLSRT.cpp)
 
 target_link_libraries(interp PUBLIC
     SPIDA::spida
@@ -31,6 +32,7 @@ target_link_libraries(kdvRV PUBLIC SPIDA::spida pw::pwutils)
 target_link_libraries(ks PUBLIC SPIDA::spida pw::pwutils)
 target_link_libraries(burgers PUBLIC SPIDA::spida pw::pwutils)
 target_link_libraries(nlsR PUBLIC SPIDA::spida pw::pwutils)
+target_link_libraries(nlsRT PUBLIC SPIDA::spida pw::pwutils)
 
 
 

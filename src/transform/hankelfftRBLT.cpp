@@ -7,6 +7,7 @@
 #include "spida/transform/hankelR.h"
 #include "spida/grid/besselR.h" 
 #include "spida/grid/uniformRVT.h" 
+#include "spida/helper/funcs.hpp"
 
 namespace spida {
 
@@ -36,47 +37,47 @@ namespace spida {
           delete item;
   }
 
-  void HankelFFTRBLT::worker_T_To_ST(unsigned int tid,const double* in,dcmplx* out){
-      for(unsigned int i = tid; i < m_nr; i+= m_threads)
+  void HankelFFTRBLT::worker_T_To_ST(unsigned tid,const double* in,dcmplx* out){
+      for(unsigned i = tid; i < m_nr; i+= m_threads)
           m_transformT[tid]->T_To_ST(in+m_nt*i,out+m_nst*i);
   }
 
-  void HankelFFTRBLT::worker_ST_To_T(unsigned int tid,const dcmplx* in,double* out)
+  void HankelFFTRBLT::worker_ST_To_T(unsigned tid,const dcmplx* in,double* out)
   {
-      for (unsigned int i = tid; i < m_nr; i+= m_threads)
+      for (unsigned i = tid; i < m_nr; i+= m_threads)
           m_transformT[tid]->ST_To_T(in+m_nst*i,out+m_nt*i);
   }
 
-  void HankelFFTRBLT::worker_CVT_To_ST(unsigned int tid,const dcmplx* in,dcmplx* out){
-      for(unsigned int i = tid; i < m_nr; i+= m_threads)
+  void HankelFFTRBLT::worker_CVT_To_ST(unsigned tid,const dcmplx* in,dcmplx* out){
+      for(unsigned i = tid; i < m_nr; i+= m_threads)
           m_transformT[tid]->CVT_To_ST(in+m_nt*i,out+m_nst*i);
   }
 
-  void HankelFFTRBLT::worker_ST_To_CVT(unsigned int tid,const dcmplx* in,dcmplx* out)
+  void HankelFFTRBLT::worker_ST_To_CVT(unsigned tid,const dcmplx* in,dcmplx* out)
   {
-      for (unsigned int i = tid; i < m_nr; i+= m_threads)
+      for (unsigned i = tid; i < m_nr; i+= m_threads)
           m_transformT[tid]->ST_To_CVT(in+m_nst*i,out+m_nt*i);
   }
 
-  void HankelFFTRBLT::worker_R_To_SR(unsigned int tid,const double* in,double* out){
-      for(unsigned int i = tid; i < m_nt; i+= m_threads)
+  void HankelFFTRBLT::worker_R_To_SR(unsigned tid,const double* in,double* out){
+      for(unsigned i = tid; i < m_nt; i+= m_threads)
           m_transformR[tid]->R_To_SR(in+m_nr*i,out+m_nr*i);
   }
 
-  void HankelFFTRBLT::worker_SR_To_R(unsigned int tid,const double* in,double* out)
+  void HankelFFTRBLT::worker_SR_To_R(unsigned tid,const double* in,double* out)
   {
-      for (unsigned int j = tid; j < m_nt; j+=m_threads)  
+      for (unsigned j = tid; j < m_nt; j+=m_threads)  
           m_transformR[tid]->SR_To_R(in+m_nr*j,out+m_nr*j);
   }
 
-  void HankelFFTRBLT::workerCMP_R_To_SR(unsigned int tid,const dcmplx* in,dcmplx* out){
-      for(unsigned int i = tid; i < m_nst; i+= m_threads)
+  void HankelFFTRBLT::workerCMP_R_To_SR(unsigned tid,const dcmplx* in,dcmplx* out){
+      for(unsigned i = tid; i < m_nst; i+= m_threads)
           m_transformR[tid]->R_To_SR(in+m_nr*i,out+m_nr*i);
   }
 
-  void HankelFFTRBLT::workerCMP_SR_To_R(unsigned int tid,const dcmplx* in, dcmplx* out)
+  void HankelFFTRBLT::workerCMP_SR_To_R(unsigned tid,const dcmplx* in, dcmplx* out)
   {
-      for (unsigned int j = tid; j < m_nst; j+=m_threads)  
+      for (unsigned j = tid; j < m_nst; j+=m_threads)  
           m_transformR[tid]->SR_To_R(in+m_nr*j,out+m_nr*j);
   }
 
@@ -249,9 +250,9 @@ namespace spida {
   void HankelFFTRBLT::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
   {
       std::vector<std::thread> workers;
-      auto rt_to_rst = [](int nr,int nt,int nst,unsigned int tid, unsigned int num_threads,
+      auto rt_to_rst = [](int nr,int nt,int nst,unsigned tid, unsigned num_threads,
               const double* in,dcmplx* out,FFTBLT* fftblt){
-          for(unsigned int i = tid; i < nr; i+= num_threads)
+          for(unsigned i = tid; i < nr; i+= num_threads)
               fftblt->T_To_ST(in+nt*i,out+nst*i);
       };
 
@@ -264,13 +265,13 @@ namespace spida {
           worker.join();
       workers.clear();
 
-      for(unsigned int i = 0; i < m_nr; i++)
-          for (unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = 0; i < m_nr; i++)
+          for (unsigned j = 0; j < m_nst; j++)
               m_rs[j*m_nr+i] = m_ss[i*m_nst+j];
 
-      auto str_to_stsr = [](int nr,int nt,int nst,unsigned int tid, unsigned int num_threads,
+      auto str_to_stsr = [](int nr,int nt,int nst,unsigned tid, unsigned num_threads,
               const dcmplx* in,dcmplx* out,HankelTransformR* hankel){
-          for(unsigned int i = tid; i < nst; i+= num_threads)
+          for(unsigned i = tid; i < nst; i+= num_threads)
               hankel->R_To_SR(in+nr*i,out+nr*i);
       };
 
@@ -282,8 +283,8 @@ namespace spida {
           worker.join();
       workers.clear();
 
-      for(unsigned int i = 0; i < m_nr; i++)
-          for(unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = 0; i < m_nr; i++)
+          for(unsigned j = 0; j < m_nst; j++)
               out[i*m_nst+j] = m_ss[m_nr*j + i]; 
   }                                  
 
@@ -326,7 +327,7 @@ namespace spida {
 
   HankelFFTRBLT::~HankelFFTRBLT(){
       ReadySTATE(State::Done);
-      for (unsigned int m = 0; m < m_thread.size(); m++)
+      for (unsigned m = 0; m < m_thread.size(); m++)
           m_thread[m].join();
       m_thread.clear();
       for(auto item : m_transformT)
@@ -339,31 +340,31 @@ namespace spida {
 
   void HankelFFTRBLT::RT_To_SRT(const std::vector<double>& in,std::vector<double>& out) 
   {
-      for(unsigned int i = 0; i < m_nr; i++)
-          for (unsigned int j = 0; j < m_nt; j++){
+      for(unsigned i = 0; i < m_nr; i++)
+          for (unsigned j = 0; j < m_nt; j++){
               m_rr[j*m_nr+i] = in[i*m_nt+j];
       }
       ReadySTATE(State::RT_To_SRT);
       worker_RT_To_SRT(0);
       ProcessedSTATE(State::Wait);
-      for(unsigned int i = 0; i < m_nr; i++)
-          for(unsigned int j = 0; j < m_nt; j++)
+      for(unsigned i = 0; i < m_nr; i++)
+          for(unsigned j = 0; j < m_nt; j++)
               out[i*m_nt+j] = m_sr[m_nr*j + i]; 
   }                                  
 
   void HankelFFTRBLT::SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
   {
       // Transpose array -> in has SR-ST row-column form
-      for(unsigned int i = 0; i < m_nr; i++)
-          for(unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = 0; i < m_nr; i++)
+          for(unsigned j = 0; j < m_nst; j++)
               m_ss[m_nr*j+i] = in[m_nst*i + j]; 
 
       ReadySTATE(State::STSR_To_STR);
       worker_STSR_To_STR(0);
       ProcessedSTATE(State::Wait);
       // Transpose again
-      for(unsigned int i = 0; i < m_nr; i++)
-          for(unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = 0; i < m_nr; i++)
+          for(unsigned j = 0; j < m_nst; j++)
               out[m_nst*i+j] = m_rs[m_nr*j + i]; 
   }
 
@@ -409,29 +410,29 @@ namespace spida {
 
   void HankelFFTRBLT::worker_RT_To_RST(int tid)
   {
-      for (unsigned int i = tid; i < m_nr; i+=m_nThreads) 
+      for (unsigned i = tid; i < m_nr; i+=m_nThreads) 
           m_transformT[tid]->T_To_ST(m_rr.data()+m_nt*i,m_ss.data()+m_nst*i);
   }
 
   void HankelFFTRBLT::worker_RST_To_STR(int tid)
   {
-      for(unsigned int i = tid; i < m_nr; i+=m_nThreads)
-          for (unsigned int j = 0; j < m_nst; j++){
+      for(unsigned i = tid; i < m_nr; i+=m_nThreads)
+          for (unsigned j = 0; j < m_nst; j++){
               m_rs[j*m_nr+i] = m_ss[i*m_nst+j];
       }
   }
 
   void HankelFFTRBLT::worker_STR_To_STSR(int tid)
   {
-      for(unsigned int i = tid; i < m_nst; i+=m_nThreads)
+      for(unsigned i = tid; i < m_nst; i+=m_nThreads)
           m_transformR[tid]->R_To_SR(reinterpret_cast<const dcmplx*>(m_rs.data()+m_nr*i),\
                   m_ss.data()+m_nr*i);
   }
 
   void HankelFFTRBLT::worker_STSR_To_SRST(int tid)
   {
-      for(unsigned int i = tid; i < m_nr; i+=m_nThreads)
-          for(unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = tid; i < m_nr; i+=m_nThreads)
+          for(unsigned j = 0; j < m_nst; j++)
               m_rs[i*m_nst+j] = m_ss[m_nr*j + i]; 
   }
 
@@ -460,29 +461,29 @@ namespace spida {
 
   void HankelFFTRBLT::worker_SRST_To_STSR(int tid)
   {
-      for(unsigned int i = tid; i < m_nr; i+=m_nThreads)
-          for(unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = tid; i < m_nr; i+=m_nThreads)
+          for(unsigned j = 0; j < m_nst; j++)
               m_ss[m_nr*j+i] = m_rs[m_nst*i + j]; 
   }
 
 
   void HankelFFTRBLT::worker_STSR_To_STR(int tid)
   {
-      for (unsigned int j = tid; j < m_nst; j+=m_nThreads)  
+      for (unsigned j = tid; j < m_nst; j+=m_nThreads)  
           m_transformR[tid]->SR_To_R(m_ss.data()+m_nr*j,m_rs.data()+m_nr*j);
   }
 
   void HankelFFTRBLT::worker_STR_To_RST(int tid)
   {
-      for(unsigned int i = tid; i < m_nr; i+=m_nThreads)
-          for(unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = tid; i < m_nr; i+=m_nThreads)
+          for(unsigned j = 0; j < m_nst; j++)
               m_ss[m_nst*i+j] = m_rs[m_nr*j + i]; 
   }
 
 
   void HankelFFTRBLT::worker_RST_To_RT(int tid)
   {
-      for (unsigned int i = tid; i < m_nr; i+= m_nThreads)
+      for (unsigned i = tid; i < m_nr; i+= m_nThreads)
           m_transformT[tid]->ST_To_T(m_ss.data()+m_nst*i,m_rr.data()+m_nt*i);
   }
 
@@ -559,13 +560,13 @@ namespace spida {
 
   void HankelFFTRBLT::worker_RT_To_SRT(int tid)
   {
-      for(unsigned int j = tid; j < m_nt; j+=m_nThreads)
+      for(unsigned j = tid; j < m_nt; j+=m_nThreads)
           m_transformR[tid]->R_To_SR(m_rr.data()+j*m_nr,m_sr.data()+j*m_nr);
   }
 
   void HankelFFTRBLT::worker_SRST_To_SRT(int tid)
   {
-      for (unsigned int i = tid; i < m_nr; i+= m_nThreads)
+      for (unsigned i = tid; i < m_nr; i+= m_nThreads)
           m_transformT[tid]->ST_To_T(m_ss.data()+m_nst*i,m_sr.data()+m_nt*i);
   }
 
@@ -579,7 +580,7 @@ namespace spida {
       m_processed = false;
       {
           std::lock_guard<std::mutex> lock(m_mut);
-          for(unsigned int i = 0; i < m_ready.size(); i++)
+          for(unsigned i = 0; i < m_ready.size(); i++)
               m_ready[i] = true;
       }
       m_cv.notify_all();
@@ -666,21 +667,21 @@ namespace spida {
   void HankelFFTRBLTc::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
   {
       if(!m_pool){
-          for(unsigned int i = 0; i < m_nr; i++)
+          for(unsigned i = 0; i < m_nr; i++)
               m_fftblt->T_To_ST(in.data()+m_nt*i,m_ss.data()+m_nst*i);
           // transpose
-          for(unsigned int i = 0; i < m_nr; i++)
-              for (unsigned int j = 0; j < m_nst; j++){
+          for(unsigned i = 0; i < m_nr; i++)
+              for (unsigned j = 0; j < m_nst; j++){
                   m_rs[j*m_nr+i] = m_ss[i*m_nst+j];
           }
-          for(unsigned int i = 0; i < m_nst; i++)
+          for(unsigned i = 0; i < m_nst; i++)
               m_hankel->R_To_SR(m_rs.data()+m_nr*i,m_ss.data()+m_nr*i);
                 // transpose again
-          for(unsigned int i = 0; i < m_nr; i++)
-              for(unsigned int j = 0; j < m_nst; j++)
+          for(unsigned i = 0; i < m_nr; i++)
+              for(unsigned j = 0; j < m_nst; j++)
                   out[i*m_nst+j] = m_ss[m_nr*j + i]; 
       } else {
-          for(unsigned int i = 0; i < m_nr; i++){
+          for(unsigned i = 0; i < m_nr; i++){
               m_pool->push_task(std::bind(spida::worker_RT_To_RST,\
                       in.data()+m_nt*i,m_ss.data()+m_nst*i,m_transformT));
           }
@@ -698,7 +699,7 @@ namespace spida {
 
           m_pool->wait_for_tasks();
 
-          for(unsigned int i = 0; i < m_nst; i++){
+          for(unsigned i = 0; i < m_nst; i++){
               m_pool->push_task(std::bind(spida::worker_STR_To_STSR,\
                       m_rs.data()+m_nr*i,m_ss.data()+m_nr*i,m_transformR));
           }
@@ -715,21 +716,21 @@ namespace spida {
 
   void HankelFFTRBLTc::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) 
   {
-      for(unsigned int i = 0; i < m_nr; i++)
-            for(unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = 0; i < m_nr; i++)
+            for(unsigned j = 0; j < m_nst; j++)
                 m_ss[m_nr*j+i] = in[m_nst*i + j]; 
 
       if(!m_pool){
-          for (unsigned int j = 0; j < m_nst; j++)  
+          for (unsigned j = 0; j < m_nst; j++)  
               m_hankel->SR_To_R(m_ss.data()+m_nr*j,m_rs.data()+m_nr*j);
       }
 
-      for(unsigned int i = 0; i < m_nr; i++)
-          for(unsigned int j = 0; j < m_nst; j++)
+      for(unsigned i = 0; i < m_nr; i++)
+          for(unsigned j = 0; j < m_nst; j++)
               m_ss[m_nst*i+j] = m_rs[m_nr*j + i]; 
 
       if(!m_pool){
-          for (unsigned int j = 0; j < m_nst; j++)  
+          for (unsigned j = 0; j < m_nst; j++)  
               m_fftblt->ST_To_T(m_ss.data()+m_nst*j,out.data()+m_nt*j);
       }
   }

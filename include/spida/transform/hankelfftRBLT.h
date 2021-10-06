@@ -3,11 +3,7 @@
 #pragma once
 
 #include <vector>
-#include <mutex>
-#include <condition_variable>
 #include <thread>
-#include <future>
-#include <map>
 #include "spida/helper/constants.h"
 
 namespace spida{
@@ -17,18 +13,10 @@ class HankelTransformR;
 class BesselRootGridR;
 class UniformGridRVT;
 
-template<typename T>
-void transpose(const T* in,T* out,unsigned nd1,unsigned nd2)
-{
-    for(unsigned i = 0; i < nd1; i++)
-        for(unsigned j = 0; j < nd2; j++)
-            out[j*nd1+i] = in[i*nd2+j];
-}
-
 class HankelFFTRBLT 
 {
     public:
-        explicit HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned int threads = 1);
+        explicit HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads = 1);
         ~HankelFFTRBLT();
         HankelFFTRBLT()=delete;
         HankelFFTRBLT(const HankelFFTRBLT& sp)=delete;
@@ -67,16 +55,16 @@ class HankelFFTRBLT
         std::vector<FFTBLT*> m_transformT;
         std::vector<HankelTransformR*> m_transformR;
 
-        void worker_T_To_ST(unsigned int tid,const double* in,dcmplx* out);
-        void worker_ST_To_T(unsigned int tid,const dcmplx* in,double* out);
+        void worker_T_To_ST(unsigned tid,const double* in,dcmplx* out);
+        void worker_ST_To_T(unsigned tid,const dcmplx* in,double* out);
 
-        void worker_ST_To_CVT(unsigned int tid,const dcmplx* in,dcmplx* out);
-        void worker_CVT_To_ST(unsigned int tid,const dcmplx* in,dcmplx* out);
+        void worker_ST_To_CVT(unsigned tid,const dcmplx* in,dcmplx* out);
+        void worker_CVT_To_ST(unsigned tid,const dcmplx* in,dcmplx* out);
 
-        void worker_R_To_SR(unsigned int tid,const double* in,double* out);
-        void worker_SR_To_R(unsigned int tid,const double* in,double* out);
-        void workerCMP_R_To_SR(unsigned int tid,const dcmplx* in,dcmplx* out);
-        void workerCMP_SR_To_R(unsigned int tid,const dcmplx* in,dcmplx* out);
+        void worker_R_To_SR(unsigned tid,const double* in,double* out);
+        void worker_SR_To_R(unsigned tid,const double* in,double* out);
+        void workerCMP_R_To_SR(unsigned tid,const dcmplx* in,dcmplx* out);
+        void workerCMP_SR_To_R(unsigned tid,const dcmplx* in,dcmplx* out);
 
         void wait_for_workers(std::vector<std::thread>& workers);
 
@@ -204,8 +192,8 @@ class HankelFFTRBLTc
         std::map<std::thread::id,HankelTransformR*> m_transformR;
         thread_pool* m_pool;
 
-        void worker_RT_To_RST(unsigned int tid);
-        void worker_STR_To_STSR(unsigned int tid);
+        void worker_RT_To_RST(unsigned tid);
+        void worker_STR_To_STSR(unsigned tid);
 
 };
 

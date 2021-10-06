@@ -6,6 +6,7 @@ set(SRC_FILES
     SpidaBLT.cpp
     SpidaCVT.cpp
     SpidaRBLT.cpp
+    SpidaRCVT.cpp
     SpidaRVX.cpp
     SpidaCVX.cpp
     SpidaCHEBX.cpp
@@ -36,6 +37,7 @@ set(SRC_FILES
 	transform/chebX.cpp
 	transform/hankelR.cpp
     transform/hankelfftRBLT.cpp
+    transform/hankelfftRCVT.cpp
 )
 
 set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
@@ -48,8 +50,10 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/SpidaBLT.h"
    "${INCL_DIR}/SpidaR.h"
    "${INCL_DIR}/SpidaRBLT.h"
+   "${INCL_DIR}/SpidaRCVT.h"
    "${INCL_DIR}/helper/constants.h"
    "${INCL_DIR}/helper/interp.h"
+   "${INCL_DIR}/helper/funcs.hpp"
    "${INCL_DIR}/grid/grid.h"
    "${INCL_DIR}/grid/gridX.h"
    "${INCL_DIR}/grid/gridT.h"
@@ -77,6 +81,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/transform/fftRVX.h"
    "${INCL_DIR}/transform/hankelR.h"
    "${INCL_DIR}/transform/hankelfftRBLT.h"
+   "${INCL_DIR}/transform/hankelfftRCVT.h"
 )
 
 set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")

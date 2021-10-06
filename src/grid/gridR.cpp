@@ -23,15 +23,7 @@ void GridR::mirrorGrid(const std::vector<double>& in,std::vector<double>& out,bo
 {
     if(out.size() != 2*in.size())
         out.resize(2*in.size());
-    if(sign_reverse){
-        for(int i = in.size()-1; i >=0; i--)
-            out[(in.size()-1)-i] = -in[i];
-    } else{
-        for(int i = in.size()-1; i >=0; i--)
-            out[(in.size()-1)-i] = in[i];
-    }
-    for(auto i = 0; i < in.size(); i++)
-        out[i+in.size()] = in[i];
+    mirrorGrid(in.data(),out.data(),sign_reverse);
 }
 
 
@@ -39,16 +31,37 @@ void GridR::mirrorGrid(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,bo
 {
     if(out.size() != 2*in.size())
         out.resize(2*in.size());
-    if(sign_reverse){
-        for(int i = in.size()-1; i >=0; i--)
-            out[(in.size()-1)-i] = -in[i];
-    } else{
-        for(int i = in.size()-1; i >=0; i--)
-            out[(in.size()-1)-i] = in[i];
-    }
-    for(auto i = 0; i < in.size(); i++)
-        out[i+in.size()] = in[i];
+    mirrorGrid(in.data(),out.data(),sign_reverse);
 }
+
+
+void GridR::mirrorGrid(const double* in,double* out,bool sign_reverse) const
+{
+    if(sign_reverse){
+        for(int i = m_nr-1; i >=0; i--)
+            out[(m_nr-1)-i] = -in[i];
+    } else{
+        for(int i = m_nr-1; i >=0; i--)
+            out[(m_nr-1)-i] = in[i];
+    }
+    for(auto i = 0; i < m_nr; i++)
+        out[i+m_nr] = in[i];
+}
+
+
+void GridR::mirrorGrid(const dcmplx* in,dcmplx* out,bool sign_reverse) const
+{
+    if(sign_reverse){
+        for(int i = m_nr-1; i >=0; i--)
+            out[(m_nr-1)-i] = -in[i];
+    } else{
+        for(int i = m_nr-1; i >=0; i--)
+            out[(m_nr-1)-i] = in[i];
+    }
+    for(auto i = 0; i < m_nr; i++)
+        out[i+m_nr] = in[i];
+}
+
 
 
 }

@@ -23,10 +23,15 @@ class GridR : public Grid
               bool sign_reverse=false) const;
       std::vector<dcmplx> mirrorGrid(const std::vector<dcmplx>& in,\
               bool sign_reverse=false) const;
+
       void mirrorGrid(const std::vector<double>& in,std::vector<double>& out,\
               bool sign_reverse=false) const;
       void mirrorGrid(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,\
               bool sign_reverse=false) const;
+      void mirrorGrid(const double* in,double* out,bool sign_reverse=false) const;
+      void mirrorGrid(const dcmplx* in,dcmplx* out,bool sign_reverse=false) const;
+
+
   private:
       unsigned m_nr;
       double m_rmax;

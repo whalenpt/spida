@@ -123,13 +123,18 @@ void BasePropagator::reportStats() const
 
 void BasePropagator::report(double t)
 {
-    report1D(t);
-    report2D(t);
-    reportTrack(t);
+    if(m_report_handler.hasData1D())
+        report1D(t);
+    if(m_report_handler.hasData2D())
+        report2D(t);
+    if(m_report_handler.hasDataTrack())
+        reportTrack(t);
 }
 
 void BasePropagator::report1D(double t) 
 {
+    if(!m_report_handler.hasData1D())
+        return;
     m_stat.startTimer("Time Reporting 1D");
     m_report_handler.setItem("t",t);
     m_report_handler.report1D(m_dir_path,m_report_count1D);
@@ -140,6 +145,8 @@ void BasePropagator::report1D(double t)
 
 void BasePropagator::report2D(double t) 
 {
+    if(!m_report_handler.hasData2D())
+        return;
     m_stat.startTimer("Time Reporting 2D");
     m_report_handler.setItem("t",t);
     m_report_handler.report2D(m_dir_path,m_report_count2D);
@@ -150,6 +157,8 @@ void BasePropagator::report2D(double t)
 
 void BasePropagator::reportTrack(double t) 
 {
+    if(!m_report_handler.hasDataTrack())
+        return;
     m_stat.startTimer("Time Reporting Trackers");
     m_report_handler.setItem("t",t);
     m_report_handler.reportTrack(m_dir_path,t);

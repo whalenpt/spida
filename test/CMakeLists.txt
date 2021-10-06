@@ -7,6 +7,7 @@ set(SRC_FILES
 	dct_tests.cpp
 	fft_tests.cpp
 	transform_tests.cpp
+	hankelfft_tests.cpp
 	shape_tests.cpp
 	grid_tests.cpp
 )
