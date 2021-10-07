@@ -22,6 +22,7 @@
 //------------------------------------------------------------------------------
 
 using namespace spida;
+// dzA = -0.5*i*dt^2A -i\laplace_perpA  + i|U|^2U
 
 // NLS model for complex-valued physical space fields and spectral fields
 class NLSRT
@@ -38,9 +39,9 @@ class NLSRT
                 // ii is spida::ii which is imaginary an number
                 for(auto i = 0; i < kr.size(); i++)
                     for(auto j = 0; j < omega.size(); j++)
-                        m_L[i] = -ii*(pow(kr[i],2) - sigma*pow(omega[j],2));
+                        m_L[i] = ii*(sigma*pow(omega[j],2) - pow(kr[i],2));
                  m_NL = [this](const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
-                    double gamma = 2.0;
+                    double gamma = 1.0;
                     m_spi.SRST_To_RT(in,m_uphys);
                     for(auto i = 0; i < m_uphys.size(); i++)
                         m_uphys[i] = ii*gamma*m_uphys[i]*std::norm(m_uphys[i]);
@@ -102,19 +103,24 @@ class Propagator : public PropagatorCV
         // updateFields is a pure virtual function of PropagatorCV and must be implemented 
         // This function is called before each Solver report (allows for updating of real space fields)
         void updateFields(double t) { 
+            std::cout << "updateFields called" << std::endl;
             m_spi.SRST_To_RT(m_usp,m_uphys);
             m_spi.mirrorR(m_uphys,m_mirror_uphys);
             // output mirrored grids with negative radial components (for better graphs, not necessary)
             //m_spi.getGridR().mirrorGrid(m_uphys,m_mirror_uphys);
             //m_spi.getGridR().mirrorGrid(m_usp,m_mirror_usp);
         }
+        // propagator accessed by solver (what is propagated)
         std::vector<dcmplx>& propagator() {return m_usp;}
     private:
         // initReport is a helper function that feeds PropagatorCV information on what to report out to files
         void initReport() {
             // add report for complex physical space NLS field
+//            auto report = std::make_unique<dat::ReportComplexData2D<\
+//                     double,double,double>>("RT",m_mirror_r,m_spi.getT(),m_mirror_uphys);
             auto report = std::make_unique<dat::ReportComplexData2D<\
-                     double,double,double>>("RT",m_mirror_r,m_spi.getT(),m_mirror_uphys);
+                     double,double,double>>("RT",m_spi.getR(),m_spi.getT(),m_uphys);
+
             report->setItem("xlabel","r");
             report->setItem("ylabel","t");
             report->setItem("zlabel","A");
