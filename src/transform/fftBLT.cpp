@@ -76,6 +76,42 @@ void FFTBLT::ST_To_T(const dcmplx* in,double* out)
       out[j] = m_rFFTr[m_nt-j-1];
 }
 
+/*
+void FFTBLT::T_To_ST(const double* in,dcmplx* out)
+{
+    // FFTW FORWARD
+    for(auto i = m_nt/2+1; i < m_nt; i++)
+        m_rFFTr[i-(m_nt/2+1)] = in[i];
+    for(auto i = 0; i <= m_nt/2; i++)
+        m_rFFTr[i+(m_nt/2-1)] = in[i];
+
+    kiss_fftr(m_rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()),\
+                  reinterpret_cast<kiss_fft_cpx*>(m_rFFTs.data()));
+    for(auto j = m_minI; j <= m_maxI; j++)
+        out[j-m_minI] = 2.0*m_L*m_rFFTs[j]/static_cast<double>(m_nt);
+}
+
+void FFTBLT::ST_To_T(const dcmplx* in,double* out)
+{
+    // band limited minimum frequency 
+    for(unsigned j = 0; j < m_minI; j++) 
+        m_rFFTs[j] = 0.0; 
+    for(unsigned j = m_minI; j <= m_maxI; j++)
+        m_rFFTs[j] = in[j-m_minI]/(2.0*m_L);
+    // band limited maximum frequency
+    for(unsigned j = m_maxI+1; j < m_nt/2+1; j++)
+        m_rFFTs[j] = 0.0; 
+
+    kiss_fftri(m_rcfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_rFFTs.data()),\
+                  reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()));
+
+    for(auto i = 0; i <= m_nt/2; i++)
+        out[i] = m_rFFTr[i+(m_nt/2-1)];
+    for(auto i = m_nt/2+1; i < m_nt; i++)
+        out[i] = m_rFFTr[i-(m_nt/2+1)];
+}
+*/
+
 void FFTBLT::CVT_To_ST(const dcmplx* in,dcmplx* out)
 {
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in),\

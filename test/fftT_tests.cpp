@@ -8,6 +8,7 @@
 #include <spida/transform/fftBLT.h>
 #include <spida/transform/fftCVT.h>
 #include <spida/SpidaCVT.h>
+#include <spida/SpidaBLT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/report/dat.hpp>
 #include <pwutils/pwmath.hpp>
@@ -182,6 +183,7 @@ TEST(FFTRVT_TEST,GAUSST)
     spida::UniformGridRVT grid(nt,minT,maxT,minST,maxST);
     unsigned nst = grid.getNst();
     std::vector<double> y(nt);
+    std::vector<dcmplx> ycmplx(nt);
     std::vector<double> yinv(nt);
     std::vector<dcmplx> ysp(nst);
 
@@ -189,6 +191,7 @@ TEST(FFTRVT_TEST,GAUSST)
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
     shape.shapeRV(y);
+    shape.shapeCV(ycmplx);
 
     transform.T_To_ST(y,ysp);
     transform.ST_To_T(ysp,yinv);
@@ -211,14 +214,72 @@ TEST(FFTRVT_TEST,GAUSST)
     // absolute value seems to be accurate enough
     EXPECT_LT(pw::relative_error(ysp_abs,ysp_ex_abs),1e-6);
 
-//    std::ofstream os;
-//    auto report = dat::ReportComplexData1D<double,double>("fftrvt_gauss_out",omega,ysp);
-//    report.setDirPath("outfolder");
-//    report.report(os);
-//    auto report_ex = dat::ReportComplexData1D<double,double>("fftrvt_gauss_expect",omega,ysp_ex);
-//    report_ex.setDirPath("outfolder");
-//    report_ex.report(os);
+    std::ofstream os;
+    // Output with alot of precision
+    os << std::scientific << std::setprecision(10);
+    auto report = dat::ReportComplexData1D<double,double>("fftrvt_gauss_out",omega,ysp);
+    report.setDirPath("outfolder");
+    report.report(os);
+    auto report_ex = dat::ReportComplexData1D<double,double>("fftrvt_gauss_expect",omega,ysp_ex);
+    report_ex.setDirPath("outfolder");
+    report_ex.report(os);
+
+    // Complex valued transform -> phase works fine
+    transform.CVT_To_ST(ycmplx,ysp);
+    EXPECT_LT(pw::relative_error(ysp,ysp_ex),1e-6);
 }
+
+// F{cos(at)} = PI*(delta(omega-a) + delta(omega+a))
+TEST(FFTRVT_TEST,COS)
+{
+	unsigned N = 32;
+    pw::DataIO dataio("outfolder");
+    using spida::dcmplx;
+    using spida::PI;
+
+    std::vector<double> in(N);
+    //spida::UniformGridRVT grid(N,0.0,2.0*PI);
+    spida::UniformGridRVT grid(N,0.0,2.0*PI);
+	unsigned nst = grid.getNst();
+    std::vector<dcmplx> out(nst);
+
+    const std::vector<double> t = grid.getT();
+    for(auto i = 0; i < t.size(); i++)
+        in[i] = cos(8*t[i]);
+
+    spida::FFTBLT tr(grid);
+    tr.T_To_ST(in,out);
+    std::cout << out[8].real() << std::endl;
+    std::cout << out[8].imag() << std::endl;
+    dataio.writeFile("fftrvt_cos_check.dat",out);
+	EXPECT_DOUBLE_EQ(out[8].real(),PI);
+}
+
+TEST(FFTRVT_TEST,DERIVATIVE_SIN)
+{
+	unsigned N = 32;
+    pw::DataIO dataio("outfolder");
+
+    using spida::dcmplx;
+    using spida::PI;
+    std::vector<double> in(N);
+    std::vector<double> out(N);
+    std::vector<double> expect(N);
+
+    spida::UniformGridRVT grid(N,0,3*PI);
+    const std::vector<double> t = grid.getT();
+    for(auto i = 0; i < t.size(); i++)
+        in[i] = sin(t[i]);
+    for(auto i = 0; i < t.size(); i++)
+        expect[i] = cos(t[i]);
+
+    spida::SpidaBLT spi{grid};
+    spi.dT(in,out);
+    dataio.writeFile("fftrvt_der_sin.dat",expect,out);
+    EXPECT_LT(pw::relative_error(expect,out),1e-6);
+}
+
+
 
 
 /*
