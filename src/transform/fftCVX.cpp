@@ -9,6 +9,9 @@
 
 namespace spida{
 
+// kiss fft defined for x in [0,1], kx in [0,1]    
+// FFTCVX wrapper will compute fft for x in [-xmin,xmax]  and kx in [-pi/L,pi/L] where L = xmax-xmin
+// FFT{f(x)} = L*exp(-i*xmin*kx)*kissfft{f(x)}
 FFTCVX::FFTCVX(const UniformGridCVX& grid) :
     m_nx(grid.getNx()),
     m_minx(grid.getMinX()),
@@ -28,42 +31,32 @@ FFTCVX::~FFTCVX()
     kiss_fft_free(m_cfg_reverse);
 }
 
-void FFTCVX::X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept
-{
-    kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in.data()),\
-                  reinterpret_cast<kiss_fft_cpx*>(out.data()));
-    // Divide by FFT multiplier m_nx and adjust phase since physical grid is not assumed to start at 0
-    for(auto i = 0; i < out.size(); i++)
-        out[i] *= exp(ii*m_kx[i]*m_minx)/static_cast<double>(m_nx);
-}
-
 void FFTCVX::X_To_SX(const dcmplx* in,dcmplx* out) noexcept
 {
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in),\
                   reinterpret_cast<kiss_fft_cpx*>(out));
-    // Divide by FFT multiplier m_nx and adjust phase since physical grid is not assumed to start at 0
+    // Divide by FFT multiplier m_nx
+    // Adjust phase since physical grid is not assumed to start at 0
+    // Additional adjustment for length of grid (L)
     for(auto i = 0; i < m_nx; i++)
-        out[i] *= exp(ii*m_kx[i]*m_minx)/static_cast<double>(m_nx);
+        out[i] *= (m_L*exp(ii*m_kx[i]*m_minx))/static_cast<double>(m_nx);
 }
-
-void FFTCVX::SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept
-{
-    // Undo phase adjustment for inverse
-    for(auto i = 0; i < in.size(); i++)
-        m_temp[i] = in[i]*exp(-ii*m_kx[i]*m_minx);
-    kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_temp.data()),\
-                  reinterpret_cast<kiss_fft_cpx*>(out.data()));
-}
-
 void FFTCVX::SX_To_X(const dcmplx* in,dcmplx* out) noexcept
 {
-    // Undo phase adjustment for inverse
+    // Undo phase adjustment and length adjustment for inverse
     for(auto i = 0; i < m_nx; i++)
-        m_temp[i] = in[i]*exp(-ii*m_kx[i]*m_minx);
+        m_temp[i] = in[i]*exp(-ii*m_kx[i]*m_minx)/m_L;
 
     kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_temp.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(out));
 }
+
+void FFTCVX::X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept 
+{ X_To_SX(in.data(),out.data()); }
+
+void FFTCVX::SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept
+{ SX_To_X(in.data(),out.data()); }
+
 
 
 

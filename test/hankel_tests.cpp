@@ -2,113 +2,16 @@
 
 #include <gtest/gtest.h>
 #include <spida/helper/constants.h>
-#include <spida/grid/uniformRVT.h>
 #include <spida/grid/besselR.h>
-#include <spida/shape/shapeT.h>
-#include <spida/shape/shapeR.h>
-#include <spida/transform/fftBLT.h>
 #include <spida/transform/hankelR.h>
-#include <spida/transform/hankelfftRBLT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
-#include <algorithm>
-#include <numeric>
-#include <functional>
 #include <random>
 
-TEST(FFTCVT_TEST,GAUSST)
-{
-    using spida::dcmplx;
-    int nt = 4096;
-    double I0 = 5.0e16;
-    double tp = 20.0e-15;
-    double omega0 = 4.7091e14;
-    double minT = -240e-15;
-    double maxT = 240e-15;
 
-    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    std::vector<double> y(nt);
-    std::vector<double> yinv(nt);
-    std::vector<dcmplx> ysp(grid.getNst());
-
-    spida::FFTBLT transform(grid);
-    spida::GaussT shape(grid,std::sqrt(I0),tp);
-    shape.setFastPhase(omega0);
-    shape.shapeRV(y);
-
-    transform.T_To_ST(y,ysp);
-    transform.ST_To_T(ysp,yinv);
-
-    auto maxval = pw::max(ysp);
-    auto maxpos = pw::argmax(ysp);
-	EXPECT_DOUBLE_EQ(abs(maxval),33820027093.103012);
-	EXPECT_EQ(maxpos,28);
-    EXPECT_LT(pw::relative_error(y,yinv),1e-6);
-}
-
-TEST(FFTCVT_TEST,GAUSST_POINTERS)
-{
-    using spida::dcmplx;
-    int nt = 4096;
-    double I0 = 5.0e16;
-    double tp = 20.0e-15;
-    double omega0 = 4.7091e14;
-    double minT = -240e-15;
-    double maxT = 240e-15;
-
-    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    spida::FFTBLT transform(grid);
-
-    spida::GaussT shape(grid,std::sqrt(I0),tp);
-    shape.setFastPhase(omega0);
-
-    std::vector<double> y(nt);
-    std::vector<double> yinv(nt);
-    std::vector<dcmplx> ysp(grid.getNst());
-
-    shape.ShapeT::shapeRV(y);
-    transform.T_To_ST(y.data(),ysp.data());
-    transform.ST_To_T(ysp.data(),yinv.data());
-
-    auto maxval = pw::max(ysp);
-    auto maxpos = pw::argmax(ysp);
-	EXPECT_DOUBLE_EQ(abs(maxval),33820027093.103012);
-	EXPECT_EQ(maxpos,28);
-    EXPECT_LT(pw::relative_error(y,yinv),1e-6);
-}
-
-
-TEST(FFTCVT_TEST,COMPLEX_GAUSST)
-{
-    using spida::dcmplx;
-    int nt = 4096;
-    double I0 = 5.0e16;
-    double tp = 20.0e-15;
-    double omega0 = 4.7091e14;
-    double minT = -240e-15;
-    double maxT = 240e-15;
-
-    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    spida::FFTBLT transform(grid);
-
-    spida::GaussT shape(grid,std::sqrt(I0),tp);
-    shape.setFastPhase(omega0);
-
-    std::vector<dcmplx> y(nt);
-    std::vector<dcmplx> yinv(nt);
-    std::vector<dcmplx> ysp(grid.getNst());
-    shape.shapeCV(y);
-
-    transform.CVT_To_ST(y,ysp);
-    transform.ST_To_CVT(ysp,yinv);
-
-    auto maxval = pw::max(ysp);
-    auto maxpos = pw::argmax(ysp);
-	EXPECT_DOUBLE_EQ(abs(maxval),2*33820027093.103012);
-	EXPECT_EQ(maxpos,28);
-    EXPECT_LT(pw::relative_error(y,yinv),1e-6);
-}
-
+// Hankel transform of a gauss
+// H0{exp(-ar^2)}=(1/2a)*exp(-kr^2/(4a))
+// H0{exp(-(r/w0)^2)}=(w0^2/2)*exp(-w0^2*kr^2/4)
 TEST(HANKEL_TRANSFORM_TEST,GAUSS)
 {
     int N = 25;
@@ -125,15 +28,16 @@ TEST(HANKEL_TRANSFORM_TEST,GAUSS)
 
     double a = 5.0;
     for(auto i = 0; i < N; i++)
-        in[i] = exp(-pow(a*r[i],2));
+        in[i] = exp(-a*pow(r[i],2));
     for(auto i = 0; i < N; i++){
-        double beta = 1.0/(2.0*pow(a,2));
-        exact[i] = beta*exp(-pow(kr[i],2)/(4.0*pow(a,2)));
+        double beta = 1.0/(2.0*a);
+        exact[i] = beta*exp(-pow(kr[i],2)/(4.0*a));
     }
     transform.R_To_SR(in,out);
     EXPECT_LT(pw::relative_error(out,exact),1e-6);
 }
 
+// H0{exp(-a*r)/r} = 1.0/(sqrt(a^2+kr^2))
 TEST(HANKEL_TRANSFORM_TEST,EXP_OVER_R)
 {
     int N = 64;
@@ -158,6 +62,9 @@ TEST(HANKEL_TRANSFORM_TEST,EXP_OVER_R)
     EXPECT_LT(pw::relative_error(exact,out),0.2);
 }
 
+// H0 {sinc(a*r)} = 1.0/(a^2*sqrt(1.0-(kr/a)^2)) if kr < a
+//                             0.0               if kr >=a                                        
+// sinc(a*r) = sin(a*r)/(a*r)
 TEST(HANKEL_TRANSFORM_TEST,SINC_TEST)
 {
     int N = 256;
@@ -182,6 +89,7 @@ TEST(HANKEL_TRANSFORM_TEST,SINC_TEST)
     EXPECT_LT(pw::relative_error(exact,out),0.3);
 }
 
+// Test that forward Hankel followed by inverse Hankel yields the identity
 TEST(HANKEL_TRANSFORM_TEST,INVERSES)
 {
     int N = 25;
@@ -201,6 +109,7 @@ TEST(HANKEL_TRANSFORM_TEST,INVERSES)
     EXPECT_LT(pw::relative_error(in,expect),1e-6);
 }
 
+// Test Hankel matrix for orthogonality
 TEST(HANKEL_TRANSFORM_TEST,ORTHOGONALITY)
 {
     int N = 25;

@@ -11,12 +11,16 @@
 #include <spida/transform/hankelfftRCVT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
+#include <pwutils/report/dat.hpp>
 #include <algorithm>
 #include <numeric>
 #include <functional>
 #include <random>
+#include <fstream>
 
-TEST(HANKELFFTRCVT_TEST,GAUSSTGAUSSR)
+
+// Test that forward transforms followed by the inverse transforms yield the identity
+TEST(HANKELFFTRCVT_TEST,INVERSES)
 {
     using spida::dcmplx;
     unsigned nr = 100;
@@ -38,14 +42,8 @@ TEST(HANKELFFTRCVT_TEST,GAUSSTGAUSSR)
         for(auto j = 0; j < nt; j++)
             u[i*nt+j] = u0r[i]*u0t[j];
 
-    unsigned nst = gridT.getNst();
-    std::vector<dcmplx> v(nr*nst);
-    std::vector<dcmplx> vb(nr*nst);
-    std::vector<dcmplx> w(nr*nst);
-    std::vector<dcmplx> wb(nr*nst);
-    std::vector<dcmplx> ub(nr*nt);
     std::vector<dcmplx> usr(nr*nt);
-    // Check forward transform and reverse transform over R dimension
+    std::vector<dcmplx> ub(nr*nt);
 
     spida::HankelFFTRCVT transform(gridR,gridT);
     // Check forward transform and reverse transform over R dimension
@@ -53,6 +51,9 @@ TEST(HANKELFFTRCVT_TEST,GAUSSTGAUSSR)
     transform.SRT_To_RT(usr,ub);
     EXPECT_LT(pw::relative_error(u,ub),1e-6);
 
+
+    unsigned nst = gridT.getNst();
+    std::vector<dcmplx> v(nr*nst);
     // Check forward transform and reverse transform over T dimension
     transform.RT_To_RST(u,v);
     transform.RST_To_RT(v,ub);
@@ -63,6 +64,9 @@ TEST(HANKELFFTRCVT_TEST,GAUSSTGAUSSR)
     transform.SRST_To_RT(v,ub);
     EXPECT_LT(pw::relative_error(u,ub),1e-6);
 
+
+    std::vector<dcmplx> w(nr*nst);
+    std::vector<dcmplx> vb(nr*nst);
     // Check forward tranform and reverse transform over SR dimension
     transform.SRST_To_RST(v,w);
     transform.RST_To_SRST(w,vb);
@@ -73,6 +77,7 @@ TEST(HANKELFFTRCVT_TEST,GAUSSTGAUSSR)
     transform.SRT_To_SRST(usr,vb);
     EXPECT_LT(pw::relative_error(v,vb),1e-6);
 
+    std::vector<dcmplx> wb(nr*nst);
     // Check RT_To_RST and SRST_To_RST are equal
     transform.RT_To_RST(u,w);
     transform.SRST_To_RST(v,wb);
@@ -84,6 +89,56 @@ TEST(HANKELFFTRCVT_TEST,GAUSSTGAUSSR)
     transform.RT_To_SRT(u,zeta);
     transform.SRST_To_SRT(v,zetab);
     EXPECT_LT(pw::relative_error(zeta,zetab),1e-6);
+}
+
+// H0{exp(-a*r^2)}=(1/2a)*exp(-kr^2/(4a))
+// FFT{exp(-b*t^2)} = sqrt(pi/b)*exp(-omega^2/(4*b)) 
+// F{exp(-a*r^2 -b*t^2)} = sqrt(pi/b)/(2*a)*exp(-kr^2/(4a)-omega^2/(4*b))
+TEST(HANKELFFTRCVT_TEST,GAUSSTGAUSSR)
+{
+    using spida::dcmplx;
+    using spida::PI;
+    using spida::ii;
+
+    unsigned nr = 100;
+    unsigned nt = 512;
+    double minT = -6.0;
+    double maxT = 6.0;
+    double maxR = 12.0;
+
+    spida::UniformGridCVT gridT(nt,minT,maxT);
+    spida::BesselRootGridR gridR(nr,maxR);
+    const std::vector<double> r = gridR.getR();
+    const std::vector<double> t = gridT.getT();
+    const std::vector<double> kr = gridR.getSR();
+    const std::vector<double> omega = gridT.getST();
+    unsigned nst = gridT.getNst();
+
+    std::vector<dcmplx> u(nr*nt);
+    double a = 1.0;
+    double b = 2.0;
+    for(auto i = 0; i < nr; i++)
+        for(auto j = 0; j < nt; j++)
+            u[i*nt+j] = exp(-a*pow(r[i],2) - b*pow(t[j],2));
+
+    std::vector<dcmplx> out(nr*nst);
+    spida::HankelFFTRCVT transform(gridR,gridT);
+    transform.RT_To_SRST(u,out);
+    auto report = dat::ReportComplexData2D<double,double,double>("hankelfft_SR",kr,omega,out);
+    std::ofstream os;
+    report.setDirPath("outfolder");
+    os << report;
+
+    std::vector<dcmplx> expect(nr*nt);
+    for(auto i = 0; i < kr.size(); i++)
+        for(auto j = 0; j < omega.size(); j++)
+            expect[i*nst+j] = sqrt(PI/b)/(2.0*a)*exp(-(pow(kr[i],2)/(4.0*a)+pow(omega[j],2)/(4.0*b)));
+
+    auto report_ex = dat::ReportComplexData2D<double,double,double>("hankelfft_expect_SR",kr,omega,expect);
+    report_ex.setDirPath("outfolder");
+    os << report_ex;
+
+    EXPECT_LT(pw::relative_error(expect,out),1e-5);
 }
 
 TEST(HANKELFFTRCVT_TEST,MULTITHREAD)
@@ -135,7 +190,7 @@ TEST(HANKELFFTRCVT_TEST,MULTITHREAD)
 }
 
 
-TEST(HANKELFFTRRVT_TEST,GAUSSTGAUSSR)
+TEST(HANKELFFTRRVT_TEST,INVERSES)
 {
     using spida::dcmplx;
     int nr = 100;
@@ -212,6 +267,64 @@ TEST(HANKELFFTRRVT_TEST,GAUSSTGAUSSR)
     transform.SRST_To_SRT(v,zetab);
     EXPECT_LT(pw::relative_error(zeta,zetab),1e-6);
 }
+
+// H0{exp(-(r/w0)^2)}=(w0^2/2)*exp(-w0^2*kr^2/4)
+// FFT{exp(-(t/tp)^2)}= tp*sqrt(pi)*exp(-tp^2*omega^2/4)
+// F{exp(-(r/w0)^2-(t/tp)^2)} = (tp*w0^2*sqrt(pi)/2)*exp(-w0^2*kr^2/4-tp^2*omega^2/4)
+TEST(HANKELFFTRRVT_TEST,GAUSSTGAUSSR)
+{
+    using spida::dcmplx;
+    using spida::PI;
+    using spida::ii;
+    int nr = 100;
+    int nt = 512;
+    double w0 = 20.0e-6;
+    double maxR = 12*w0;
+    double I0 = 5.0e16;
+    double tp = 5.0e-15;
+    double omega0 = 2.7091e15;
+    double minT = -10*tp;
+    double maxT = 10*tp;
+    double minST = 1.0e15;
+    double maxST = 4.3e15;
+
+    spida::UniformGridRVT gridT(nt,minT,maxT,minST,maxST);
+    spida::BesselRootGridR gridR(nr,maxR);
+
+    const std::vector<double> r = gridR.getR();
+    const std::vector<double> t = gridT.getT();
+    const std::vector<double> kr = gridR.getSR();
+    const std::vector<double> omega = gridT.getST();
+    unsigned nst = gridT.getNst();
+
+    std::vector<double> u(nr*nt);
+    for(auto i = 0; i < nr; i++)
+        for(auto j = 0; j < nt; j++)
+            u[i*nt+j] = sqrt(I0)*exp(-pow(r[i]/w0,2) - pow(t[j]/tp,2))*cos(omega0*t[j]);
+
+    std::vector<dcmplx> out(nr*nst);
+    spida::HankelFFTRBLT transform(gridR,gridT);
+
+    transform.RT_To_SRST(u,out);
+    auto report = dat::ReportComplexData2D<double,double,double>("hankelrfft_SR",kr,omega,out);
+    std::ofstream os;
+    report.setDirPath("outfolder");
+    os << report;
+
+    std::vector<dcmplx> expect(nr*nt);
+    for(auto i = 0; i < kr.size(); i++)
+        for(auto j = 0; j < omega.size(); j++)
+            expect[i*nst+j] = sqrt(I0)*(tp*pow(w0,2)*sqrt(PI)/2.0)*exp(\
+                    -pow(w0,2)*pow(kr[i],2)/(4.0)-pow(tp,2)*pow(omega[j],2)/(4.0));
+
+    auto report_ex = dat::ReportComplexData2D<double,double,double>("hankelfft_expect_SR",kr,omega,expect);
+    report_ex.setDirPath("outfolder");
+    os << report_ex;
+
+    EXPECT_LT(pw::relative_error(expect,out),1e-5);
+}
+
+
 
 TEST(HANKELFFTRRVT_TEST,MULTITHREAD)
 {

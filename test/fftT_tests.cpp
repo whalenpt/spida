@@ -1,142 +1,20 @@
 
+
 #include <gtest/gtest.h>
-#include <spida/shape/shapeX.h>
-#include <spida/transform/fftCVX.h>
-#include <spida/transform/fftCVT.h>
-#include <spida/grid/uniformCVX.h>
+#include <spida/helper/constants.h>
+#include <spida/grid/uniformRVT.h>
 #include <spida/grid/uniformCVT.h>
-#include <spida/SpidaCVX.h>
+#include <spida/shape/shapeT.h>
+#include <spida/transform/fftBLT.h>
+#include <spida/transform/fftCVT.h>
 #include <spida/SpidaCVT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <random>
 
-TEST(FFTCVX_TEST,INVERSES)
-{
-	unsigned N = 32;
-    pw::DataIO dataio("outfolder");
-    using spida::dcmplx;
 
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution(1.0,1.0);
-    std::vector<dcmplx> in(N);
-    std::vector<dcmplx> out(N);
-    std::vector<dcmplx> expect(N);
-    for(unsigned i = 0; i < N; i++)
-        in[i] = distribution(generator);
-
-    spida::FFTCVX tr(spida::UniformGridCVX{N,-1,1});
-    tr.X_To_SX(in,out);
-    tr.SX_To_X(out,expect);
-
-    dataio.writeFile("fft_check.dat",in,expect);
-    EXPECT_LT(pw::relative_error(in,expect),1e-6);
-}
-
-TEST(FFTCVX_TEST,GAUSS)
-{
-	unsigned N = 64;
-    pw::DataIO dataio("outfolder");
-    using spida::dcmplx;
-    using spida::PI;
-    using spida::ii;
-
-    std::vector<dcmplx> in(N,0.0);
-    std::vector<dcmplx> out(N,0.0);
-    std::vector<dcmplx> expect(N,0.0);
-
-    double xmin = -6;
-    double xmax = 6;
-    spida::UniformGridCVX grid(N,xmin,xmax);
-    double L = grid.getLX();
-    const std::vector<double> x = grid.getX();
-    const std::vector<double> kx = grid.getSX();
-    
-    double alpha = 2.0;
-    for(auto i = 0; i < x.size(); i++)
-        in[i] = exp(-alpha*pow(x[i],2));
-    for(auto i = 0; i < kx.size(); i++)
-        expect[i] = (1.0/L)*sqrt(PI/alpha)*exp(-pow(kx[i],2)/(4.0*alpha));
-
-    spida::FFTCVX tr(grid);
-    tr.X_To_SX(in,out);
-
-    dataio.writeFile("fft_gauss.dat",expect,out);
-    EXPECT_LT(pw::relative_error(expect,out),1e-5);
-}
-
-TEST(FFTCVX_TEST,COS)
-{
-	unsigned N = 32;
-    pw::DataIO dataio("outfolder");
-    using spida::dcmplx;
-    using spida::PI;
-
-    std::vector<dcmplx> in(N);
-    std::vector<dcmplx> out(N);
-    spida::UniformGridCVX grid(N,0,1);
-    const std::vector<double> x = grid.getX();
-    for(auto i = 0; i < x.size(); i++)
-        in[i] = cos(8*2.0*PI*x[i]);
-
-    spida::FFTCVX tr(grid);
-    tr.X_To_SX(in,out);
-    dataio.writeFile("fft_cos_check.dat",out);
-	EXPECT_DOUBLE_EQ(out[8].real(),0.5);
-}
-
-
-
-TEST(FFTCVX_TEST,DERIVATIVE_SIN)
-{
-	unsigned N = 32;
-    pw::DataIO dataio("outfolder");
-
-    using spida::dcmplx;
-    using spida::PI;
-    std::vector<dcmplx> in(N);
-    std::vector<dcmplx> out(N);
-    std::vector<dcmplx> expect(N);
-
-    spida::UniformGridCVX grid(N,0,2*PI);
-    const std::vector<double> x = grid.getX();
-    for(auto i = 0; i < x.size(); i++)
-        in[i] = sin(x[i]);
-    for(auto i = 0; i < x.size(); i++)
-        expect[i] = cos(x[i]);
-
-    spida::SpidaCVX spidaX{grid};
-    spidaX.dX(in,out);
-    dataio.writeFile("fft_der_sin.dat",expect,out);
-    EXPECT_LT(pw::relative_error(expect,out),1e-6);
-}
-
-TEST(FFTCVX_TEST,DERIVATIVE_GAUSS)
-{
-	unsigned N = 32;
-    pw::DataIO dataio("outfolder");
-
-    using spida::dcmplx;
-    std::vector<dcmplx> in(N);
-    std::vector<dcmplx> out(N);
-    std::vector<dcmplx> expect(N);
-
-    spida::UniformGridCVX grid(N,-6,6);
-    const std::vector<double> x = grid.getX();
-    for(auto i = 0; i < x.size(); i++)
-        in[i] = exp(-pow(x[i],2));
-    for(auto i = 0; i < x.size(); i++)
-        expect[i] = -2.0*x[i]*exp(-pow(x[i],2));
-
-    spida::SpidaCVX spidaX{grid};
-    spidaX.dX(in,out);
-    dataio.writeFile("fft_der_gauss.dat",expect,out);
-    dataio.writeFile("fft_x_sx.dat",grid.getX(),grid.getSX());
-    EXPECT_LT(pw::relative_error(expect,out),1e-6);
-}
-
-
-
+// FFTCVT defined such that F{f(t)} = \integral_{-\inf}^{\inf}f(t)exp(i*omega*t) dt
+// Test that forward fft followed by inverse fft yields identity
 TEST(FFTCVT_TEST,INVERSES)
 {
 	unsigned N = 32;
@@ -159,6 +37,9 @@ TEST(FFTCVT_TEST,INVERSES)
     EXPECT_LT(pw::relative_error(in,expect),1e-6);
 }
 
+// a = 1/tp^2
+// F{exp(-a*t^2)} = sqrt(pi/a)*exp(-omega^2/(4*a)) 
+// F{exp(-(t/tp)^2)}= tp*sqrt(pi)*exp(-tp^2*omega^2/4)
 TEST(FFTCVT_TEST,GAUSS)
 {
 	unsigned N = 64;
@@ -174,15 +55,14 @@ TEST(FFTCVT_TEST,GAUSS)
     double xmin = -6;
     double xmax = 6;
     spida::UniformGridCVT grid(N,xmin,xmax);
-    double L = grid.getLT();
     const std::vector<double> t = grid.getT();
     const std::vector<double> omega = grid.getST();
     
-    double alpha = 2.0;
+    double a = 2.0;
     for(auto i = 0; i < t.size(); i++)
-        in[i] = exp(-alpha*pow(t[i],2));
+        in[i] = exp(-a*pow(t[i],2));
     for(auto i = 0; i < omega.size(); i++)
-        expect[i] = (1.0/L)*sqrt(PI/alpha)*exp(-pow(omega[i],2)/(4.0*alpha));
+        expect[i] = sqrt(PI/a)*exp(-pow(omega[i],2)/(4.0*a));
 
     spida::FFTCVT tr(grid);
     tr.T_To_ST(in,out);
@@ -190,6 +70,7 @@ TEST(FFTCVT_TEST,GAUSS)
     EXPECT_LT(pw::relative_error(expect,out),1e-5);
 }
 
+// F{cos(at)} = PI*(delta(omega-a) + delta(omega+a))
 TEST(FFTCVT_TEST,COS)
 {
 	unsigned N = 32;
@@ -199,18 +80,16 @@ TEST(FFTCVT_TEST,COS)
 
     std::vector<dcmplx> in(N);
     std::vector<dcmplx> out(N);
-    spida::UniformGridCVT grid(N,0,1);
+    spida::UniformGridCVT grid(N,0.0,2.0*PI);
     const std::vector<double> t = grid.getT();
     for(auto i = 0; i < t.size(); i++)
-        in[i] = cos(8*2.0*PI*t[i]);
+        in[i] = cos(8*t[i]);
 
     spida::FFTCVT tr(grid);
     tr.T_To_ST(in,out);
     dataio.writeFile("fftcvt_cos_check.dat",out);
-	EXPECT_DOUBLE_EQ(out[8].real(),0.5);
+	EXPECT_DOUBLE_EQ(out[8].real(),PI);
 }
-
-
 
 TEST(FFTCVT_TEST,DERIVATIVE_SIN)
 {
@@ -259,6 +138,102 @@ TEST(FFTCVT_TEST,DERIVATIVE_GAUSS)
     dataio.writeFile("fftcv_t_st.dat",grid.getT(),grid.getST());
     EXPECT_LT(pw::relative_error(expect,out),1e-6);
 }
+
+/*
+
+TEST(FFTRVT_TEST,GAUSST)
+{
+    using spida::dcmplx;
+    int nt = 4096;
+    double I0 = 5.0e16;
+    double tp = 20.0e-15;
+    double omega0 = 4.7091e14;
+    double minT = -240e-15;
+    double maxT = 240e-15;
+
+    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+    std::vector<double> y(nt);
+    std::vector<double> yinv(nt);
+    std::vector<dcmplx> ysp(grid.getNst());
+
+    spida::FFTBLT transform(grid);
+    spida::GaussT shape(grid,std::sqrt(I0),tp);
+    shape.setFastPhase(omega0);
+    shape.shapeRV(y);
+
+    transform.T_To_ST(y,ysp);
+    transform.ST_To_T(ysp,yinv);
+
+    auto maxval = pw::max(ysp);
+    auto maxpos = pw::argmax(ysp);
+	EXPECT_DOUBLE_EQ(abs(maxval),33820027093.103012);
+	EXPECT_EQ(maxpos,28);
+    EXPECT_LT(pw::relative_error(y,yinv),1e-6);
+}
+
+TEST(FFTRVT_TEST,GAUSST_POINTERS)
+{
+    using spida::dcmplx;
+    int nt = 4096;
+    double I0 = 5.0e16;
+    double tp = 20.0e-15;
+    double omega0 = 4.7091e14;
+    double minT = -240e-15;
+    double maxT = 240e-15;
+
+    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+    spida::FFTBLT transform(grid);
+
+    spida::GaussT shape(grid,std::sqrt(I0),tp);
+    shape.setFastPhase(omega0);
+
+    std::vector<double> y(nt);
+    std::vector<double> yinv(nt);
+    std::vector<dcmplx> ysp(grid.getNst());
+
+    shape.ShapeT::shapeRV(y);
+    transform.T_To_ST(y.data(),ysp.data());
+    transform.ST_To_T(ysp.data(),yinv.data());
+
+    auto maxval = pw::max(ysp);
+    auto maxpos = pw::argmax(ysp);
+	EXPECT_DOUBLE_EQ(abs(maxval),33820027093.103012);
+	EXPECT_EQ(maxpos,28);
+    EXPECT_LT(pw::relative_error(y,yinv),1e-6);
+}
+
+
+TEST(FFTRVT_TEST,COMPLEX_GAUSST)
+{
+    using spida::dcmplx;
+    int nt = 4096;
+    double I0 = 5.0e16;
+    double tp = 20.0e-15;
+    double omega0 = 4.7091e14;
+    double minT = -240e-15;
+    double maxT = 240e-15;
+
+    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+    spida::FFTBLT transform(grid);
+
+    spida::GaussT shape(grid,std::sqrt(I0),tp);
+    shape.setFastPhase(omega0);
+
+    std::vector<dcmplx> y(nt);
+    std::vector<dcmplx> yinv(nt);
+    std::vector<dcmplx> ysp(grid.getNst());
+    shape.shapeCV(y);
+
+    transform.CVT_To_ST(y,ysp);
+    transform.ST_To_CVT(ysp,yinv);
+
+    auto maxval = pw::max(ysp);
+    auto maxpos = pw::argmax(ysp);
+	EXPECT_DOUBLE_EQ(abs(maxval),2*33820027093.103012);
+	EXPECT_EQ(maxpos,28);
+    EXPECT_LT(pw::relative_error(y,yinv),1e-6);
+}
+*/
 
 
 
@@ -380,6 +355,10 @@ TEST(DCT_TEST,DCT_EXP_DER_TEST)
     EXPECT_LT(pw::relative_error(in,beta),1e-6);
 }
 */
+
+
+
+
 
 
 

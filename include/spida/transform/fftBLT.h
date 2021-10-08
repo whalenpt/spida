@@ -29,16 +29,16 @@ class FFTBLT
         void ST_To_CVT(const dcmplx* in,dcmplx* out); 
         void CVT_To_ST(const dcmplx* in,dcmplx* out); 
     private:
-        int m_nt;
-        int m_nst;
-        int m_minI;
-        int m_maxI;
+        unsigned m_nt;
+        unsigned m_nst;
+        unsigned m_minI;
+        unsigned m_maxI;
         std::vector<double> m_rFFTr;
         std::vector<dcmplx> m_rFFTs;
         std::vector<dcmplx> m_cFFT;
-
-        void execute_forward();
-        void execute_backward();
+        std::vector<double> m_omega;
+        double m_mint;
+        double m_L;
 
         kiss_fft_cfg m_cfg_forward;
         kiss_fft_cfg m_cfg_reverse;

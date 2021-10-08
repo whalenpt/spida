@@ -26,6 +26,7 @@ class FFTCVT
     private:
         unsigned m_nt;
         double m_mint;
+        double m_L;
         std::vector<double> m_omega;
         std::vector<dcmplx> m_temp;
 

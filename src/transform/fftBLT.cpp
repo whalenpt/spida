@@ -14,7 +14,10 @@ namespace spida{
 FFTBLT::FFTBLT(const UniformGridRVT& grid) :
     m_rFFTr(grid.getNt(),0.0),
     m_rFFTs(grid.getNt()/2+1,0.0),
-    m_cFFT(grid.getNt(),0.0)
+    m_cFFT(grid.getNt(),0.0),
+    m_omega(grid.getST()),
+    m_mint(grid.getMinT()),
+    m_L(grid.getLT())
 {
     m_nt = grid.getNt();
     if(!((m_nt%2)==0))
@@ -43,97 +46,65 @@ FFTBLT::~FFTBLT()
 
 }
 
-void FFTBLT::execute_forward()
-{
-    kiss_fftr(m_rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()),\
-                  reinterpret_cast<kiss_fft_cpx*>(m_rFFTs.data()));
-}
-
-void FFTBLT::execute_backward()
-{
-    kiss_fftri(m_rcfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_rFFTs.data()),\
-                  reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()));
-}
-
-void FFTBLT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out)
-{
-    // FFTW FORWARD - > +iwt transform def -> reverse time t -> -t
-    std::reverse_copy(std::begin(in),std::end(in),std::begin(m_rFFTr));
-    execute_forward();
-    std::copy(std::begin(m_rFFTs)+m_minI,std::begin(m_rFFTs)+m_maxI+1,std::begin(out));
-}
-
 void FFTBLT::T_To_ST(const double* in,dcmplx* out)
 {
     // FFTW FORWARD - > +iwt transform def -> reverse time t -> -t
-    for (unsigned int j = 0; j < m_nt; j++) 
+    for (unsigned j = 0; j < m_nt; j++) 
         m_rFFTr[j] = in[m_nt-j-1]; 
-    execute_forward();
-    for(unsigned int j = m_minI; j<=m_maxI; j++)
-        out[j-m_minI] = m_rFFTs[j];
-}
-
-void FFTBLT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out)
-{
-    std::fill(m_rFFTs.begin(),m_rFFTs.begin()+m_minI,dcmplx(0,0));
-    for(auto j = m_minI; j <= m_maxI; j++)
-        m_rFFTs[j] = in[j-m_minI]/static_cast<double>(m_nt); 
-    std::fill(m_rFFTs.begin()+m_maxI+1,m_rFFTs.end(),dcmplx(0,0));
-    execute_backward();
-    std::reverse_copy(std::begin(m_rFFTr),std::end(m_rFFTr),std::begin(out));
+    kiss_fftr(m_rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()),\
+                  reinterpret_cast<kiss_fft_cpx*>(out));
+    // iwt transform def opposite of kiss
+    for(auto i = 0; i < m_nst; i++)
+        out[i] *= (m_L*exp(-ii*m_omega[i]*m_mint))/static_cast<double>(m_nt);
 }
 
 void FFTBLT::ST_To_T(const dcmplx* in,double* out)
 {
     // band limited minimum frequency 
-    for(unsigned int j = 0; j < m_minI; j++) 
+    for(unsigned j = 0; j < m_minI; j++) 
         m_rFFTs[j] = 0.0; 
-    for(unsigned int j = m_minI; j <= m_maxI; j++)
-        m_rFFTs[j] = in[j-m_minI]/static_cast<double>(m_nt); 
+    for(unsigned j = m_minI; j <= m_maxI; j++)
+        m_rFFTs[j] = exp(ii*m_omega[j-m_minI]*m_mint)*in[j-m_minI]/m_L;
     // band limited maximum frequency
-    for(unsigned int j = m_maxI+1; j < m_nt/2+1; j++)
+    for(unsigned j = m_maxI+1; j < m_nt/2+1; j++)
         m_rFFTs[j] = 0.0; 
-    execute_backward();
-    // FFTW BACKWARD - > -iwt transform def -> reverse time t -> -t
-    for (unsigned int j = 0; j < m_nt; j++)  
-      out[j] = m_rFFTr[m_nt-j-1];
-}
 
-void FFTBLT::CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
-{
-    kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in.data()),\
-            reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()));
-    std::copy(std::begin(m_cFFT)+m_minI,std::begin(m_cFFT)+m_maxI+1,std::begin(out));
+    kiss_fftri(m_rcfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_rFFTs.data()),\
+                  reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()));
+    // FFTW BACKWARD - > -iwt transform def -> reverse time t -> -t
+    for (unsigned j = 0; j < m_nt; j++)  
+      out[j] = m_rFFTr[m_nt-j-1];
 }
 
 void FFTBLT::CVT_To_ST(const dcmplx* in,dcmplx* out)
 {
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in),\
             reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()));
-    for(unsigned int j = m_minI; j<=m_maxI; j++)
-        out[j-m_minI] = m_cFFT[j];
-}
-
-void FFTBLT::ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
-{
-    std::fill(m_cFFT.begin(),m_cFFT.begin()+m_minI,dcmplx(0,0));
-    for(auto j = m_minI; j <= m_maxI; j++) 
-        m_cFFT[j] = in[j-m_minI]/static_cast<double>(m_nt); 
-    // Set negative half of spectrum to zero (fine for real fields)
-    std::fill(m_cFFT.begin()+m_maxI+1,m_cFFT.end(),dcmplx(0,0));
-    kiss_fft(m_cfg_reverse,reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()),\
-            reinterpret_cast<kiss_fft_cpx*>(out.data()));
+    for(unsigned j = m_minI; j<=m_maxI; j++)
+        out[j-m_minI] = m_L*exp(-ii*m_omega[j-m_minI]*m_mint)*m_cFFT[j]/static_cast<double>(m_nt);
 }
 
 void FFTBLT::ST_To_CVT(const dcmplx* in,dcmplx* out)
 {
     std::fill(m_cFFT.begin(),m_cFFT.begin()+m_minI,dcmplx(0,0));
     for(auto j = m_minI; j <= m_maxI; j++) 
-        m_cFFT[j] = in[j-m_minI]/static_cast<double>(m_nt); 
+        m_cFFT[j] = exp(ii*m_omega[j-m_minI]*m_mint)*in[j-m_minI]/m_L;
     std::fill(m_cFFT.begin()+m_maxI+1,m_cFFT.end(),dcmplx(0,0));
     kiss_fft(m_cfg_reverse,reinterpret_cast<kiss_fft_cpx*>(m_cFFT.data()),\
             reinterpret_cast<kiss_fft_cpx*>(out));
 }
+
+void FFTBLT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out)
+{ T_To_ST(in.data(),out.data()); }
+
+void FFTBLT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out)
+{ ST_To_T(in.data(),out.data()); }
+
+void FFTBLT::CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+{ CVT_To_ST(in.data(),out.data()); }
+
+void FFTBLT::ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+{ ST_To_CVT(in.data(),out.data()); }
 
 
 

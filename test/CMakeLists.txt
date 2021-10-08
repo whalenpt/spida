@@ -5,8 +5,9 @@ set(SRC_FILES
 	kiss_tests.cpp
 	nayukidct_tests.cpp
 	dct_tests.cpp
-	fft_tests.cpp
-	transform_tests.cpp
+	fftX_tests.cpp
+	fftT_tests.cpp
+	hankel_tests.cpp
 	hankelfft_tests.cpp
 	shape_tests.cpp
 	grid_tests.cpp
