@@ -9,7 +9,9 @@
 #include <spida/transform/fftCVT.h>
 #include <spida/SpidaCVT.h>
 #include <pwutils/report/dataio.hpp>
+#include <pwutils/report/dat.hpp>
 #include <pwutils/pwmath.hpp>
+#include <fstream>
 #include <random>
 
 
@@ -139,22 +141,49 @@ TEST(FFTCVT_TEST,DERIVATIVE_GAUSS)
     EXPECT_LT(pw::relative_error(expect,out),1e-6);
 }
 
-/*
+// FFTRVT defined such that F{f(t)} = \integral_{-\inf}^{\inf}f(t)exp(i*omega*t) dt
+// Test that forward fft followed by inverse fft yields identity
+TEST(FFTRVT_TEST,INVERSES)
+{
+	unsigned N = 32;
+    pw::DataIO dataio("outfolder");
+    using spida::dcmplx;
 
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(1.0,1.0);
+    std::vector<double> in(N);
+    std::vector<dcmplx> out(N);
+    std::vector<double> expect(N);
+    for(unsigned i = 0; i < N; i++)
+        in[i] = distribution(generator);
+
+    spida::FFTBLT tr(spida::UniformGridRVT{N,-2,2});
+    tr.T_To_ST(in,out);
+    tr.ST_To_T(out,expect);
+    EXPECT_LT(pw::relative_error(in,expect),1e-6);
+}
+
+
+// FFT{exp(-(t/tp)^2)exp(-i*omega0*t}= tp*sqrt(pi)*exp(-tp^2*(omega-omega0)^2/4)
 TEST(FFTRVT_TEST,GAUSST)
 {
+    pw::DataIO dataio("outfolder");
     using spida::dcmplx;
+    using spida::PI;
     int nt = 4096;
     double I0 = 5.0e16;
     double tp = 20.0e-15;
     double omega0 = 4.7091e14;
     double minT = -240e-15;
     double maxT = 240e-15;
+    double minST = 1.10803e14;
+    double maxST = 1.448963e16;
 
-    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
+    spida::UniformGridRVT grid(nt,minT,maxT,minST,maxST);
+    unsigned nst = grid.getNst();
     std::vector<double> y(nt);
     std::vector<double> yinv(nt);
-    std::vector<dcmplx> ysp(grid.getNst());
+    std::vector<dcmplx> ysp(nst);
 
     spida::FFTBLT transform(grid);
     spida::GaussT shape(grid,std::sqrt(I0),tp);
@@ -163,14 +192,36 @@ TEST(FFTRVT_TEST,GAUSST)
 
     transform.T_To_ST(y,ysp);
     transform.ST_To_T(ysp,yinv);
-
-    auto maxval = pw::max(ysp);
-    auto maxpos = pw::argmax(ysp);
-	EXPECT_DOUBLE_EQ(abs(maxval),33820027093.103012);
-	EXPECT_EQ(maxpos,28);
     EXPECT_LT(pw::relative_error(y,yinv),1e-6);
+
+    std::vector<dcmplx> ysp_ex(grid.getNst(),0.0);
+    const std::vector<double>& omega = grid.getST();
+    for(auto j = 0; j < grid.getNst(); j++)
+        ysp_ex[j] = std::sqrt(I0)*tp*sqrt(PI)*exp(-pow(tp,2)*pow(omega[j]-omega0,2)/4.0);
+
+    // phase seems to be slightly off from expected in spectral domain (0.05 relative_error)
+    EXPECT_LT(pw::relative_error(ysp,ysp_ex),0.1);
+
+    std::vector<double> ysp_abs(nst);
+    std::vector<double> ysp_ex_abs(nst);
+    for(auto j = 0; j < nst; j++){
+        ysp_abs[j] = abs(ysp[j]);
+        ysp_ex_abs[j] = abs(ysp_ex[j]);
+    }
+    // absolute value seems to be accurate enough
+    EXPECT_LT(pw::relative_error(ysp_abs,ysp_ex_abs),1e-6);
+
+//    std::ofstream os;
+//    auto report = dat::ReportComplexData1D<double,double>("fftrvt_gauss_out",omega,ysp);
+//    report.setDirPath("outfolder");
+//    report.report(os);
+//    auto report_ex = dat::ReportComplexData1D<double,double>("fftrvt_gauss_expect",omega,ysp_ex);
+//    report_ex.setDirPath("outfolder");
+//    report_ex.report(os);
 }
 
+
+/*
 TEST(FFTRVT_TEST,GAUSST_POINTERS)
 {
     using spida::dcmplx;

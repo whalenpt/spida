@@ -50,12 +50,12 @@ void FFTBLT::T_To_ST(const double* in,dcmplx* out)
 {
     // FFTW FORWARD - > +iwt transform def -> reverse time t -> -t
     for (unsigned j = 0; j < m_nt; j++) 
-        m_rFFTr[j] = in[m_nt-j-1]; 
+        m_rFFTr[j] = in[m_nt-1-j]; 
     kiss_fftr(m_rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(m_rFFTr.data()),\
-                  reinterpret_cast<kiss_fft_cpx*>(out));
+                  reinterpret_cast<kiss_fft_cpx*>(m_rFFTs.data()));
     // iwt transform def opposite of kiss
-    for(auto i = 0; i < m_nst; i++)
-        out[i] *= (m_L*exp(-ii*m_omega[i]*m_mint))/static_cast<double>(m_nt);
+    for(auto j = m_minI; j <= m_maxI; j++)
+        out[j-m_minI] = 2.0*(m_L*exp(-ii*m_omega[j-m_minI]*m_mint))*m_rFFTs[j]/static_cast<double>(m_nt);
 }
 
 void FFTBLT::ST_To_T(const dcmplx* in,double* out)
@@ -64,7 +64,7 @@ void FFTBLT::ST_To_T(const dcmplx* in,double* out)
     for(unsigned j = 0; j < m_minI; j++) 
         m_rFFTs[j] = 0.0; 
     for(unsigned j = m_minI; j <= m_maxI; j++)
-        m_rFFTs[j] = exp(ii*m_omega[j-m_minI]*m_mint)*in[j-m_minI]/m_L;
+        m_rFFTs[j] = exp(ii*m_omega[j-m_minI]*m_mint)*in[j-m_minI]/(2.0*m_L);
     // band limited maximum frequency
     for(unsigned j = m_maxI+1; j < m_nt/2+1; j++)
         m_rFFTs[j] = 0.0; 
