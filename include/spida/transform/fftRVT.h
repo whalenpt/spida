@@ -1,4 +1,4 @@
-// fftBLT.h
+// fftRVT.h
 #pragma once
 
 #include <vector>
@@ -10,14 +10,14 @@
 
 namespace spida{
 
-class FFTBLT 
+class FFTRVT 
 {
     public:
-        explicit FFTBLT(const UniformGridRVT& grid);
-        ~FFTBLT();
-        FFTBLT()=delete;
-        FFTBLT(const FFTBLT& sp)=delete;
-        FFTBLT& operator=(const FFTBLT& sp)=delete;
+        explicit FFTRVT(const UniformGridRVT& grid);
+        ~FFTRVT();
+        FFTRVT()=delete;
+        FFTRVT(const FFTRVT& sp)=delete;
+        FFTRVT& operator=(const FFTRVT& sp)=delete;
 
         void T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out); 
@@ -34,7 +34,7 @@ class FFTBLT
         unsigned m_minI;
         unsigned m_maxI;
         std::vector<double> m_rFFTr;
-        std::vector<dcmplx> m_rFFTs;
+        std::vector<dcmplx> m_temp;
         std::vector<dcmplx> m_cFFT;
         std::vector<double> m_omega;
         double m_mint;

@@ -1,4 +1,4 @@
-// SpidaRBLT.h
+// SpidaRRVT.h
 #pragma once
 
 #include <vector>
@@ -7,18 +7,18 @@
 namespace spida{
   class UniformGridRVT;
   class BesselRootGridR;
-  class HankelFFTRBLT;
+  class HankelFFTRRVT;
 
   // Assumes real data
-  class SpidaRBLT 
+  class SpidaRRVT 
   {
     public:
-      SpidaRBLT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads=1);
-      SpidaRBLT() = delete;
-      ~SpidaRBLT();
+      SpidaRRVT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads=1);
+      SpidaRRVT() = delete;
+      ~SpidaRRVT();
       const BesselRootGridR& getGridR() const;
       const UniformGridRVT& getGridT() const;
-      const HankelFFTRBLT& getTransformRT() const;
+      const HankelFFTRRVT& getTransformRT() const;
       const std::vector<double>& getR() const;
       const std::vector<double>& getSR() const;
       const std::vector<double>& getT() const;
@@ -27,13 +27,11 @@ namespace spida{
       void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
       void CVRT_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
       void SRST_To_CVRT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
-//      void dT(const std::vector<double>& in,std::vector<double>& out,unsigned int n = 1); 
 
     private:
       std::unique_ptr<BesselRootGridR> m_gridR;
       std::unique_ptr<UniformGridRVT> m_gridT;
-      std::unique_ptr<HankelFFTRBLT> m_tr;
-//      std::vector<dcmplx> m_vs;
+      std::unique_ptr<HankelFFTRRVT> m_tr;
   };
 }
 

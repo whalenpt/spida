@@ -12,7 +12,7 @@
 
 #include <spida/grid/uniformRVT.h>
 #include <spida/shape/shapeT.h>
-#include <spida/transform/fftBLT.h>
+#include <spida/transform/fftRVT.h>
 #include <pwutils/report/dat.hpp>
 #include <pwutils/report/reporthelper.h>
 #include <iostream>
@@ -34,7 +34,7 @@ int main()
     double maxST = 4.3e15;
 
     spida::UniformGridRVT gridT(nt,minT,maxT,minST,maxST);
-    spida::FFTBLT transform(gridT);
+    spida::FFTRVT transform(gridT);
     spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
     shapeT.setFastPhase(omega0);
 

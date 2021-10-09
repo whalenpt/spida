@@ -7,7 +7,7 @@
 #include <spida/grid/besselR.h>
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
-#include <spida/transform/hankelfftRBLT.h>
+#include <spida/transform/hankelfftRRVT.h>
 #include <spida/transform/hankelfftRCVT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
@@ -228,7 +228,7 @@ TEST(HANKELFFTRRVT_TEST,INVERSES)
     std::vector<dcmplx> wb(nr*nst);
     std::vector<double> ub(nr*nt);
     std::vector<double> usr(nr*nt);
-    spida::HankelFFTRBLT transform(gridR,gridT);
+    spida::HankelFFTRRVT transform(gridR,gridT);
 
     // Check forward transform and reverse transform over R dimension
     transform.RT_To_SRT(u,usr);
@@ -303,7 +303,7 @@ TEST(HANKELFFTRRVT_TEST,GAUSSTGAUSSR)
             u[i*nt+j] = sqrt(I0)*exp(-pow(r[i]/w0,2) - pow(t[j]/tp,2))*cos(omega0*t[j]);
 
     std::vector<dcmplx> out(nr*nst);
-    spida::HankelFFTRBLT transform(gridR,gridT);
+    spida::HankelFFTRRVT transform(gridR,gridT);
 
     transform.RT_To_SRST(u,out);
     auto report = dat::ReportComplexData2D<double,double,double>("hankelrfft_SR",kr,omega,out);
@@ -311,28 +311,15 @@ TEST(HANKELFFTRRVT_TEST,GAUSSTGAUSSR)
     report.setDirPath("outfolder");
     os << report;
 
+    // y = f(t)*cos(i\omega0t) - > FFT{y} = (FFT{f(\omega - \omega0)}+FFT{f(\omega+\omega0)})/2
+    // For real fields, fft taken over positive frequencies: FFT_real{y} = FFT_real{f(\omega-\omega0)}/2  
     std::vector<dcmplx> expect(nr*nst);
     for(auto i = 0; i < kr.size(); i++)
         for(auto j = 0; j < omega.size(); j++)
-            expect[i*nst+j] = (std::sqrt(I0)*tp*pow(w0,2)*sqrt(PI)/2.0)*exp(\
+            expect[i*nst+j] = 0.5*(std::sqrt(I0)*tp*pow(w0,2)*sqrt(PI)/2.0)*exp(\
                     -pow(w0,2)*pow(kr[i],2)/4.0-pow(tp,2)*pow(omega[j]-omega0,2)/4.0);
 
-    auto report_ex = dat::ReportComplexData2D<double,double,double>("hankelfft_expect_SR",kr,omega,expect);
-    report_ex.setDirPath("outfolder");
-    os << report_ex;
-
-    
-    // phase seems to be slightly off from expected in spectral domain (0.5 relative_error)
     EXPECT_LT(pw::relative_error(expect,out),1);
-
-    std::vector<double> out_abs(nr*nst);
-    std::vector<double> out_ex_abs(nr*nst);
-    for(auto j = 0; j < nr*nst; j++){
-        out_abs[j] = abs(out[j]);
-        out_ex_abs[j] = abs(expect[j]);
-    }
-    // absolute value seems to be accurate enough
-    EXPECT_LT(pw::relative_error(out_abs,out_ex_abs),1e-6);
 }
 
 
@@ -377,7 +364,7 @@ TEST(HANKELFFTRRVT_TEST,MULTITHREAD)
     std::vector<double> ub(nr*nt);
 
     // Check forward tranform and reverse transform applied in sequence is identity
-    spida::HankelFFTRBLT transform(gridR,gridT,NUM_THREADS);
+    spida::HankelFFTRRVT transform(gridR,gridT,NUM_THREADS);
     transform.RT_To_SRST(u,v);
     transform.SRST_To_RT(v,ub);
     EXPECT_LT(pw::relative_error(u,ub),1e-6);

@@ -1,5 +1,5 @@
-// hankelfftRBLT.h
-// Class for 2D functions of radius (R) and band-limited time (BLT)
+// hankelfftRRVT.h
+// Class for 2D functions of radius (R) and band-limited time (RVT)
 #pragma once
 
 #include <vector>
@@ -8,19 +8,19 @@
 
 namespace spida{
 
-class FFTBLT;
+class FFTRVT;
 class HankelTransformR;
 class BesselRootGridR;
 class UniformGridRVT;
 
-class HankelFFTRBLT 
+class HankelFFTRRVT 
 {
     public:
-        explicit HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads = 1);
-        ~HankelFFTRBLT();
-        HankelFFTRBLT()=delete;
-        HankelFFTRBLT(const HankelFFTRBLT& sp)=delete;
-        HankelFFTRBLT& operator=(const HankelFFTRBLT& sp)=delete;
+        explicit HankelFFTRRVT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads = 1);
+        ~HankelFFTRRVT();
+        HankelFFTRRVT()=delete;
+        HankelFFTRRVT(const HankelFFTRRVT& sp)=delete;
+        HankelFFTRRVT& operator=(const HankelFFTRRVT& sp)=delete;
 
         void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
@@ -52,7 +52,7 @@ class HankelFFTRBLT
         std::vector<double> m_sr;
         std::vector<dcmplx> m_ss;
 
-        std::vector<FFTBLT*> m_transformT;
+        std::vector<FFTRVT*> m_transformT;
         std::vector<HankelTransformR*> m_transformR;
 
         void worker_T_To_ST(unsigned tid,const double* in,dcmplx* out);
@@ -76,14 +76,14 @@ class HankelFFTRBLT
 
 /*
 
-class HankelFFTRBLT 
+class HankelFFTRRVT 
 {
     public:
-        explicit HankelFFTRBLT(const BesselRootGridR& gridR,const UniformGridT& gridT,int threads=1);
-        ~HankelFFTRBLT();
-        HankelFFTRBLT()=delete;
-        HankelFFTRBLT(const HankelFFTRBLT& sp)=delete;
-        HankelFFTRBLT& operator=(const HankelFFTRBLT& sp)=delete;
+        explicit HankelFFTRRVT(const BesselRootGridR& gridR,const UniformGridT& gridT,int threads=1);
+        ~HankelFFTRRVT();
+        HankelFFTRRVT()=delete;
+        HankelFFTRRVT(const HankelFFTRRVT& sp)=delete;
+        HankelFFTRRVT& operator=(const HankelFFTRRVT& sp)=delete;
         void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
 
@@ -117,7 +117,7 @@ class HankelFFTRBLT
         std::vector<dcmplx> m_ss;
 
         std::vector<std::thread> m_thread;
-        std::vector<FFTBLT*> m_transformT;
+        std::vector<FFTRVT*> m_transformT;
         std::vector<HankelTransformR*> m_transformR;
 
         State m_STATE;
@@ -155,19 +155,19 @@ class HankelFFTRBLT
 // Attempt at using a third party thread pool - slow results :(
 
 void worker_RT_To_RST(const double* in,dcmplx* out,\
-        std::map<std::thread::id,FFTBLT*> fftblt_map);
+        std::map<std::thread::id,FFTRVT*> fftblt_map);
 void worker_STR_To_STSR(const dcmplx* in,dcmplx* out,\
         std::map<std::thread::id,HankelTransformR*> hankel_map);
 
 
-class HankelFFTRBLTc 
+class HankelFFTRRVTc 
 {
     public:
-        explicit HankelFFTRBLTc(const BesselRootGridR& gridR,const UniformGridT& gridT);
-        ~HankelFFTRBLTc();
-        HankelFFTRBLTc()=delete;
-        HankelFFTRBLTc(const HankelFFTRBLTc& sp)=delete;
-        HankelFFTRBLTc& operator=(const HankelFFTRBLTc& sp)=delete;
+        explicit HankelFFTRRVTc(const BesselRootGridR& gridR,const UniformGridT& gridT);
+        ~HankelFFTRRVTc();
+        HankelFFTRRVTc()=delete;
+        HankelFFTRRVTc(const HankelFFTRRVTc& sp)=delete;
+        HankelFFTRRVTc& operator=(const HankelFFTRRVTc& sp)=delete;
 
         void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
         void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
@@ -186,9 +186,9 @@ class HankelFFTRBLTc
 
         BesselRootGridR* m_gridR;
         UniformGridT* m_gridT;
-        FFTBLT* m_fftblt;
+        FFTRVT* m_fftblt;
         HankelTransformR* m_hankel;
-        std::map<std::thread::id,FFTBLT*> m_transformT;
+        std::map<std::thread::id,FFTRVT*> m_transformT;
         std::map<std::thread::id,HankelTransformR*> m_transformR;
         thread_pool* m_pool;
 

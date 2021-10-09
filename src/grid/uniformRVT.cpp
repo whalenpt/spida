@@ -7,19 +7,6 @@
 
 namespace spida{
 
-UniformGridRVT::UniformGridRVT(const UniformGridRVT& grid) : 
-    UniformGridT(grid.getNt(),grid.getMinT(),grid.getMaxT()),
-    m_st(grid.getNst()),
-    m_nst(grid.getNst()),
-    m_minST(grid.getMinST()),
-    m_maxST(grid.getMaxST()),
-    m_minI(grid.getMinI()),
-    m_maxI(grid.getMaxI())
-{
-    const std::vector<double>& st = grid.getST();
-    std::copy(std::cbegin(st),std::cend(st),std::begin(m_st));
-}
-
 std::vector<double> UniformGridRVT::constructGridST(unsigned nt,double minT,double maxT)
 {
     std::vector<double> st(nt/2+1);
@@ -27,19 +14,6 @@ std::vector<double> UniformGridRVT::constructGridST(unsigned nt,double minT,doub
     for(auto i = 0; i <= nt/2; i++)
         st[i] = i*dst;
     return st;
-}
-
-UniformGridRVT::UniformGridRVT(unsigned nt,double minT,double maxT) : 
-    UniformGridT(nt,minT,maxT),
-    m_st(nt/2+1),
-    m_nst(nt/2+1),
-    m_minST(indxToFreq(0)),
-    m_maxST(indxToFreq(nt/2)),
-    m_minI(0),
-    m_maxI(nt/2)
-
-{
-    m_st = constructGridST(nt,minT,maxT);
 }
 
 UniformGridRVT::UniformGridRVT(unsigned nt,double minT,double maxT,\
@@ -56,6 +30,32 @@ UniformGridRVT::UniformGridRVT(unsigned nt,double minT,double maxT,\
         m_st[i-m_minI] = full_st[i];
     m_minST = m_st[0];
     m_maxST = m_st.back();
+}
+
+UniformGridRVT::UniformGridRVT(const UniformGridRVT& grid) : 
+    UniformGridT(grid.getNt(),grid.getMinT(),grid.getMaxT()),
+    m_st(grid.getNst()),
+    m_nst(grid.getNst()),
+    m_minST(grid.getMinST()),
+    m_maxST(grid.getMaxST()),
+    m_minI(grid.getMinI()),
+    m_maxI(grid.getMaxI())
+{
+    const std::vector<double>& st = grid.getST();
+    std::copy(std::cbegin(st),std::cend(st),std::begin(m_st));
+}
+
+UniformGridRVT::UniformGridRVT(unsigned nt,double minT,double maxT) : 
+    UniformGridT(nt,minT,maxT),
+    m_st(nt/2+1),
+    m_nst(nt/2+1),
+    m_minST(indxToFreq(0)),
+    m_maxST(indxToFreq(nt/2)),
+    m_minI(0),
+    m_maxI(nt/2)
+
+{
+    m_st = constructGridST(nt,minT,maxT);
 }
 
 double UniformGridRVT::maxPossibleFreq() const {

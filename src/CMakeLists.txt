@@ -3,12 +3,12 @@
 cmake_minimum_required(VERSION 3.19.1)
 
 set(SRC_FILES
-    SpidaBLT.cpp
     SpidaCVT.cpp
-    SpidaRBLT.cpp
+    SpidaRVT.cpp
     SpidaRCVT.cpp
-    SpidaRVX.cpp
+    SpidaRRVT.cpp
     SpidaCVX.cpp
+    SpidaRVX.cpp
     SpidaCHEBX.cpp
     SpidaR.cpp
     ChebInterpX.cpp
@@ -17,11 +17,11 @@ set(SRC_FILES
     grid/gridR.cpp
     grid/chebX.cpp
     grid/uniformX.cpp
-    grid/uniformRVX.cpp
     grid/uniformCVX.cpp
+    grid/uniformRVX.cpp
 	grid/uniformT.cpp
-    grid/uniformRVT.cpp
     grid/uniformCVT.cpp
+    grid/uniformRVT.cpp
 	grid/besselR.cpp
 	propagator/propagator.cpp
 	propagator/reporthandler.cpp
@@ -30,27 +30,27 @@ set(SRC_FILES
 	rkstiff/solver.cpp
 	rkstiff/ETDAS.cpp
 	rkstiff/ETDCS.cpp
-    transform/fftBLT.cpp
     transform/fftCVT.cpp
+    transform/fftRVT.cpp
     transform/fftCVX.cpp
     transform/fftRVX.cpp
 	transform/chebX.cpp
 	transform/hankelR.cpp
-    transform/hankelfftRBLT.cpp
     transform/hankelfftRCVT.cpp
+    transform/hankelfftRRVT.cpp
 )
 
 set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
 set(SPIDA_INCLUDES
-   "${INCL_DIR}/SpidaRVX.h"
    "${INCL_DIR}/SpidaCVX.h"
+   "${INCL_DIR}/SpidaRVX.h"
    "${INCL_DIR}/SpidaCHEBX.h"
    "${INCL_DIR}/ChebInterpX.h"
    "${INCL_DIR}/SpidaCVT.h"
-   "${INCL_DIR}/SpidaBLT.h"
+   "${INCL_DIR}/SpidaRVT.h"
    "${INCL_DIR}/SpidaR.h"
-   "${INCL_DIR}/SpidaRBLT.h"
    "${INCL_DIR}/SpidaRCVT.h"
+   "${INCL_DIR}/SpidaRRVT.h"
    "${INCL_DIR}/helper/constants.h"
    "${INCL_DIR}/helper/interp.h"
    "${INCL_DIR}/helper/funcs.hpp"
@@ -74,14 +74,14 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/rkstiff/solver.h"
    "${INCL_DIR}/rkstiff/ETDAS.h"
    "${INCL_DIR}/rkstiff/ETDCS.h"
-   "${INCL_DIR}/transform/fftBLT.h"
-   "${INCL_DIR}/transform/fftCVT.h"
    "${INCL_DIR}/transform/chebX.h"
+   "${INCL_DIR}/transform/fftCVT.h"
+   "${INCL_DIR}/transform/fftRVT.h"
    "${INCL_DIR}/transform/fftCVX.h"
    "${INCL_DIR}/transform/fftRVX.h"
    "${INCL_DIR}/transform/hankelR.h"
-   "${INCL_DIR}/transform/hankelfftRBLT.h"
    "${INCL_DIR}/transform/hankelfftRCVT.h"
+   "${INCL_DIR}/transform/hankelfftRRVT.h"
 )
 
 set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")

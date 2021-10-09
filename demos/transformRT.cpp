@@ -4,7 +4,7 @@
  *    Email: whalenpt@gmail.com
  *    Status: Development
  *    Date: 08/17/21
- *    Description: Examples of HankelFFTRBLTRT transform
+ *    Description: Examples of HankelFFTRRVTRT transform
  *
 ------------------------------------------------------------------------------*/
 
@@ -14,7 +14,7 @@
 #include <spida/grid/uniformRVT.h>
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
-#include <spida/transform/hankelfftRBLT.h>
+#include <spida/transform/hankelfftRRVT.h>
 #include <pwutils/report/dat.hpp>
 #include <pwutils/report/reporthelper.h>
 #include <cmath>
@@ -78,7 +78,7 @@ int main()
     std::vector<dcmplx> v(nr*nst);
     std::vector<double> uop(nr*nt);
 
-    spida::HankelFFTRBLT transform(gridR,gridT);
+    spida::HankelFFTRRVT transform(gridR,gridT);
     transform.RT_To_SRST(u,v);
     transform.SRST_To_RT(v,uop);
 
@@ -137,7 +137,7 @@ int main()
     std::vector<int> rt_srst_timings(MAX_THREADS);
     std::vector<int> srst_rt_timings(MAX_THREADS);
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        spida::HankelFFTRBLT transform_threaded(gridR,gridT,threads);
+        spida::HankelFFTRRVT transform_threaded(gridR,gridT,threads);
 
         auto start_time = std::chrono::steady_clock::now();
         for(auto i = 0; i < NUM_LOOPS; i++)
@@ -156,19 +156,19 @@ int main()
     }
 
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelFFTRBLT RT_To_SRST duration with " << threads << " thread(s): "\
+        std::cout << "HankelFFTRRVT RT_To_SRST duration with " << threads << " thread(s): "\
                   << rt_srst_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelFFTRBLT SRST_To_RT duration with " << threads << " thread(s): "\
+        std::cout << "HankelFFTRRVT SRST_To_RT duration with " << threads << " thread(s): "\
                   << srst_rt_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;
 
     /*
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        spida::HankelFFTRBLTb transform_threaded(gridR,gridT,threads);
+        spida::HankelFFTRRVTb transform_threaded(gridR,gridT,threads);
 
         auto start_time = std::chrono::steady_clock::now();
         for(auto i = 0; i < NUM_LOOPS; i++)
@@ -186,12 +186,12 @@ int main()
     }
 
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelFFTRBLTb RT_To_SRST duration with " << threads << " thread(s): "\
+        std::cout << "HankelFFTRRVTb RT_To_SRST duration with " << threads << " thread(s): "\
                   << rt_srst_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;
     for(auto threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelFFTRBLTb SRST_To_RT duration with " << threads << " thread(s): "\
+        std::cout << "HankelFFTRRVTb SRST_To_RT duration with " << threads << " thread(s): "\
                   << srst_rt_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;

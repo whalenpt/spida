@@ -5,10 +5,10 @@
 #include <spida/grid/uniformRVT.h>
 #include <spida/grid/uniformCVT.h>
 #include <spida/shape/shapeT.h>
-#include <spida/transform/fftBLT.h>
+#include <spida/transform/fftRVT.h>
 #include <spida/transform/fftCVT.h>
 #include <spida/SpidaCVT.h>
-#include <spida/SpidaBLT.h>
+#include <spida/SpidaRVT.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/report/dat.hpp>
 #include <pwutils/pwmath.hpp>
@@ -146,21 +146,26 @@ TEST(FFTCVT_TEST,DERIVATIVE_GAUSS)
 // Test that forward fft followed by inverse fft yields identity
 TEST(FFTRVT_TEST,INVERSES)
 {
-	unsigned N = 32;
     pw::DataIO dataio("outfolder");
     using spida::dcmplx;
+
+	unsigned N = 32;
+    spida::UniformGridRVT grid{N,-2,2};
+    unsigned nst = grid.getNst();
 
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(1.0,1.0);
     std::vector<double> in(N);
-    std::vector<dcmplx> out(N);
+    std::vector<dcmplx> out(nst);
     std::vector<double> expect(N);
     for(unsigned i = 0; i < N; i++)
         in[i] = distribution(generator);
 
-    spida::FFTBLT tr(spida::UniformGridRVT{N,-2,2});
+    spida::FFTRVT tr(grid);
     tr.T_To_ST(in,out);
     tr.ST_To_T(out,expect);
+    dataio.writeFile("fftrvt_check.dat",in,expect);
+
     EXPECT_LT(pw::relative_error(in,expect),1e-6);
 }
 
@@ -183,15 +188,13 @@ TEST(FFTRVT_TEST,GAUSST)
     spida::UniformGridRVT grid(nt,minT,maxT,minST,maxST);
     unsigned nst = grid.getNst();
     std::vector<double> y(nt);
-    std::vector<dcmplx> ycmplx(nt);
     std::vector<double> yinv(nt);
     std::vector<dcmplx> ysp(nst);
 
-    spida::FFTBLT transform(grid);
+    spida::FFTRVT transform(grid);
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
     shape.shapeRV(y);
-    shape.shapeCV(ycmplx);
 
     transform.T_To_ST(y,ysp);
     transform.ST_To_T(ysp,yinv);
@@ -199,20 +202,12 @@ TEST(FFTRVT_TEST,GAUSST)
 
     std::vector<dcmplx> ysp_ex(grid.getNst(),0.0);
     const std::vector<double>& omega = grid.getST();
+    // y = f(t)*cos(i\omega0t) - > FFT{y} = (FFT{f(\omega - \omega0)}+FFT{f(\omega+\omega0)})/2
+    // For real fields, fft taken over positive frequencies: FFT_real{y} = FFT_real{f(\omega-\omega0)}/2  
     for(auto j = 0; j < grid.getNst(); j++)
-        ysp_ex[j] = std::sqrt(I0)*tp*sqrt(PI)*exp(-pow(tp,2)*pow(omega[j]-omega0,2)/4.0);
+        ysp_ex[j] = 0.5*std::sqrt(I0)*tp*sqrt(PI)*exp(-pow(tp,2)*pow(omega[j]-omega0,2)/4.0);
 
-    // phase seems to be slightly off from expected in spectral domain (0.05 relative_error)
-    EXPECT_LT(pw::relative_error(ysp,ysp_ex),0.1);
-
-    std::vector<double> ysp_abs(nst);
-    std::vector<double> ysp_ex_abs(nst);
-    for(auto j = 0; j < nst; j++){
-        ysp_abs[j] = abs(ysp[j]);
-        ysp_ex_abs[j] = abs(ysp_ex[j]);
-    }
-    // absolute value seems to be accurate enough
-    EXPECT_LT(pw::relative_error(ysp_abs,ysp_ex_abs),1e-6);
+    EXPECT_LT(pw::relative_error(ysp,ysp_ex),1e-5);
 
     std::ofstream os;
     // Output with alot of precision
@@ -224,8 +219,16 @@ TEST(FFTRVT_TEST,GAUSST)
     report_ex.setDirPath("outfolder");
     report_ex.report(os);
 
+    std::vector<dcmplx> ycmplx(nt);
+    shape.shapeCV(ycmplx);
+    std::vector<dcmplx> ysp_exCV(grid.getNst(),0.0);
+    // y = f(t)*exp(i\omega0t) - > FFT{y} = FFT{f(\omega - \omega0)}
+    // For complex fields, multiplication by exp(i\omega0t) in real space is a simple shift in spectral space
+    for(auto j = 0; j < grid.getNst(); j++)
+        ysp_exCV[j] = std::sqrt(I0)*tp*sqrt(PI)*exp(-pow(tp,2)*pow(omega[j]-omega0,2)/4.0);
+
     // Complex valued transform -> phase works fine
-    transform.CVT_To_ST(ycmplx,ysp);
+    transform.CVT_To_ST(ycmplx,ysp_exCV);
     EXPECT_LT(pw::relative_error(ysp,ysp_ex),1e-6);
 }
 
@@ -238,7 +241,6 @@ TEST(FFTRVT_TEST,COS)
     using spida::PI;
 
     std::vector<double> in(N);
-    //spida::UniformGridRVT grid(N,0.0,2.0*PI);
     spida::UniformGridRVT grid(N,0.0,2.0*PI);
 	unsigned nst = grid.getNst();
     std::vector<dcmplx> out(nst);
@@ -247,10 +249,8 @@ TEST(FFTRVT_TEST,COS)
     for(auto i = 0; i < t.size(); i++)
         in[i] = cos(8*t[i]);
 
-    spida::FFTBLT tr(grid);
+    spida::FFTRVT tr(grid);
     tr.T_To_ST(in,out);
-    std::cout << out[8].real() << std::endl;
-    std::cout << out[8].imag() << std::endl;
     dataio.writeFile("fftrvt_cos_check.dat",out);
 	EXPECT_DOUBLE_EQ(out[8].real(),PI);
 }
@@ -266,17 +266,26 @@ TEST(FFTRVT_TEST,DERIVATIVE_SIN)
     std::vector<double> out(N);
     std::vector<double> expect(N);
 
-    spida::UniformGridRVT grid(N,0,3*PI);
+    // Need sin(tmin) = sin(tmax) for periodicity
+    double tmin = 0.0;
+    double tmax = 2.0*PI;
+    spida::UniformGridRVT grid(N,tmin,tmax);
+
     const std::vector<double> t = grid.getT();
     for(auto i = 0; i < t.size(); i++)
         in[i] = sin(t[i]);
     for(auto i = 0; i < t.size(); i++)
         expect[i] = cos(t[i]);
 
-    spida::SpidaBLT spi{grid};
+    spida::SpidaRVT spi(grid);
     spi.dT(in,out);
     dataio.writeFile("fftrvt_der_sin.dat",expect,out);
     EXPECT_LT(pw::relative_error(expect,out),1e-6);
+
+    std::vector<dcmplx> out1(grid.getNst());
+    spida::FFTRVT tr(grid);
+    tr.T_To_ST(in,out1);
+    dataio.writeFile("fftrvt_sin1.dat",grid.getST(),out1);
 }
 
 
@@ -294,7 +303,7 @@ TEST(FFTRVT_TEST,GAUSST_POINTERS)
     double maxT = 240e-15;
 
     spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    spida::FFTBLT transform(grid);
+    spida::FFTRVT transform(grid);
 
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
@@ -326,7 +335,7 @@ TEST(FFTRVT_TEST,COMPLEX_GAUSST)
     double maxT = 240e-15;
 
     spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    spida::FFTBLT transform(grid);
+    spida::FFTRVT transform(grid);
 
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
