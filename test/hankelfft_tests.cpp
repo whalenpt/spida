@@ -51,7 +51,6 @@ TEST(HANKELFFTRCVT_TEST,INVERSES)
     transform.SRT_To_RT(usr,ub);
     EXPECT_LT(pw::relative_error(u,ub),1e-6);
 
-
     unsigned nst = gridT.getNst();
     std::vector<dcmplx> v(nr*nst);
     // Check forward transform and reverse transform over T dimension

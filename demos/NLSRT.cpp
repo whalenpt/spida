@@ -17,6 +17,7 @@
 #include <spida/rkstiff/ETDAS.h>
 #include <spida/propagator/propagator.h>
 #include <pwutils/report/dat.hpp>
+#include <algorithm>
 #include <complex> // std::norm -> std::norm(dcmplx(3,4)) = 25
 
 //------------------------------------------------------------------------------
@@ -36,13 +37,16 @@ class NLSRT
                 const std::vector<double>& kr = gridR.getSR();
                 const std::vector<double>& omega = gridT.getST();
                 double sigma = 0.5;
-                // ii is spida::ii which is imaginary an number
+                // ii is spida::ii which is imaginary an number sqrt(-1)
                 for(auto i = 0; i < kr.size(); i++)
                     for(auto j = 0; j < omega.size(); j++)
-                        m_L[i] = ii*(sigma*pow(omega[j],2) - pow(kr[i],2));
-                 m_NL = [this](const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
-                    double gamma = 1.0;
+                        m_L[i*omega.size()+j] = -ii*pow(kr[i],2) + ii*sigma*pow(omega[j],2);
+
+                m_NL = [this](const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
+                    double gamma = 2.0;
                     m_spi.SRST_To_RT(in,m_uphys);
+                    //std::cout << "Max element physical: " << abs(*std::max_element(m_uphys.begin(),m_uphys.end(),\
+                    //    [](auto a,auto b) {return abs(a) < abs(b);})) << std::endl;
                     for(auto i = 0; i < m_uphys.size(); i++)
                         m_uphys[i] = ii*gamma*m_uphys[i]*std::norm(m_uphys[i]);
                     m_spi.RT_To_SRST(m_uphys,out);
@@ -103,10 +107,11 @@ class Propagator : public PropagatorCV
         // updateFields is a pure virtual function of PropagatorCV and must be implemented 
         // This function is called before each Solver report (allows for updating of real space fields)
         void updateFields(double t) { 
-            std::cout << "updateFields called" << std::endl;
+            //std::cout << "updateFields called" << std::endl;
             m_spi.SRST_To_RT(m_usp,m_uphys);
             m_spi.mirrorR(m_uphys,m_mirror_uphys);
-            // output mirrored grids with negative radial components (for better graphs, not necessary)
+            // output mirrored grids with negative radial components (for better graphs)
+            
             //m_spi.getGridR().mirrorGrid(m_uphys,m_mirror_uphys);
             //m_spi.getGridR().mirrorGrid(m_usp,m_mirror_usp);
         }
@@ -116,15 +121,18 @@ class Propagator : public PropagatorCV
         // initReport is a helper function that feeds PropagatorCV information on what to report out to files
         void initReport() {
             // add report for complex physical space NLS field
-//            auto report = std::make_unique<dat::ReportComplexData2D<\
-//                     double,double,double>>("RT",m_mirror_r,m_spi.getT(),m_mirror_uphys);
             auto report = std::make_unique<dat::ReportComplexData2D<\
-                     double,double,double>>("RT",m_spi.getR(),m_spi.getT(),m_uphys);
-
+                     double,double,double>>("RT",m_mirror_r,m_spi.getT(),m_mirror_uphys);
             report->setItem("xlabel","r");
             report->setItem("ylabel","t");
             report->setItem("zlabel","A");
+            report->setStrideX(2);
+            report->setStrideY(8);
             PropagatorCV::addReport(std::move(report));
+
+//            auto track_max = std::make_unique<dat::TrackComplexData<double>>("Peak Power",\
+//                    pw::TrackType::Max,m_uphys,pw::ComplexOp::Power);
+//            PropagatorCV::addReport(std::move(track_max));
 
             // add report for power of physical space NLS field 
             auto reportpow = std::make_unique<dat::ReportComplexData2D<\
@@ -133,6 +141,8 @@ class Propagator : public PropagatorCV
             reportpow->setItem("xlabel","r");
             reportpow->setItem("ylabel","t");
             reportpow->setItem("zlabel","|A|^2");
+            reportpow->setStrideX(2);
+            reportpow->setStrideY(8);
             PropagatorCV::addReport(std::move(reportpow));
 
             // add report for spectral space NLS field (the propagator)
@@ -141,6 +151,8 @@ class Propagator : public PropagatorCV
             reportsp->setItem("xlabel","kr");
             reportsp->setItem("ylabel","omega");
             reportsp->setItem("zlabel","A");
+            reportsp->setStrideX(2);
+            reportsp->setStrideY(8);
             PropagatorCV::addReport(std::move(reportsp));
 
 //            // add report for power of spectral space NLS field (the propagator)
@@ -169,22 +181,26 @@ int main()
     double b = 6.0;
     UniformGridCVT gridT(nt,a,b);
 
-    unsigned num_threads = 1;
+    unsigned num_threads = 4;
     NLSRT model(gridR,gridT,num_threads);
 
     std::filesystem::path dirpath("nlsRT_propagator_files");
     Propagator propagator(dirpath,model);
-    propagator.setStepsPerOutput(3);
+    propagator.setStepsPerOutput(6);
     propagator.setLogProgress(true);
-    propagator.setLogFrequency(1);
+    propagator.setLogProgress(false);
+    propagator.setLogFrequency(12);
 
     ETD35 solver(model.L(),model.NL());
-    solver.setEpsRel(1e-5);
+    solver.setEpsRel(1e-4);
     solver.setLogProgress(true);
-    solver.setLogFrequency(1);
+    solver.setLogProgress(false);
+    solver.setLogFrequency(4);
     double z0 = 0.0;
     double zf = 0.3;
+    propagator.report(z0);
     solver.evolve(propagator,z0,zf,zf/100.0);
+    propagator.report(zf);
     return 0;
 }
 
