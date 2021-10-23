@@ -10,7 +10,7 @@ high-level wrappers for spectral transforms:
 #. Hankel-Transforms  
 
 SPIDA also contains adaptive-step Runge-Kutta numerical propagators for stiff partial-differential-equations (PDEs).
-These are the same methods as implemented for the python package `rkstiff <https://github.com/whalenpt/rkstiff>`.
+These are the same methods as implemented for the python package `rkstiff <https://github.com/whalenpt/rkstiff>`_.
 Two types of numerical methods are available, integrating factor methods (IF), and exponential time-differencing (ETD).
 In particular, the solvers provided are
 
@@ -21,11 +21,6 @@ In particular, the solvers provided are
 
 In general, one should prefer ETD35 as it often has the best speed and stability for diagonal systems.
 No non-diagonal methods are implemented as of yet (see the python package for that functionality).
-
-This project implements the
-functionality of the python rkstiff package in C++ and also includes several high-level wrappers
-for third-party Fast-Fourier Transforms (FFTs), among other transforms. The aim of the project
-is to provide fast solutions of partial-differential-equations (PDEs) using pseudo-spectral methods.
 
 Dependencies
 ------------
