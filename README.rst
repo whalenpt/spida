@@ -2,15 +2,11 @@
 SPIDA
 =========
 
-.. _kissfft: 
-.. _indirect target: _kissfft
-.. _internal target:
-
 Spectral integration and differentiation algorithms (SPIDA). This project implements several
-high-level wrappers for spectral transforms: 
+high-level wrappers for spectral transforms:
 
-#. `Fast-Fourier Transforms <https://github.com/mborgerding/kissfft>`_ (FFTs) 
-#. `Fast Discrete Cosine Transforms <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>`_ (FDCTs) 
+#. Fast-Fourier Transforms (FFTs) 
+#. Fast Discrete Cosine Transforms (FDCTs) 
 #. Hankel-Transforms  
 
 SPIDA also contains adaptive-step Runge-Kutta numerical propagators for stiff partial-differential-equations (PDEs).
@@ -37,8 +33,8 @@ Dependencies
 Third-party packages use MIT licenses or similarly permissive licenses
 
 Libraries built with
-* kissfft
-* nayukidct
+* `kissfft <https://github.com/mborgerding/kissfft>`_
+* `nayukidct <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>`_ 
 * pwutils
 * boost
  
