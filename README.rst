@@ -3,7 +3,7 @@ SPIDA
 =========
 
 .. _kissfft: https://github.com/mborgerding/kissfft
-.. _indirect target: kissfft
+.. _indirect target: _kissfft
 .. _internal target:
 
 Spectral integration and differentiation algorithms (SPIDA). This project implements several
