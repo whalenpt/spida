@@ -13,7 +13,6 @@
 #include <vector>
 #include <cmath>
 #include <string>
-#include <ParamBin/parambin.hpp>
 #include <pwutils/report/dataio.hpp>
 #include <spida/helper/interp.h>
 //------------------------------------------------------------------------------

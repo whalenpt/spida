@@ -18,7 +18,6 @@ add_executable(nlsRT NLSRT.cpp)
 target_link_libraries(interp PUBLIC
     SPIDA::spida
     pw::pwutils
-    ParamBin::parambin
 )
 
 target_link_libraries(grid PUBLIC SPIDA::spida)

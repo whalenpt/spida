@@ -107,14 +107,13 @@ target_include_directories(spida PUBLIC
 )
 
 target_include_directories(spida PRIVATE
-	$<BUILD_INTERFACE:${BOOST_DIR}>
-	$<INSTALL_INTERFACE:include/boost>
     $<BUILD_INTERFACE:${Spida_SOURCE_DIR}/include/spida>
 	$<INSTALL_INTERFACE:include/spida>
+	$<BUILD_INTERFACE:${BOOST_DIR}>
+	$<INSTALL_INTERFACE:include/boost>
 )
 
 target_link_libraries(spida
-    PRIVATE ParamBin::parambin
     PRIVATE pw::pwutils
     PUBLIC kissfft
     PUBLIC nayukidct
