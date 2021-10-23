@@ -9,7 +9,7 @@ SPIDA
 Spectral integration and differentiation algorithms (SPIDA). This project implements several
 high-level wrappers for spectral transforms: 
 
-#. Fast-Fourier Transforms _kissfft (FFTs) 
+#. Fast-Fourier Transforms _kissfft; (FFTs) 
 #. `Fast Discrete Cosine Transforms <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>` (FDCTs) 
 #. Hankel-Transforms  
 
