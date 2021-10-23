@@ -3,6 +3,7 @@ SPIDA
 =========
 
 .. _kissfft: https://github.com/mborgerding/kissfft
+.. _indirect target: kissfft
 
 Spectral integration and differentiation algorithms (SPIDA). This project implements several
 high-level wrappers for spectral transforms: 
