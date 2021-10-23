@@ -47,31 +47,16 @@ Compile and build
 Usage
 -----
 
-Check out the demos. These can be built by configuring CMake with
-cmake -S . -B build -DCMAKE_E
+Check out the demos. These can be built by configuring CMake with::
+    cmake -S . -B build -DCMAKE_DEMOS=ON
 
--DSPIDA_DEMOS:ON
-
-
-
-
-
-
-
-* Free software: MIT license
-
-Features
---------
-
-* TODO
-
-Credits
+License
 -------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-
+This project is licensed under the MIT License - see the `LICENSE <./LICENSE>` file for details.
 
 Contact
+-------
+Patrick Whalen - whalenpt@gmail.com
+
+
+
