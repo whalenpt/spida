@@ -48,7 +48,10 @@ Compile and build
 Usage
 -----
 
-Check out the demos. These can be built by configuring CMake with::
+Check out the demos. These can be built by configuring CMake with
+
+.. code-block:: none
+
     cmake -S . -B build -DCMAKE_DEMOS=ON
 
 License
