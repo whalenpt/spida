@@ -24,6 +24,7 @@ Non-diagonal methods are not implemented as of yet (see the python package for t
 A detailed discussion of these suolvers is provided in the journal article 
 
 .. raw:: html 
+
    <embed> 
      <a href=https://www.sciencedirect.com/science/article/pii/S0021999114006743> <i> Exponential time-differencing with embedded Runge–Kutta adaptive step control </i> </a>
    </embed>
