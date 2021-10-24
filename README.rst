@@ -69,6 +69,7 @@ Usage
         For example, the C++ code may look something like this:
     </embed>
 
+
 .. code-block:: c
 
     #include <spida/grid/uniformRVX.h>
