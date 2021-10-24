@@ -48,11 +48,29 @@ Compile and build
 Usage
 -----
 
+.. raw:: html
+
+    <embed>
+        Consider the Kuramoto-Sivashinsky (KS) equation: 
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+         u<sub>t</sub> = -u<sub>xx</sub> - u<sub>xxxx</sub> - uu<sub>x</sub>. 
+         
+         Converting to spectral space using a Fourier transform (F) we have 
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        v<sub>t</sub> = k<sub>x</sub><sup>2</sup>(1- k<sub>x</sub><sup>2</sup>)v - F \{ F<sup>-1</sup> \{v\} F<sup>-1</sup>\{ i k<sub>x</sub> v\} \} 
+        <br>
+        where v = F{u}. We can then plug L = k<sub>x</sub><sup>2</sup>(1- k<sub>x</sub><sup>2</sup>), and NL(u) =  - F \{ F<sup>-1</sup> \{v\} F<sup>-1</sup>\{ i k<sub>x</sub> v\} \} into an rkstiff solver and propagate the field u in spectral space, converting back to real space when desired.
+    </embed>
+
 Check out the demos. These can be built by configuring CMake with
 
 .. code-block:: none
 
     cmake -S . -B build -DCMAKE_DEMOS=ON
+
+
 
 License
 -------

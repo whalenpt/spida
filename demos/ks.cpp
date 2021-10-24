@@ -1,8 +1,8 @@
 /*------------------------------------------------------------------------------
  *   
- *    Author: Patrick Townsend Whalen   
+ *    Author: Patrick Whalen   
  *    Email: whalenpt@gmail.com
- *    Status: Development
+ *    Status: Complete
  *    Date: 08/27/21
  *    Description: Implementation of kdv PDE with a Propagator class (automated file reporting)
  *
@@ -22,7 +22,7 @@
 
 using namespace spida;
 
-// kDV model for real-valued physical space fields (spectral space is still complex)
+// kDV model for real-valued physical space fields (spectral space is complex)
 class KS_RV
 {
     public: 
