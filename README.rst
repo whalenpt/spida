@@ -22,7 +22,7 @@ In particular, the solvers provided are
 In general, one should prefer ETD35 as it often has the best speed and stability for diagonal systems.
 Non-diagonal methods are not implemented as of yet (see the python package for this functionality).
 A detailed discussion of these suolvers is provided in the journal article
-`*Exponential time-differencing with embedded Runge–Kutta adaptive step control* <https://www.sciencedirect.com/science/article/pii/S0021999114006743>`_
+<a href=https://www.sciencedirect.com/science/article/pii/S0021999114006743> <i> Exponential time-differencing with embedded Runge–Kutta adaptive step control </i> </a>
 
 Dependencies
 ------------
