@@ -1,5 +1,5 @@
 =========
-SPIDA
+spida
 =========
 
 Spectral integration and differentiation algorithms (SPIDA). This project implements several
