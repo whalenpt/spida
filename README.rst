@@ -2,6 +2,10 @@
 SPIDA
 =========
 
+.. _rkstiff: https://github.com/whalenpt/rkstiff
+.. _indirect target: rkstiff_
+.. _internal target: 
+
 Spectral integration and differentiation algorithms (SPIDA). This project implements several
 high-level wrappers for spectral transforms:
 
@@ -11,6 +15,7 @@ high-level wrappers for spectral transforms:
 
 SPIDA also contains adaptive-step Runge-Kutta numerical propagators for stiff partial-differential-equations (PDEs).
 These are the same methods as implemented for the python package `rkstiff <https://github.com/whalenpt/rkstiff>`_.
+These are the same methods as implemented for the python package rkstiff_. 
 Two types of numerical methods are available, integrating factor methods (IF), and exponential time-differencing (ETD).
 In particular, the solvers provided are
 
