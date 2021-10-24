@@ -22,7 +22,7 @@
 
 using namespace spida;
 
-// kDV model for real-valued physical space fields (spectral space is complex)
+// KS model for real-valued physical space fields (spectral space is complex)
 class KS_RV
 {
     public: 
@@ -86,14 +86,12 @@ class PropagatorKS : public PropagatorCV
     private:
         // initReport is a helper function that feeds PropagatorCV information on what to report out to files
         void initReport() {
-            // add report for real space kDV field
+            // add report for real space KS field
             const std::vector<double>& x  = m_spi.getGridX().getX();
-            auto report = std::make_unique<dat::ReportData1D<double,double>>("X",x,m_uphys);
-            PropagatorCV::addReport(std::move(report));
-            // add report for spectral space kDV field (the propagator)
+            PropagatorCV::addReport(std::make_unique<dat::ReportData1D<double,double>>("X",x,m_uphys));
+            // add report for spectral space KS field (the propagator)
             const std::vector<double>& sx  = m_spi.getGridX().getSX();
-            auto reportsp = std::make_unique<dat::ReportComplexData1D<double,double>>("SX",sx,m_usp);
-            PropagatorCV::addReport(std::move(reportsp));
+            PropagatorCV::addReport(std::make_unique<dat::ReportComplexData1D<double,double>>("SX",sx,m_usp));
         }
         SpidaRVX& m_spi;
         std::vector<dcmplx> m_usp;
