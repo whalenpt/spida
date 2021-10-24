@@ -28,16 +28,17 @@ Dependencies
 Third-party packages use MIT licenses or similarly permissive licenses
 
 Libraries built with
-* `kissfft <https://github.com/mborgerding/kissfft>`_
-* `nayukidct <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>`_ 
-* pwutils
-* boost
+
+* `KISS FFT <https://github.com/mborgerding/kissfft>`_
+* `Nayuki-Lee DCT <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>`_ 
+* `pwutils <https://github.com/whalenpt/pwutils>`_
+* `Boost <https://www.boost.org>`_
  
 Testing done with
-* googletest
+* `GoogleTest <https://github.com/google/googletest>`_
 
 Compile and build
-* CMake
+* `CMake <https://cmake.org>`_
 
 Usage
 -----
