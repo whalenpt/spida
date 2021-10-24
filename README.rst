@@ -25,7 +25,7 @@ In particular, the solvers provided are
 
 In general, one should prefer ETD35 as it often has the best speed and stability for diagonal systems.
 Non-diagonal methods are not implemented as of yet (see the python package rkstiff_ for this functionality).
-A detailed discussion of these suolvers is provided in the journal article |article|_.
+A detailed discussion of these solvers is provided in the journal article |article|_.
 
  .. _article: https://www.sciencedirect.com/science/article/pii/S0021999114006743
 
@@ -39,7 +39,7 @@ Libraries built with
 * `KISS FFT <https://github.com/mborgerding/kissfft>`_
 * `Nayuki-Lee DCT <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>`_ 
 * `pwutils <https://github.com/whalenpt/pwutils>`_
-* `Boost <https://www.boost.org>`_
+* `Boost <https://www.boost.org>`_ (limited to special functions and their dependencies)
  
 Testing done with
 
