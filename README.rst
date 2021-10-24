@@ -14,7 +14,6 @@ high-level wrappers for spectral transforms:
 #. Hankel-Transforms  
 
 SPIDA also contains adaptive-step Runge-Kutta numerical propagators for stiff partial-differential-equations (PDEs).
-These are the same methods as implemented for the python package `rkstiff <https://github.com/whalenpt/rkstiff>`_.
 These are the same methods as implemented for the python package rkstiff_. 
 Two types of numerical methods are available, integrating factor methods (IF), and exponential time-differencing (ETD).
 In particular, the solvers provided are
@@ -25,7 +24,7 @@ In particular, the solvers provided are
 * IF45DP (5th order IF with 4th order embedding)
 
 In general, one should prefer ETD35 as it often has the best speed and stability for diagonal systems.
-Non-diagonal methods are not implemented as of yet (see the python package for this functionality).
+Non-diagonal methods are not implemented as of yet (see the python package rkstiff_ for this functionality).
 A detailed discussion of these suolvers is provided in the journal article |article|_.
 
  .. _article: https://www.sciencedirect.com/science/article/pii/S0021999114006743
