@@ -39,7 +39,7 @@ Libraries built with
 * `KISS FFT <https://github.com/mborgerding/kissfft>`_
 * `Nayuki-Lee DCT <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>`_ 
 * `pwutils <https://github.com/whalenpt/pwutils>`_
-* `Boost <https://www.boost.org>`_ (limited to special functions and their dependencies)
+* `Boost <https://www.boost.org>`_ (limited to special function headers and their dependencies)
  
 Testing done with
 
