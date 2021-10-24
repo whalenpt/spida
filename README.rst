@@ -68,7 +68,7 @@ Usage
         where v = F{u}. We can then plug L = k<sub>x</sub><sup>2</sup>(1- k<sub>x</sub><sup>2</sup>), and NL(u) =  - F \{ F<sup>-1</sup> \{v\} F<sup>-1</sup>\{ i k<sub>x</sub> v\} \} into an rkstiff solver and propagate the field u in spectral space, converting back to real space when desired.
         For example, the C++ code may look something like this:
     </embed>
-
+|
 
 .. code-block:: c
 
