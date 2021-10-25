@@ -41,7 +41,7 @@ set(SRC_FILES
     transform/hankelfftRRVT.cpp
 )
 
-set(INCL_DIR "${Spida_SOURCE_DIR}/include/spida")
+set(INCL_DIR "${SPIDA_SOURCE_DIR}/include/spida")
 set(SPIDA_INCLUDES
    "${INCL_DIR}/SpidaCVX.h"
    "${INCL_DIR}/SpidaRVX.h"
@@ -86,7 +86,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/transform/hankelfftRRVT.h"
 )
 
-set(BOOST_DIR "${Spida_SOURCE_DIR}/include/spida/boost_1_76_0/boost")
+set(BOOST_DIR "${SPIDA_SOURCE_DIR}/include/spida/boost_1_76_0/boost")
 set(BOOST_INCLUDES 
 	"${BOOST_DIR}/math/special_functions/airy.hpp"
 	"${BOOST_DIR}/math/special_functions/bessel.hpp"
@@ -101,9 +101,9 @@ add_library(spida ${SRC_FILES} ${INCLUDE_FILES})
 add_library(SPIDA::spida ALIAS spida)
 
 target_include_directories(spida PUBLIC 
-    $<BUILD_INTERFACE:${Spida_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${SPIDA_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:include>
-	$<BUILD_INTERFACE:${Spida_SOURCE_DIR}/include/spida/boost_1_76_0>
+	$<BUILD_INTERFACE:${SPIDA_SOURCE_DIR}/include/spida/boost_1_76_0>
     # Need to find boost on local installs
 	$<INSTALL_INTERFACE:include/spida/boost_1_76_0>
 )
@@ -119,15 +119,16 @@ set_target_properties(spida PROPERTIES
 	SOVERSION 0
 )
 
+install(DIRECTORY ${INCL_DIR}
+    DESTINATION include
+)
+
+#install(TARGETS spida pwutils nayukidct kissfft
 install(TARGETS spida
 	EXPORT SpidaTargets
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	RUNTIME DESTINATION bin
-)
-
-install(DIRECTORY ${INCL_DIR}
-    DESTINATION include
 )
 
 install(EXPORT SpidaTargets
@@ -143,9 +144,7 @@ write_basic_package_version_file(
 	COMPATIBILITY AnyNewerVersion
 )
 
-message("Get configure file: ${Spida_SOURCE_DIR}/cmake/SpidaConfig.cmake.in")
-
-configure_file("${Spida_SOURCE_DIR}/cmake/SpidaConfig.cmake.in"
+configure_file("${SPIDA_SOURCE_DIR}/cmake/SPIDAconfig.cmake.in"
     SpidaConfig.cmake @ONLY
 )
 

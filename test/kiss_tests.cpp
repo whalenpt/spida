@@ -344,7 +344,6 @@ TEST(KISS_TEST,GAUSS)
 
 	for(auto i = 0; i < out.size(); i++)
 	    out_phase_adj[i] = out[i]*exp(ii*kx[i]*xmin);
-	    //out_phase_adj[i] = out[i]*exp(2.0*PI*ii*kx[i]*xmin);
 
     dataio.writeFile("kissfft_gauss.dat",expect,out_phase_adj);
     EXPECT_LT(pw::relative_error(expect,out_phase_adj),1e-5);
