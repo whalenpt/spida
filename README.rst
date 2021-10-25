@@ -280,6 +280,7 @@ the configure command is:
 License
 -------
 This project is licensed under the MIT License - see the `LICENSE <./LICENSE>`_ file for details.
+
 Third-party package dependencies use MIT or similarly permissive licenses
 
 Contact
