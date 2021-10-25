@@ -30,6 +30,7 @@ set(SRC_FILES
 	rkstiff/solver.cpp
 	rkstiff/ETDAS.cpp
 	rkstiff/ETDCS.cpp
+    rkstiff/IFAS.cpp
     transform/fftCVT.cpp
     transform/fftRVT.cpp
     transform/fftCVX.cpp
@@ -74,6 +75,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/rkstiff/solver.h"
    "${INCL_DIR}/rkstiff/ETDAS.h"
    "${INCL_DIR}/rkstiff/ETDCS.h"
+   "${INCL_DIR}/rkstiff/IFAS.h"
    "${INCL_DIR}/transform/chebX.h"
    "${INCL_DIR}/transform/fftCVT.h"
    "${INCL_DIR}/transform/fftRVT.h"
@@ -110,14 +112,13 @@ target_include_directories(spida PRIVATE
     $<BUILD_INTERFACE:${Spida_SOURCE_DIR}/include/spida>
 	$<INSTALL_INTERFACE:include/spida>
 	$<BUILD_INTERFACE:${BOOST_DIR}>
-	$<INSTALL_INTERFACE:include/boost>
+	$<INSTALL_INTERFACE:include/spida/boost>
 )
 
 target_link_libraries(spida
     PRIVATE pw::pwutils
     PUBLIC kissfft
     PUBLIC nayukidct
-    #    PUBLIC gsl
 )
 
 set_target_properties(spida PROPERTIES
