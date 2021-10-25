@@ -108,10 +108,10 @@ target_include_directories(spida PUBLIC
 	$<INSTALL_INTERFACE:include/spida/boost_1_76_0>
 )
 
-target_link_libraries(spida
-    PUBLIC pw::pwutils
-    PUBLIC kissfft
-    PUBLIC nayukidct
+target_link_libraries(spida PUBLIC
+    pw::pwutils
+    kissfft
+    nayukidct
 )
 
 set_target_properties(spida PROPERTIES
