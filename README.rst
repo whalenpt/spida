@@ -294,12 +294,12 @@ Demos
 -----
 
 Check out the demos. These can be built by configuring CMake with
-the option DEMOS set to ON. On the command line, in the spida directory,
+the option SPIDA_DEMOS set to ON. On the command line, in the spida directory,
 the configure command is:
 
 .. code-block:: none
 
-    cmake -S . -B build -DCMAKE_DEMOS=ON
+    cmake -S . -B build -DSPIDA_DEMOS=ON
 
 Testing
 -------
@@ -310,7 +310,7 @@ the configure command is:
 
 .. code-block:: none
 
-    cmake -S . -B build -DCMAKE_TEST=ON
+    cmake -S . -B build -DSPIDA_TEST=ON
 
 License
 -------
