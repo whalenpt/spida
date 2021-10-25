@@ -119,6 +119,14 @@ set_target_properties(spida PROPERTIES
 	SOVERSION 0
 )
 
+# Enforce usage of c++17 standard
+target_compile_features(spida PUBLIC cxx_std_17)
+if(CMAKE_CXX_STANDARD LESS 17)
+    message(FATAL_ERROR
+        "spida library requires CMAKE_CXX_STANDARD >= 17 (got: ${CMAKE_CXX_STANDARD})")
+endif()
+
+
 install(DIRECTORY ${INCL_DIR}
     DESTINATION include
 )
