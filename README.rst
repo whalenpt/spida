@@ -257,12 +257,12 @@ PropagatorKS is a class that inherits from PropagatorCV which is a container
 for a complex-valued propagating field. This class has several helper
 functions for convenient file reporting, such the number of steps for the
 solver to take before each report and whether to log the solvers progress with
-std::cout. In particular, the class has two pure virtual
+std::cout. In particular, the class has two pure virtual functions
 
 * std::vector<spida::dcmplx>& propagator()
 * void updateFields(double t) 
 
-that need to be specified in a subclass. The propagator function returns
+that need to be specified in a subclass. The propagator() function returns
 the complex-valued array that is propagated by the solver. The updateFields
 function is called right before any file report. Note that none of the solvers
 require the use of a PropagatorCV class and can use a std::vector input
@@ -270,7 +270,7 @@ directly.
 
 The main function sets up the grid, model, propagator, and solver.
 The ETD34 evolve function automatically file reports results based
-on the settings provided by the Propagator class.
+on the settings provided by the PropagatorCV class.
 
 Installation
 ------------
