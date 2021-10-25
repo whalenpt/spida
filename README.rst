@@ -100,7 +100,7 @@ Hankel transforms of order zero computed on a Bessel root grid:
     }
 
 
-The GaussR shape class takes as an input a BesselRootGrid, an amplitude, 
+The GaussR shape class takes as input: a BesselRootGrid, an amplitude, 
 and a width (also, potentially a focus parameter for complex-valued inputs).
 The GaussR::shapeRV() function returns real-valued double vector
 containing a Gaussian profile.
