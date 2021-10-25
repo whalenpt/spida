@@ -40,6 +40,7 @@ Libraries built with
 * `Nayuki-Lee DCT <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>`_ 
 * `pwutils <https://github.com/whalenpt/pwutils>`_
 * `Boost <https://www.boost.org>`_ (limited to special function headers and their dependencies)
+* `json11 <https://github.com/dropbox/json11>`_
  
 Testing done with
 
