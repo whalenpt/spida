@@ -17,40 +17,44 @@
 #include <pwutils/report/reporthelper.h>
 #include <iostream>
 #include <fstream>
-#include <cmath>
 
 //------------------------------------------------------------------------------
 
 int main()
 {
-
-    using spida::dcmplx;
+    // dcmplx is short for std::complex<double>
     int nr = 200;
     double w0 = 20.0e-6;
     double I0 = 5.0e16;
 
+    // Set up a grid of Bessel function roots
     spida::BesselRootGridR gridR(nr,12*w0);
+    // GaussR is a Shape class used for gaussian functions with a Bessel root grid
     spida::GaussR shapeR(gridR,std::sqrt(I0),w0);
-
-    std::vector<double> u(nr);
-    shapeR.shapeRV(u);
-    std::vector<double> v(nr);
-
+    // HankelTransformR is a Hankel transform using Bessel function roots as the grid
     spida::HankelTransformR transform(gridR);
+
+    std::vector<double> u = shapeR.shapeRV();
+    std::vector<double> v(nr);
+    // Transform to spectral space
+    transform.R_To_SR(u,v);
+
     dat::ReportData1D<double,double> in_report("R",gridR.getR(),u);
     in_report.setItem("xlabel","r");
-    std::cout << in_report.path().string() << std::endl;
-
-    std::ofstream os;
-    os << std::scientific << std::setprecision(3);
-    os << in_report;
-
-    transform.R_To_SR(u,v);
     dat::ReportData1D<double,double> out_report("SR",gridR.getSR(),v);
     out_report.setItem("xlabel","kr");
+
+    std::ofstream os;
+    // can set precision for reporting
+    os << std::scientific << std::setprecision(3);
+    os << in_report;
     os << std::scientific << std::setprecision(8);
     os << out_report;
 
+    std::cout << in_report.path().string() << std::endl;
+    std::cout << out_report.path().string() << std::endl;
+
+    using spida::dcmplx;
     std::vector<dcmplx> ucmplx(nr);
     for(auto i = 0; i < nr; i++)
         ucmplx[i] = dcmplx(u[i],0.0);

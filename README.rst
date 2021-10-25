@@ -49,8 +49,56 @@ Compile and build
 
 * `CMake <https://cmake.org>`_
 
-Usage
------
+Hankel transform usage
+----------------------
+
+Hankel transforms of order 0 computed on a Bessel root grid:
+
+.. code-block:: c
+
+    #include <spida/grid/besselR.h>
+    #include <spida/shape/shapeR.h>
+    #include <spida/transform/hankelR.h>
+    #include <pwutils/report/dat.hpp>
+    #include <pwutils/report/reporthelper.h>
+    #include <iostream>
+    #include <fstream>
+
+    int main()
+    {
+        // dcmplx is short for std::complex<double>
+        int nr = 200;
+
+        // Set up a grid of Bessel function roots
+        spida::BesselRootGridR gridR(nr,12*w0);
+        double A0 = 1.0; double w0 = 1.0;
+        // GaussR -> A0*exp(-r^2/w0^2)
+        spida::GaussR shapeR(gridR,A0,w0);
+        
+        // HankelTransformR is a Hankel transform using Bessel function roots as the grid
+        spida::HankelTransformR transform(gridR);
+
+        std::vector<double> u = shapeR.shapeRV();
+        std::vector<double> v(nr);
+        // Transform to spectral space
+        transform.R_To_SR(u,v);
+
+        dat::ReportData1D<double,double> in_report("R",gridR.getR(),u);
+        dat::ReportData1D<double,double> out_report("SR",gridR.getSR(),v);
+
+        std::ofstream os;
+        // can set precision for reporting
+        os << std::scientific << std::setprecision(3);
+        os << in_report;
+        os << std::scientific << std::setprecision(8);
+        os << out_report;
+        return 0;
+    }
+
+
+
+rkstiff usage
+-------------
 
 .. raw:: html
 
@@ -84,7 +132,7 @@ Usage
 
     using namespace spida;
 
-    // kDV model for real-valued physical space fields (spectral space is complex)
+    // KS model for real-valued physical space fields (spectral space is complex)
     class KS_RV
     {
         public: 
