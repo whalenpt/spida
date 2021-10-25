@@ -56,7 +56,7 @@ Compile and build
 Hankel transform usage
 ----------------------
 
-Hankel transforms of order 0 computed on a Bessel root grid:
+Hankel transforms of order zero computed on a Bessel root grid:
 
 .. code-block:: c
 
@@ -99,6 +99,19 @@ Hankel transforms of order 0 computed on a Bessel root grid:
         return 0;
     }
 
+
+The GaussR shape class takes as input: a BesselRootGrid, an amplitude, 
+and a width (also, potentially a focus parameter for complex-valued inputs).
+The GaussR::shapeRV() function returns real-valued double vector
+containing a Gaussian profile.
+
+The HankelTransformR class also takes a BesselRootGrid as an input.
+The HankelTransformR::R_To_SR(const std::vector<double>& in, std::vector<double>& out) function
+will transform the radial Gaussian profile into spectral space (which also should be Gaussian).
+
+Note that pwutils is used here to output results to files named "R.dat" and "SR.dat".
+dat::ReportData1D reports two STL vectors into a two-column data file. The spectral 
+results are in the SR.dat file.
 
 
 rkstiff usage
@@ -244,12 +257,12 @@ PropagatorKS is a class that inherits from PropagatorCV which is a container
 for a complex-valued propagating field. This class has several helper
 functions for convenient file reporting, such the number of steps for the
 solver to take before each report and whether to log the solvers progress with
-std::cout. In particular, the class has two pure virtual
+std::cout. In particular, the class has two pure virtual functions
 
 * std::vector<spida::dcmplx>& propagator()
 * void updateFields(double t) 
 
-that need to be specified in a subclass. The propagator function returns
+that need to be specified in a subclass. The propagator() function returns
 the complex-valued array that is propagated by the solver. The updateFields
 function is called right before any file report. Note that none of the solvers
 require the use of a PropagatorCV class and can use a std::vector input
@@ -257,7 +270,7 @@ directly.
 
 The main function sets up the grid, model, propagator, and solver.
 The ETD34 evolve function automatically file reports results based
-on the settings provided by the Propagator class.
+on the settings provided by the PropagatorCV class.
 
 Installation
 ------------
@@ -275,27 +288,29 @@ To build and install the SPIDA library from the terminal (Linux/MacOS) use
     make -j4
     cmake --install .
 
+Check the `usage <./usage>`_ folder for more information on using the library once installed.
+
 Demos
 -----
 
 Check out the demos. These can be built by configuring CMake with
-the option DEMOS set to ON. On the command line, in the spida directory,
+the option SPIDA_DEMOS set to ON. On the command line, in the spida directory,
 the configure command is:
 
 .. code-block:: none
 
-    cmake -S . -B build -DCMAKE_DEMOS=ON
+    cmake -S . -B build -DSPIDA_DEMOS=ON
 
 Testing
 -------
 
 Testing done with GoogleTest. Enable testing by configuring CMake
-with the option TEST set to ON. On the command line, in the spida directory,
+with the option SPIDA_TEST set to ON. On the command line, in the spida directory,
 the configure command is:
 
 .. code-block:: none
 
-    cmake -S . -B build -DCMAKE_TEST=ON
+    cmake -S . -B build -DSPIDA_TEST=ON
 
 License
 -------
