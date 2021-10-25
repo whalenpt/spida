@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <boost/math/special_functions/bessel.hpp>
 #include "spida/grid/besselR.h"
-//#include <gsl/gsl_sf_bessel.h>
 #include <iostream>
 
 namespace spida{
@@ -29,28 +28,6 @@ BesselRootGridR::BesselRootGridR(int nr,double maxr) : GridR(nr,maxr),
     // Set spectral grid
     for(auto i = 0; i < nr; i++)
         m_sr[i] = m_roots[i]*getMaxSR()/m_jN;
-
-//    unsigned int status = 0;
-//    std::vector<double> v(nr);
-//    gsl_sf_result result;
-//    for(auto i = 0; i < nr; i++){
-//        status += gsl_sf_bessel_zero_Jnu_e(0.0,i+1,&result);
-//        m_roots[i] = result.val;
-//    }
-//    status += gsl_sf_bessel_zero_Jnu_e(0.0,nr+1,&result);
-//    m_jN = result.val;
-//
-//    for(auto i = 0; i < nr; i++)
-//        m_r[i] = m_roots[i]*GridR::getMaxR()/m_jN;
-//    // Set spectral grid
-//    for(auto i = 0; i < nr; i++)
-//        m_sr[i] = m_roots[i]*getMaxSR()/m_jN;
-
-
-//    std::cout << "ROOTS" << std::endl;
-//    for(auto i = 0; i < nr; i++)
-//        std::cout << std::setprecision(15) << std::scientific << m_roots[i] << " - " << v[i] << std::endl;
-
 }
 
 

@@ -3,13 +3,30 @@
 #include <fstream>
 #include <complex>
 #include <cmath>
+#include <cassert>
 #include <random>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
-#include <spida/helper/constants.h>
-#include <spida/grid/uniformCVX.h>
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
+
+constexpr auto PI = 3.141592653589793238462643383279502884197;
+using dcmplx = std::complex<double>;
+constexpr dcmplx ii (0.0,1.0);
+
+void createGrids(unsigned nx,double xmin,double xmax,std::vector<double>& x,std::vector<double>& kx)
+{
+    assert(x.size() == nx);
+    assert(kx.size() == nx);
+    double L = xmax - xmin;
+    double dx = L/static_cast<double>(nx);
+    for(auto i = 0; i < nx; i++) x[i] = xmin + i*dx; 
+    double dsx = 2.0*PI/L;
+    for(auto i = 0; i <= nx/2; i++)
+        kx[i] = i*dsx;
+    for(auto i = nx/2+1; i < nx; i++)
+        kx[i] = -static_cast<double>(nx-i)*dsx;
+}
 
 /* Apply forward fft then inverse fft to a random vector and verify its the identity */
 TEST(KISS_TEST,RANDOM)
@@ -205,15 +222,12 @@ TEST(KISS_TEST,ALTERNATING_ONE_NEGONE_REAL)
 TEST(KISS_TEST,EXP_IMAG_TRIG_WAVE)
 {
 	int N = 32;
-    using spida::dcmplx;
-    using spida::PI;
-    using spida::ii;
 
-    double xmin = 0;
-    double xmax = 1;
-    spida::UniformGridCVX grid(N,xmin,xmax);
-    const std::vector<double> x = grid.getX();
-    const std::vector<double> kx = grid.getSX();
+    double xmin = 0.0;
+    double xmax = 1.0;
+    std::vector<double> x(N);
+    std::vector<double> kx(N);
+    createGrids(N,xmin,xmax,x,kx);
     std::vector<std::complex<double> > in(N, 0.);
     std::vector<std::complex<double> > out(N, 0.);
     kiss_fft_cfg cfg_forward = kiss_fft_alloc(N,0,nullptr,nullptr);
@@ -238,7 +252,7 @@ TEST(KISS_TEST,COS_TRIG_WAVE)
 
 	std::vector<std::complex<double>> in(N,0.0);
     for(auto i = 0; i < N; i++)
-        in[i] = cos(8.0*2.0*spida::PI*i/static_cast<double>(N));
+        in[i] = cos(8.0*2.0*PI*i/static_cast<double>(N));
 	std::vector<std::complex<double>> out(N);
 	std::vector<std::complex<double>> out2(N);
 
@@ -248,7 +262,7 @@ TEST(KISS_TEST,COS_TRIG_WAVE)
 	        reinterpret_cast<kiss_fft_cpx*>(out.data()));
 
     for(unsigned int i = 0; i < N; i++)
-        in[i] = cos((43.0/7.0)*2.0*spida::PI*i/static_cast<double>(N));
+        in[i] = cos((43.0/7.0)*2.0*PI*i/static_cast<double>(N));
 	kiss_fft(cfg_forward,reinterpret_cast<kiss_fft_cpx*>(in.data()),\
 	        reinterpret_cast<kiss_fft_cpx*>(out2.data()));
 
@@ -275,7 +289,7 @@ TEST(KISS_TEST,COS_TRIG_WAVE_REAL)
 
 	std::vector<double> in(N,0.0);
     for(unsigned int i = 0; i < N; i++)
-        in[i] = cos(8.0*2.0*spida::PI*i/static_cast<double>(N));
+        in[i] = cos(8.0*2.0*PI*i/static_cast<double>(N));
 	std::vector<std::complex<double>> out(N/2+1);
 	std::vector<std::complex<double>> out2(N/2+1);
 
@@ -283,7 +297,7 @@ TEST(KISS_TEST,COS_TRIG_WAVE_REAL)
 	kiss_fftr(rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(in.data()),\
 	        reinterpret_cast<kiss_fft_cpx*>(out.data()));
     for(auto i = 0; i < N; i++)
-        in[i] = cos((43.0/7.0)*2.0*spida::PI*i/static_cast<double>(N));
+        in[i] = cos((43.0/7.0)*2.0*i/static_cast<double>(N));
 	kiss_fftr(rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(in.data()),\
 	        reinterpret_cast<kiss_fft_cpx*>(out2.data()));
 
@@ -302,23 +316,19 @@ TEST(KISS_TEST,GAUSS)
 {
 	unsigned N = 64;
     pw::DataIO dataio("outfolder");
-    using spida::dcmplx;
-    using spida::PI;
-    using spida::ii;
-
     std::vector<dcmplx> in(N,0.0);
     std::vector<dcmplx> out(N,0.0);
     std::vector<dcmplx> phase_adj(N,0.0);
     std::vector<dcmplx> out_phase_adj(N,0.0);
     std::vector<dcmplx> expect(N,0.0);
 
-    double xmin = -6;
-    double xmax = 6;
-    spida::UniformGridCVX grid(N,xmin,xmax);
-    double L = grid.getLX();
-    const std::vector<double> x = grid.getX();
-    const std::vector<double> kx = grid.getSX();
-    
+    double xmin = -6.0;
+    double xmax = 6.0;
+    double L = xmax-xmin;
+    std::vector<double> x(N);
+    std::vector<double> kx(N);
+    createGrids(N,xmin,xmax,x,kx);
+
     double alpha = 2.0;
     for(auto i = 0; i < x.size(); i++)
         in[i] = exp(-alpha*pow(x[i],2));
@@ -345,21 +355,18 @@ TEST(KISS_TEST,SECH)
 {
 	unsigned N = 64;
     pw::DataIO dataio("outfolder");
-    using spida::dcmplx;
-    using spida::PI;
-    using spida::ii;
 
     std::vector<dcmplx> in(N,0.0);
     std::vector<dcmplx> out(N,0.0);
     std::vector<dcmplx> expect(N,0.0);
 
     // make range large enough such that sech is near zero at xmin and xmax (FFT is periodic)
-    double xmin = -6;
-    double xmax = 6;
-    spida::UniformGridCVX grid(N,xmin,xmax);
-    double L = grid.getLX();
-    const std::vector<double> x = grid.getX();
-    const std::vector<double> kx = grid.getSX();
+    double xmin = -6.0;
+    double xmax = 6.0;
+    double L = xmax-xmin;
+    std::vector<double> x(N);
+    std::vector<double> kx(N);
+    createGrids(N,xmin,xmax,x,kx);
     double a = 2.0;
     // fill sech
     for(auto i = 0; i < x.size(); i++)
@@ -389,16 +396,15 @@ TEST(KISS_TEST,EXP_IMAG_TRIG_WAVE2)
 	int N = 32;
     pw::DataIO dataio("outfolder");
 
-
-    double xmin = 0;
-    double xmax = 4;
-    spida::UniformGridCVX grid(N,xmin,xmax);
-    const std::vector<double> x = grid.getX();
-    const std::vector<double> kx = grid.getSX();
+    double xmin = 0.0;
+    double xmax = 4.0;
+    std::vector<double> x(N);
+    std::vector<double> kx(N);
+    createGrids(N,xmin,xmax,x,kx);
 
     std::vector<std::complex<double> > in(N, 0.);
     for(unsigned int i = 0; i < N; i++)
-        in[i] = exp(4.0*spida::ii*2.0*spida::PI*x[i]);
+        in[i] = exp(4.0*ii*2.0*PI*x[i]);
     std::vector<std::complex<double> > out(N, 0.);
 
     kiss_fft_cfg cfg_forward = kiss_fft_alloc(N,0,nullptr,nullptr);

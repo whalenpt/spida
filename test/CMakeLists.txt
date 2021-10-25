@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-set(THIS mytests)
-set(SRC_FILES
-	kiss_tests.cpp
-	nayukidct_tests.cpp
+set(SPIDA_FILES
 	dct_tests.cpp
 	fftX_tests.cpp
 	fftT_tests.cpp
@@ -13,27 +10,53 @@ set(SRC_FILES
 	grid_tests.cpp
 )
 
-#set(BOOST_INCLUDES 
-#	"${BOOST_DIR}/boost/math/special_functions/airy.hpp"
-#	"${BOOST_DIR}/boost/math/special_functions/bessel.hpp"
-#)
+set(KISS_FILES kiss_tests.cpp)
+set(NAYUKI_FILES nayuki_tests.cpp)
 
 message("Run tests on library spida")
+add_executable(spidatest ${SPIDA_FILES})
+message("Run tests on kissfft")
+add_executable(kisstest ${KISS_FILES})
+message("Run tests on Nayuki FDCT")
+add_executable(nayukitest ${NAYUKI_FILES})
 
-add_executable(${THIS} ${SRC_FILES})
-
-message(STATUS "Link ${THIS} to pwutils and spida")
-target_link_libraries(${THIS} PUBLIC
+message(STATUS "Link spidateset to pwutils and spida")
+target_link_libraries(spidatest PUBLIC
 	gtest_main
-    pw::pwutils
     SPIDA::spida
+    pw::pwutils
 )
 
-set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")
-target_include_directories(${THIS} PRIVATE ${BOOST_DIR})
+target_link_libraries(kisstest PUBLIC
+	gtest_main
+    kissfft
+    pw::pwutils
+)
+
+target_link_libraries(nayukitest PUBLIC
+	gtest_main
+	nayukidct
+    pw::pwutils
+)
+
+#set(BOOST_DIR "${Spida_SOURCE_DIR}/external/boost_1_76_0")
+#target_include_directories(${THIS} PRIVATE ${BOOST_DIR})
 
 add_test(
-	NAME ${THIS}
-	COMMAND ${THIS}
+	NAME spidatest
+	COMMAND spidatest
 )
+add_test(
+	NAME kisstest
+	COMMAND kisstest
+)
+add_test(
+	NAME nayukitest
+	COMMAND nayukitest
+)
+
+
+
+
+
 

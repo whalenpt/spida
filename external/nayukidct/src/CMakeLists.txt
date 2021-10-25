@@ -18,14 +18,15 @@ set(INCLUDE_FILES
 )
 
 add_library(nayukidct ${SRC_FILES} ${INCLUDE_FILES})
-target_include_directories(nayukidct PRIVATE
-    $<BUILD_INTERFACE:${NayukiDCT_SOURCE_DIR}/include/nayukidct>
-    $<INSTALL_INTERFACE:include/nayukidct>
-)
 
 target_include_directories(nayukidct PUBLIC
     $<BUILD_INTERFACE:${NayukiDCT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(nayukidct PRIVATE
+    $<BUILD_INTERFACE:${NayukiDCT_SOURCE_DIR}/include/nayukidct>
+    $<INSTALL_INTERFACE:include/nayukidct>
 )
 
 set_target_properties(nayukidct PROPERTIES

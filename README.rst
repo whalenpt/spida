@@ -4,7 +4,10 @@ SPIDA
 
 .. _rkstiff: https://github.com/whalenpt/rkstiff
 .. _indirect target: rkstiff_
-.. _internal target: 
+
+.. _CMake: https://cmake.org
+.. _indirect target: CMake_
+
 
 Spectral integration and differentiation algorithms (SPIDA). This project implements several
 high-level wrappers for spectral transforms:
@@ -48,7 +51,7 @@ Testing done with
 
 Compile and build
 
-* `CMake <https://cmake.org>`_
+* CMake_
 
 Hankel transform usage
 ----------------------
@@ -255,6 +258,22 @@ directly.
 The main function sets up the grid, model, propagator, and solver.
 The ETD34 evolve function automatically file reports results based
 on the settings provided by the Propagator class.
+
+Installation
+------------
+
+If not installed, get and install CMake_.
+
+To build and install the SPIDA library from the terminal (Linux/MacOS) use
+
+.. code-block:: none
+
+    git clone https://github.com/whalenpt/spida.git
+    cd spida
+    cmake -S . -B build
+    cd build
+    make -j4
+    cmake --install .
 
 Demos
 -----
