@@ -56,7 +56,7 @@ Compile and build
 Hankel transform usage
 ----------------------
 
-Hankel transforms of order 0 computed on a Bessel root grid:
+Hankel transforms of order zero computed on a Bessel root grid:
 
 .. code-block:: c
 
@@ -99,6 +99,19 @@ Hankel transforms of order 0 computed on a Bessel root grid:
         return 0;
     }
 
+
+The GaussR shape class takes as an input a BesselRootGrid, an amplitude, 
+and a width (also, potentially a focus parameter for complex-valued inputs).
+The GaussR::shapeRV() function returns real-valued double vector
+containing a Gaussian profile.
+
+The HankelTransformR class also takes a BesselRootGrid as an input.
+The HankelTransformR::R_To_SR(const std::vector<double>& in, std::vector<double>& out) function
+will transform the radial Gaussian profile into spectral space (which also should be Gaussian).
+
+Note that pwutils is used here to output results to files named "R.dat" and "SR.dat".
+dat::ReportData1D reports two STL vectors into a two-column data file. The spectral 
+results are in the SR.dat file.
 
 
 rkstiff usage
@@ -274,6 +287,8 @@ To build and install the SPIDA library from the terminal (Linux/MacOS) use
     cd build
     make -j4
     cmake --install .
+
+Check the `usage <./usage>`_ folder for more information on using the library once installed.
 
 Demos
 -----
