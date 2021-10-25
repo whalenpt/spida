@@ -237,7 +237,7 @@ to complex-valued (CV) spectral-space transform on a uniform grid (FFT for real-
 KS_RV also holds several intermediate arrays used in the nonlinear function evaluation.
 
 PropagatorKS is a class that inherits from PropagatorCV which is a container
-for a complex-valued (CV) propagating field. This class has several helper
+for a complex-valued propagating field. This class has several helper
 functions for convenient file reporting, such the number of steps for the
 solver to take before each report and whether to log the solvers progress with
 std::cout. In particular, the class has two pure virtual
