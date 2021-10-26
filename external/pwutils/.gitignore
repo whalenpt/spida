@@ -7,7 +7,6 @@
 *.swo
 *.swp
 *.dat
-*.txt
 *~
 compile_commands*
 
