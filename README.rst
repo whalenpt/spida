@@ -305,7 +305,7 @@ Testing
 -------
 
 Testing done with GoogleTest. Enable testing by configuring CMake
-with the option TEST set to ON. On the command line, in the spida directory,
+with the option SPIDA_TEST set to ON. On the command line, in the spida directory,
 the configure command is:
 
 .. code-block:: none
