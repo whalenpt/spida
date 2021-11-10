@@ -20,7 +20,7 @@ add_executable(kisstest ${KISS_FILES})
 message("Run tests on Nayuki FDCT")
 add_executable(nayukitest ${NAYUKI_FILES})
 
-message(STATUS "Link spidateset to pwutils and spida")
+message(STATUS "Link spida test to pwutils and spida")
 target_link_libraries(spidatest PUBLIC
 	gtest_main
     SPIDA::spida

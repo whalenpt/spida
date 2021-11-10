@@ -291,25 +291,27 @@ TEST(KISS_TEST,COS_TRIG_WAVE_REAL)
     for(unsigned int i = 0; i < N; i++)
         in[i] = cos(8.0*2.0*PI*i/static_cast<double>(N));
 	std::vector<std::complex<double>> out(N/2+1);
-	std::vector<std::complex<double>> out2(N/2+1);
 
 	kiss_fftr_cfg rcfg_forward = kiss_fftr_alloc(N,0,nullptr,nullptr);
 	kiss_fftr(rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(in.data()),\
 	        reinterpret_cast<kiss_fft_cpx*>(out.data()));
-    for(auto i = 0; i < N; i++)
-        in[i] = cos((43.0/7.0)*2.0*i/static_cast<double>(N));
-	kiss_fftr(rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(in.data()),\
-	        reinterpret_cast<kiss_fft_cpx*>(out2.data()));
-
-    kiss_fft_free(rcfg_forward);
 
     // Check cosine wave with frequency that lands on discretized grid
 	EXPECT_DOUBLE_EQ(out[8].real(),static_cast<double>(N)/2);
+
+	std::vector<std::complex<double>> out2(32+1);
+    for(auto i = 0; i < 64; i++)
+        in[i] = cos((43.0/7.0)*2.0*i/static_cast<double>(64));
+	kiss_fftr(rcfg_forward,reinterpret_cast<kiss_fft_scalar*>(in.data()),\
+	        reinterpret_cast<kiss_fft_cpx*>(out2.data()));
+
     // Check cosine wave with frequency that is in between grid frequencies
 	// Compare results to python numpy rfft results for several values
-	EXPECT_NEAR(out2[0].real(),1.445134428062532,1e-8);
-	EXPECT_NEAR(out2[3].imag(),0.4098236995245791,1e-8);
-	EXPECT_NEAR(out2[N/2].real(),0.06667213305344744,1e-8);
+	EXPECT_NEAR(out2[0].real(),-1.4189089192588156,1e-8);
+	EXPECT_NEAR(out2[3].imag(),-0.229996893956892,1e-8);
+	EXPECT_NEAR(out2[32].real(),0.032896917953961546,1e-8);
+	EXPECT_NEAR(out2[32].imag(),0.0,1e-8);
+    kiss_fft_free(rcfg_forward);
 }
 
 TEST(KISS_TEST,GAUSS)
