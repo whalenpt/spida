@@ -344,9 +344,9 @@ void Control::setEpsRel(double val)
 double Control::computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew)
 {
     double s = computeRawS(errVec,ynew);
-    if(isinf(s))
+    if(std::isinf(s))
         return MIN_S;
-    else if(isnan(s))
+    else if(std::isnan(s))
         return MIN_S;
     double s_stab = safeFact*pow(s,1.0/q);
     if(s_stab < 1.0){
