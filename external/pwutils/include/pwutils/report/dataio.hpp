@@ -6,7 +6,7 @@
 #include <string>
 #include <fstream>
 #include <filesystem>
-#include <assert>
+#include <cassert>
 #include "pwutils/report/reporthelper.h"
 
 namespace pw{
