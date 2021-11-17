@@ -1,7 +1,4 @@
 
-
-cmake_minimum_required(VERSION 3.19)
-
 set(INCL_DIR "${json11_SOURCE_DIR}/include/json11")
 add_library(json11 json11.cpp ${INCL_DIR}/json11.hpp)
 set_target_properties(json11 PROPERTIES POSITION_INDEPENDENT_CODE ON)

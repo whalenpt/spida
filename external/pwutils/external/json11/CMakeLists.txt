@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.16.3)
 project(json11 VERSION 1.0.0 LANGUAGES CXX)
 
 option(JSON11_BUILD_TESTS "Build unit tests" OFF)

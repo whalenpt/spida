@@ -1,6 +1,4 @@
 
-cmake_minimum_required(VERSION 3.19)
-
 set(SRC_FILES
 	pwstats.cpp
 	pwthreads.cpp
