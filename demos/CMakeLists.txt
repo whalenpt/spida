@@ -1,6 +1,4 @@
 
-cmake_minimum_required(VERSION 3.19)
-
 add_executable(interp interp_demo.cpp)
 add_executable(grid grid_demo.cpp)
 add_executable(hankel hankel.cpp)
