@@ -1,7 +1,8 @@
 .DS_Store
-[Bb]uild
+[Bb]uild*
 *.json
 *.swp
+*~
 
 # Ignore FFTW library files
 #include/spida/spidaFFTWX.h
@@ -15,3 +16,4 @@
 #src/spidaInterpFFTWX.cpp
 #test/fftw_tests.cpp
 #test/fdct_tests.cpp
+
