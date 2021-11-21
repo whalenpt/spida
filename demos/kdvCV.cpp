@@ -14,16 +14,32 @@
 #include <spida/SpidaCVX.h>
 #include <spida/helper/constants.h>
 #include <spida/rkstiff/ETDAS.h>
+#include <spida/propagator/propagator.h>
 #include <pwutils/report/dat.hpp>
 #include <fstream>
 
 //------------------------------------------------------------------------------
 
 using namespace spida;
-class kDV
+
+/// 
+/// @brief Class for holding a linear operator and nonlinear function
+/// of the KdV equation for modeling a complex-valued propagating wave.   
+/// Also holds SpidaCVX object which has helper functions for ffts and derivatives.
+/// 
+
+class KdV
 {
     public: 
-        kDV(const UniformGridCVX& grid) : 
+
+		/// 
+		/// @brief Class constructor copies numerical grid, initializes a SpidaCVX object,
+		/// and defines both the linear operator and nonlinear function 
+		/// needed by the rkstiff solver. 
+		/// @param grid UniformGridCVX object for describing a complex-valued uniform numerical grid 
+		/// 
+
+        KdV(const UniformGridCVX& grid) : 
             L(grid.getNsx()),
             m_grid(grid), 
             m_spida(grid), 
@@ -35,7 +51,10 @@ class kDV
                 for(auto i = 0; i < sx.size(); i++)
                     L[i] = ii*pow(sx[i],3);
             }
-        std::vector<dcmplx> L;
+
+        std::vector<dcmplx> L; /**< Linear operator, dcmplx is equivalent to std::complex<double> */
+
+		/// Nonlinear function definition
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)> NL = [this](\
                 const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
             m_spida.SX_To_X(in,m_uphys);
@@ -45,15 +64,98 @@ class kDV
                 m_uphys[i] = -6.0*m_uphys[i]*m_uxphys[i];
             m_spida.X_To_SX(m_uphys,out);
         };
+
         SpidaCVX& spida() {return m_spida;}
 
     private:
-        UniformGridCVX m_grid;
-        SpidaCVX m_spida;
-        std::vector<dcmplx> m_uphys;
+        UniformGridCVX m_grid; /**< Uniformly spaced numerical grid for complex-valued functions */
+        SpidaCVX m_spida; /**< FFTs and differentiation functions */
+        std::vector<dcmplx> m_uphys; 
         std::vector<dcmplx> m_uxphys;
         std::vector<dcmplx> m_uxsp;
 };
+
+//
+// Helper class for reporting files based on data generated from the Solver used
+//
+
+class PropagatorKdV : public PropagatorCV
+{
+    public:
+
+		/// 
+		/// @brief Constructor creates vectors used during propagation and stores
+		//  the propagation model. Determines how the Solver class reports data files
+		//  during propagation
+		/// @param path Where to output data files generated during propagation
+		/// @param md KdV model which contains a SpidaCVX object with fft functions
+		
+        PropagatorKdV(const std::filesystem::path& path,KdV& md) : 
+            PropagatorCV(path),
+            m_spi(md.spida()),
+            m_usp(md.spida().getGridX().getNsx(),0.0),
+            m_uphys(md.spida().getGridX().getNx(),0.0),
+			m_shifted_kx(m_spi.getGridX().freqshift(m_spi.getGridX().getSX())),
+            m_shifted_usp(m_spi.getGridX().getNsx())
+        {
+
+			 // set up initial wave profile (5-solitons)
+			 
+			 std::vector<double> A0{0.6,0.5,0.4,0.3,0.2};
+			 std::vector<double> x0{-120.0,-90.0,-60.0,-30.0,0.0};
+			 const std::vector<double>& x  = m_spi.getX();
+
+			 for(auto i = 0; i < x.size(); i++){
+				for(auto k = 0; k < A0.size(); k++){
+					m_uphys[i] += 0.5*pow(A0[k],2)/pow(cosh(A0[k]*(x[i]-x0[k])/2.0),2);
+				}
+			 }
+
+			 // convert initial spatial wave profile to spectral space, store in m_usp
+			 m_spi.X_To_SX(m_uphys,m_usp);
+
+             // freq shift of spectral components 
+			 m_spi.getGridX().freqshift(m_usp,m_shifted_usp); 
+
+			 initReport();
+		}
+
+		/// Destructor
+        ~PropagatorKdV() {}  
+		
+        /// @brief Pure virtual function of PropagatorCV that must be implemented.
+        /// This function is called before each Solver report (allows for updating of real space fields)
+		/// @param t Current propagation time
+		
+        void updateFields(double t) { 
+			m_spi.SX_To_X(m_usp,m_uphys);
+			m_spi.getGridX().freqshift(m_usp,m_shifted_usp);
+		}
+
+		/// Returns propagating field array
+        std::vector<dcmplx>& propagator() {return m_usp;} 
+
+    private:
+        /// @brief Helper function that feeds PropagatorCV information on what to report
+        void initReport() {
+
+			// Quick access to x vector
+            const std::vector<double>& x  = m_spi.getGridX().getX();
+
+            // add report for real-space field
+            PropagatorCV::addReport(std::make_unique<dat::ReportComplexData1D<double,double>>("X",x,m_uphys));
+
+            // add report for spectral-space (the propagator)
+            PropagatorCV::addReport(std::make_unique<dat::ReportComplexData1D<double,double>>("SX",m_shifted_kx,m_shifted_usp));
+        }
+
+        SpidaCVX& m_spi;
+        std::vector<dcmplx> m_usp;
+        std::vector<dcmplx> m_uphys;
+		std::vector<double> m_shifted_kx;
+		std::vector<dcmplx> m_shifted_usp;
+};
+
 
 int main()
 {
@@ -63,72 +165,27 @@ int main()
     std::string outdir("kdv_files_CV");
 
     UniformGridCVX grid(nx,minx,maxx);
-    kDV model(grid);
+    KdV model(grid);
+
+    std::filesystem::path dirpath("kdv_files_CV");
+    PropagatorKdV propagator(dirpath,model);
+
+    propagator.setStepsPerOutput(16);
+    propagator.setLogProgress(true);
+    propagator.setLogFrequency(16);
+
     ETD34 solver(model.L,model.NL);
     solver.setEpsRel(1e-4);
-
-    std::vector<dcmplx> u0(nx,0.0);
-    std::vector<double> A0{0.6,0.5,0.4,0.3,0.2};
-    std::vector<double> x0{-120.0,-90.0,-60.0,-30.0,0.0};
-    const std::vector<double>& x  = grid.getX();
-    for(auto i = 0; i < nx; i++){
-        for(auto k = 0; k < A0.size(); k++){
-            u0[i] += 0.5*pow(A0[k],2)/pow(cosh(A0[k]*(x[i]-x0[k])/2.0),2);
-        }
-    }
-    std::vector<dcmplx> usp(grid.getNsx());
-    model.spida().X_To_SX(u0,usp);
+    solver.setLogProgress(true);
+    solver.setLogFrequency(16);
 
     double t0 = 0.0;
     double tf = 600.0;
-    double h = 0.1;
-    double h_next = 0.1;
-    double t = t0;
+    double h_init = 0.1;
+    solver.evolve(propagator,t0,tf,h_init);
 
-    std::vector<dcmplx> uphys(nx);
-    std::copy(std::cbegin(u0),std::cend(u0),std::begin(uphys));
-    dat::ReportData1D<double,dcmplx> report("X",x,uphys);
-    report.setDirPath(outdir);
-    report.setItem("t",t0);
-    std::cout << "First physical space report file location: " << report.path(0) << std::endl;
-
-    std::vector<double> shifted_kx = grid.freqshift(grid.getSX());
-    std::vector<dcmplx> shifted_usp = grid.freqshift(usp);
-    dat::ReportData1D<double,dcmplx> reportS("SX",shifted_kx,shifted_usp);
-    reportS.setDirPath(outdir);
-    std::cout << "First spectral space report file location: " << reportS.path(0) << std::endl;
-
-    std::ofstream os;
-    os << std::scientific << std::setprecision(8);
-    report.report(os,0);
-    reportS.report(os,0);
-
-    unsigned step_count = 0;
-    unsigned report_count = 1;
-    while(t < tf){
-        if(!solver.step(usp,h,h_next)){
-            std::cout << "Step failed." << std::endl;
-            return 1;
-        }
-        t += h;
-        h = h_next;
-        model.spida().SX_To_X(usp,uphys);
-        if(step_count % 16 == 0){
-            report.setItem("t",t);
-            reportS.setItem("t",t);
-            grid.freqshift(usp,shifted_usp);
-            report.report(os,report_count);
-            reportS.report(os,report_count);
-            report_count++;
-        }
-        step_count++;
-    }
-    report.setItem("t",t);
-    reportS.setItem("t",t);
-    report.report(os,report_count);
-    reportS.report(os,report_count);
-    os.close();
     return 0;
+
 }
 
 

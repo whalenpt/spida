@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------
  *   
- *    Author: Patrick Townsend Whalen   
+ *    Author: Patrick Whalen   
  *    Email: whalenpt@gmail.com
  *    Status: Development
  *    Date: 08/27/21
@@ -188,13 +188,11 @@ int main()
     Propagator propagator(dirpath,model);
     propagator.setStepsPerOutput(6);
     propagator.setLogProgress(true);
-    propagator.setLogProgress(false);
     propagator.setLogFrequency(12);
 
     ETD35 solver(model.L(),model.NL());
     solver.setEpsRel(1e-4);
     solver.setLogProgress(true);
-    solver.setLogProgress(false);
     solver.setLogFrequency(4);
     double z0 = 0.0;
     double zf = 0.3;
