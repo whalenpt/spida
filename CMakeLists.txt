@@ -27,6 +27,7 @@ endif()
 
 
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    # LIBDIR -> lib, INCLUDEDIR-> include, BINDIR-> bin
 	include(GNUInstallDirs)
     if(NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE Release)
@@ -61,9 +62,9 @@ if(NOT TARGET nayukidct)
     add_subdirectory(external/nayukidct)
 endif()
 
-#set(KISSFFT_PKGCONFIG OFF CACHE BOOL "Build pkg-config files")
 set(KISSFFT_TOOLS OFF CACHE BOOL "Build kissfft command-line tools")
 set(KISSFFT_PKGCONFIG OFF CACHE BOOL "Build pkg-config files")
+# KISSFFT_TEST requires fftw library installation
 set(KISSFFT_TEST OFF CACHE BOOL "Build kissfft tests")
 set(KISSFFT_DIR "external/kissfft")
 set(KISSFFT_DATATYPE "double" CACHE STRING "Principal datatype of kissfft: double, float (default), int16_t, int32_t, simd")
