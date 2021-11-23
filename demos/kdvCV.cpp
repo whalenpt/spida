@@ -75,9 +75,9 @@ class KdV
         std::vector<dcmplx> m_uxsp;
 };
 
-///
-/// Helper class for reporting files based on data generated from the Solver 
-///
+//
+// Helper class for reporting files based on data generated from the Solver used
+//
 
 class PropagatorKdV : public PropagatorCV
 {
