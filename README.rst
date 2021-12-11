@@ -42,7 +42,7 @@ Libraries built with
 * `KISS FFT <https://github.com/mborgerding/kissfft>`_
 * `Nayuki-Lee DCT <https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms>`_ 
 * `pwutils <https://github.com/whalenpt/pwutils>`_
-* `Boost <https://www.boost.org>`_ (limited to special function headers and their dependencies)
+* `Boost <https://www.boost.org>`_ (installed version if available, otherwise a slimmed down boost in the external folder)
 * `json11 <https://github.com/dropbox/json11>`_
  
 Testing done with
@@ -277,7 +277,7 @@ Installation
 
 If not installed, get and install CMake_.
 
-To build and install the SPIDA library from the terminal (Linux/MacOS) use
+To build and install the SPIDA library from the terminal use
 
 .. code-block:: none
 
@@ -285,7 +285,7 @@ To build and install the SPIDA library from the terminal (Linux/MacOS) use
     cd spida
     cmake -S . -B build
     cd build
-    make -j4
+    cmake --build . (optional flag --config Release/Debug)
     cmake --install .
 
 Check the `usage <./usage>`_ folder for more information on using the library once installed.
