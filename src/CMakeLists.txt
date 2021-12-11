@@ -83,26 +83,27 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/transform/hankelfftRRVT.h"
 )
 
-set(BOOST_DIR "${SPIDA_SOURCE_DIR}/include/spida/boost_1_76_0/boost")
-set(BOOST_INCLUDES 
-	"${BOOST_DIR}/math/special_functions/airy.hpp"
-	"${BOOST_DIR}/math/special_functions/bessel.hpp"
-)
+#set(BOOST_DIR "${CMAKE_SOURCE_DIR}/include/spida/boost_1_76_0/boost")
+#set(BOOST_INCLUDES 
+#	"${BOOST_DIR}/math/special_functions/airy.hpp"
+#	"${BOOST_DIR}/math/special_functions/bessel.hpp"
+#)
+#
+#set(INCLUDE_FILES
+#	${BOOST_INCLUDES}
+#	${SPIDA_INCLUDES}
+#)
 
-set(INCLUDE_FILES
-	${BOOST_INCLUDES}
-	${SPIDA_INCLUDES}
-)
-
-add_library(spida ${SRC_FILES} ${INCLUDE_FILES})
+add_library(spida ${SRC_FILES} ${SPIDA_INCLUDES})
 add_library(SPIDA::spida ALIAS spida)
 
 target_include_directories(spida PUBLIC 
     $<BUILD_INTERFACE:${SPIDA_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:include>
-	$<BUILD_INTERFACE:${SPIDA_SOURCE_DIR}/include/spida/boost_1_76_0>
-    # Need to find boost on local installs
-	$<INSTALL_INTERFACE:include/spida/boost_1_76_0>
+    ${Boost_INCLUDE_DIRS}
+    #	$<BUILD_INTERFACE:${SPIDA_SOURCE_DIR}/include/spida/boost_1_76_0>
+    #    # Need to find boost on local installs
+    #	$<INSTALL_INTERFACE:include/spida/boost_1_76_0>
 )
 
 target_link_libraries(spida PUBLIC

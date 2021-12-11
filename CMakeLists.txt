@@ -25,7 +25,6 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     endif()
 endif()
 
-
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     # LIBDIR -> lib, INCLUDEDIR-> include, BINDIR-> bin
 	include(GNUInstallDirs)
@@ -69,6 +68,15 @@ set(KISSFFT_TEST OFF CACHE BOOL "Build kissfft tests")
 set(KISSFFT_DIR "external/kissfft")
 set(KISSFFT_DATATYPE "double" CACHE STRING "Principal datatype of kissfft: double, float (default), int16_t, int32_t, simd")
 add_subdirectory(${KISSFFT_DIR})
+
+
+find_package(Boost QUIET)
+if(NOT Boost_FOUND)
+    message(STATUS "Boost not found, adding local mini-boost library")
+    add_subdirectory(external/spidaboost_1_76_0)
+else()
+    message(STATUS "Boost found")
+endif()
 
 add_subdirectory(src)
 
