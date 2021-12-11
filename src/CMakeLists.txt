@@ -105,7 +105,7 @@ else()
         $<BUILD_INTERFACE:${LOCAL_BOOST_DIR}>
     	$<INSTALL_INTERFACE:include>
     )
-#    install(DIRECTORY "${LOCAL_BOOST_DIR}/boost" DESTINATION include)
+    install(DIRECTORY "${LOCAL_BOOST_DIR}/boost" DESTINATION include)
 endif()
 
 set_target_properties(spida PROPERTIES
