@@ -4,7 +4,7 @@
  *    Email: whalenpt@gmail.com
  *    Status: Development
  *    Date: 08/27/21
- *    Description: Implementation of kdv PDE with a Propagator class (automated file reporting)
+ *    Description: Implementation of NLS PDE with a Propagator class (automated file reporting)
  *
 ------------------------------------------------------------------------------*/
 
@@ -45,8 +45,6 @@ class NLSRT
                 m_NL = [this](const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
                     double gamma = 2.0;
                     m_spi.SRST_To_RT(in,m_uphys);
-                    //std::cout << "Max element physical: " << abs(*std::max_element(m_uphys.begin(),m_uphys.end(),\
-                    //    [](auto a,auto b) {return abs(a) < abs(b);})) << std::endl;
                     for(auto i = 0; i < m_uphys.size(); i++)
                         m_uphys[i] = ii*gamma*m_uphys[i]*std::norm(m_uphys[i]);
                     m_spi.RT_To_SRST(m_uphys,out);
@@ -190,7 +188,8 @@ int main()
     propagator.setLogProgress(true);
     propagator.setLogFrequency(12);
 
-    ETD35 solver(model.L(),model.NL());
+    bool use_refs = true; // Use references to model.L and model.NL, rather than copying
+    ETD35 solver(model.L(),model.NL(),use_refs);
     solver.setEpsRel(1e-4);
     solver.setLogProgress(true);
     solver.setLogFrequency(4);

@@ -5,16 +5,16 @@
 
 namespace spida{
 
-SolverAS_ETD::SolverAS_ETD(const LinOp& Lop,const NLfunc& NL,double sf,double qv)
- :  SolverCV_AS(Lop,NL,sf,qv)
+SolverAS_ETD::SolverAS_ETD(const LinOp& Lop,const NLfunc& NL,double sf,double qv,bool use_refs)
+ :  SolverCV_AS(Lop,NL,sf,qv,use_refs)
 {
     m_mode_cutoff = 0.01;
     m_contour_radi = 1.0;
     m_contourM = 32;
 }
 
-ETD34::ETD34(const LinOp& Lop,const NLfunc& NL)
-  : SolverAS_ETD(Lop,NL,0.84,4),m_sz(SolverCV::size()),
+ETD34::ETD34(const LinOp& Lop,const NLfunc& NL,bool use_refs)
+  : SolverAS_ETD(Lop,NL,0.84,4,use_refs),m_sz(SolverCV::size()),
     L(SolverCV::L()),EL(m_sz), EL2(m_sz), 
     N1(m_sz), N2(m_sz), N3(m_sz), N4(m_sz), N5(m_sz), 
     tempK(m_sz), a21(m_sz), a31(m_sz), a32(m_sz),
@@ -122,8 +122,8 @@ void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew
     statCenter().incrementCounter("Nonlinear Function Evaluations",4);
 }
 
-ETD35::ETD35(const LinOp& Lop,const NLfunc& NL)
-  : SolverAS_ETD(Lop,NL,0.84,4),m_sz(SolverCV::size()),
+ETD35::ETD35(const LinOp& Lop,const NLfunc& NL,bool use_refs)
+  : SolverAS_ETD(Lop,NL,0.84,4,use_refs),m_sz(SolverCV::size()),
     L(SolverCV::L()),EL(m_sz),EL2(m_sz),EL4(m_sz),EL5(m_sz),
     N1(m_sz),N2(m_sz),N3(m_sz),N4(m_sz),N5(m_sz),N6(m_sz),N7(m_sz),
     tempK(m_sz),a21(m_sz),a31(m_sz),a32(m_sz),a41(m_sz),a43(m_sz),

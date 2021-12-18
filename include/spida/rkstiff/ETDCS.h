@@ -9,7 +9,7 @@ namespace spida{
 class SolverCS_ETD : public SolverCV_CS
 {
     public:
-        SolverCS_ETD(const LinOp& L,const NLfunc& NL);
+        SolverCS_ETD(const LinOp& L,const NLfunc& NL,bool use_refs=false);
         virtual ~SolverCS_ETD() {}; 
         void setModeCutoff(double val) {m_mode_cutoff = val;}
         void setContourRadius(double val) {m_contour_radi = val;}
@@ -28,7 +28,7 @@ class SolverCS_ETD : public SolverCV_CS
 class ETD4 : public SolverCS_ETD
 {
     public:
-        ETD4(const LinOp& L,const NLfunc& NL);
+        ETD4(const LinOp& L,const NLfunc& NL,bool use_refs=false);
         ~ETD4() {};
     private:
         void updateCoefficients(double dt) noexcept;

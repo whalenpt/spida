@@ -51,7 +51,7 @@ class SolverCV
         ///  @param L Linear operator
         ///  @param NL Nonlinear function
 
-        SolverCV(const LinOp& L,const NLfunc& NL);
+        SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs=false);
         virtual ~SolverCV();
 
         /// @brief Propagates a vector u from t0 to tf using the class LinOp and NLfunc
@@ -77,9 +77,9 @@ class SolverCV
         void computeCo(double dt) noexcept;
 
         /// Accessor for linear operator
-        LinOp& L() {return m_L;}
+        const LinOp& L() {return *m_L;}
         /// Accessor for nonlinear function
-        NLfunc& NL() {return m_NL;}
+        const NLfunc& NL() {return *m_NL;}
 
         /// Size of the array of the field being propagated
         unsigned size() const;
@@ -129,15 +129,14 @@ class SolverCV
 
       virtual void updateCoefficients([[maybe_unused]] double dt) noexcept {};
 
-      LinOp m_L; /**< Linear operator */
-
-      //  Note: May want to hold a reference to the NLfunc in the class rather than copy 
-      NLfunc m_NL; /**< Nonlinear function */
+      const LinOp* m_L; /**< Linear operator */
+      const NLfunc* m_NL; /**< Nonlinear function */
 
       StatCenter m_stat;
       double m_tcurrent; /**< Current time */
       double m_dt_last; /**< Previous step size */
       bool m_log_progress; /**< Determines whether to log data from propagation */
+      bool m_use_refs; /**< Use L and NL passed into class constructor (dont copy) */
       pw::ThreadManager m_thmgt; /**< Holds number of threads and helper functions */
 };
 
@@ -157,6 +156,10 @@ void norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int end
 
 class Control{
     public:
+        static constexpr double MAX_S = 4.0;
+        static constexpr double MIN_S = 0.25;
+        static const unsigned MAX_LOOP = 100;
+        static constexpr double MIN_H = 1.0e-15;
 
         /// 
         ///  @brief Constructor for Control class
@@ -169,35 +172,30 @@ class Control{
         ///  @param cthmgt Thread manager
         ///
 
-        Control(double safetyF,double qv,double epsR,double inF,double decF,int dim,pw::ThreadManager& cthmgt);
-
-
+        Control(double safetyF,double qv,double epsR,double inF,double decF,int dim,pw::ThreadManager& thmgt);
         ~Control() {}
         void setIncrementThreshold(double val); 
         void setDecrementThreshold(double val);
         void setEpsRel(double val);
         void setNorm(std::string);
-        void setNumThreads(int numThreads) {th_manage.setNumThreads(numThreads);}
+        void setNumThreads(int numThreads) {m_thmgt.setNumThreads(numThreads);}
         double computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew);
         double computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) noexcept;
         bool checkLoopCount(unsigned num_loops) noexcept;
         bool checkStepSize(double step_size) noexcept;
 
     private:
-        double safeFact;
-        double q;
-        double epsRel;
-        double incrFact;
-        double decrFact;
-        int sz;
-        int normType;
-        double MAX_S;
-        double MIN_S;
-        int MAX_LOOP;
-        double MIN_H;
-        pw::ThreadManager& th_manage;
-        std::vector<double> esum;
-        std::vector<double> ysum;
+        double m_safeFact;
+        double m_q;
+        double m_epsRel;
+        double m_incrFact;
+        double m_decrFact;
+        int m_sz;
+        int m_normType;
+        std::vector<unsigned> m_bounds;
+        std::vector<double> m_esum;
+        std::vector<double> m_ysum;
+        pw::ThreadManager& m_thmgt;
         enum {NORM1,NORM2,NORMINF,NORMSYS,NORMW2};
 };
 
@@ -210,7 +208,7 @@ class SolverCV_AS : public SolverCV
     public:
 
         /// Initializes an adaptive-step solver class
-        SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv);
+        SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv,bool use_refs=false);
 
         /// Specify descructor in subclasses
         virtual ~SolverCV_AS(); 
@@ -286,7 +284,7 @@ class SolverCV_AS : public SolverCV
 class SolverCV_CS : public SolverCV 
 {
   public:
-      SolverCV_CS(const LinOp& L,const NLfunc& NL);
+      SolverCV_CS(const LinOp& L,const NLfunc& NL,bool use_refs=false);
       virtual ~SolverCV_CS() {};
       // takes one numerical step with a step of size h
       void step(std::vector<dcmplx>& u,double h) noexcept;

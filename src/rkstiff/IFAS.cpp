@@ -4,8 +4,8 @@
 
 namespace spida{
 
-IF34::IF34(const LinOp& Lop,const NLfunc& NL,double sf,double qv)
- :  SolverCV_AS(Lop,NL,sf,qv), m_sz(SolverCV::size()),
+IF34::IF34(const LinOp& Lop,const NLfunc& NL,double sf,double qv,bool use_refs)
+ :  SolverCV_AS(Lop,NL,sf,qv,use_refs), m_sz(SolverCV::size()),
     L(SolverCV::L()),EL(m_sz), EL2(m_sz), 
     N1(m_sz), N2(m_sz), N3(m_sz), N4(m_sz), N5(m_sz), 
     tempK(m_sz), a21(m_sz), a43(m_sz), 
@@ -67,8 +67,8 @@ void IF34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew,
     statCenter().incrementCounter("Nonlinear Function Evaluations",4);
 }
 
-IF45DP::IF45DP(const LinOp& Lop,const NLfunc& NL,double sf,double qv)
- :  SolverCV_AS(Lop,NL,sf,qv), m_sz(SolverCV::size()),
+IF45DP::IF45DP(const LinOp& Lop,const NLfunc& NL,double sf,double qv,bool use_refs)
+ :  SolverCV_AS(Lop,NL,sf,qv,use_refs), m_sz(SolverCV::size()),
     L(SolverCV::L()),EL(m_sz), EL2(m_sz), EL3(m_sz), EL4(m_sz), EL5(m_sz),
     N1(m_sz), N2(m_sz), N3(m_sz), N4(m_sz), N5(m_sz), N6(m_sz), N7(m_sz),
     tempK(m_sz), a21(m_sz), a31(m_sz), a32(m_sz), a41(m_sz), a42(m_sz), a43(m_sz), 

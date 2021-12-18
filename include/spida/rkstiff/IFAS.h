@@ -9,7 +9,7 @@ namespace spida{
 class IF34 : public SolverCV_AS
 {
   public:
-    IF34(const LinOp& Lop,const NLfunc& NL,double sf = 0.84,double qv = 4.0);
+    IF34(const LinOp& Lop,const NLfunc& NL,double sf = 0.84,double qv = 4.0,bool use_refs=false);
     ~IF34() {};
   private:
     void updateCoefficients(double dt) noexcept;
@@ -35,7 +35,7 @@ class IF34 : public SolverCV_AS
 class IF45DP : public SolverCV_AS
 {
   public:
-    IF45DP(const LinOp& Lop,const NLfunc& NL,double sf = 0.9,double qv = 5.0);
+    IF45DP(const LinOp& Lop,const NLfunc& NL,double sf = 0.9,double qv = 5.0,bool use_refs=false);
     ~IF45DP() {};
   private:
     void updateCoefficients(double dt) noexcept;

@@ -16,22 +16,34 @@
 
 namespace spida{
 
-SolverCV::SolverCV(const LinOp& L,const NLfunc& NL)
- :  m_L(L),
-    m_NL(NL),
+SolverCV::SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs) :
+    m_use_refs(use_refs),
     m_thmgt(1)
 { 
+    if(use_refs){
+        m_L = &L;
+        m_NL = &NL;
+    } else {
+        m_L = new LinOp(L);
+        m_NL = new NLfunc(NL);
+    }
     m_tcurrent = 0.0;
     m_dt_last = 0.0;
     m_log_progress = false;
     m_stat.setLogFrequency(1);
 }
 
-SolverCV::~SolverCV() {}
+SolverCV::~SolverCV() {
+    if(!m_use_refs){
+        delete m_L;
+        delete m_NL;
+    }
+}
+
 
 unsigned SolverCV::size() const
 {
-    return m_L.size();
+    return m_L->size();
 }
 
 void SolverCV::computeCo(double dt) noexcept
@@ -64,8 +76,8 @@ void SolverCV::reportStats()
 }
 
 
-SolverCV_AS::SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv)
- :  SolverCV(L,NL), m_yv(SolverCV::size()), m_errv(SolverCV::size())
+SolverCV_AS::SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv,bool use_refs)
+ :  SolverCV(L,NL,use_refs), m_yv(SolverCV::size()), m_errv(SolverCV::size())
 {
     m_accept = false;
     m_control = std::unique_ptr<Control>(new Control(sf,qv,1.0e-3,1.25,0.85,SolverCV::size(),\
@@ -198,8 +210,8 @@ bool SolverCV_AS::evolve(PropagatorCV& propagator,double t0,double tf,double h) 
 }
 
 
-SolverCV_CS::SolverCV_CS(const LinOp& L,const NLfunc& NL) :
-    SolverCV(L,NL)
+SolverCV_CS::SolverCV_CS(const LinOp& L,const NLfunc& NL,bool use_refs) :
+    SolverCV(L,NL,use_refs)
 {
     m_count_time = true;
 }
@@ -267,31 +279,27 @@ bool SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double h) no
 
 Control::Control(double safetyF,double qv,double epsR,\
         double inF,double decF,int dim,pw::ThreadManager& thmgt)
-  : safeFact(safetyF),q(qv),epsRel(epsR),
-    incrFact(inF),decrFact(decF),sz(dim), 
-    th_manage(thmgt), 
-    esum(th_manage.getNumThreads(),0.0), 
-    ysum(th_manage.getNumThreads(),0.0)
+  : m_safeFact(safetyF),m_q(qv),m_epsRel(epsR),
+    m_incrFact(inF),m_decrFact(decF),m_sz(dim), 
+    m_thmgt(thmgt), 
+    m_esum(thmgt.getNumThreads(),0.0), 
+    m_ysum(thmgt.getNumThreads(),0.0)
 {
-  MAX_S = 2.5;
-  MIN_S = 0.4;
-  MAX_LOOP = 100;
-  MIN_H = 1.0e-15;
-  normType = NORM2;
+  m_normType = NORM2;
 }
 
 void Control::setNorm(std::string str)
 {
   if(str == "NORM1" || str == "1NORM" || str == "NORM 1" || str == "1 NORM")
-    normType = NORM1;
+    m_normType = NORM1;
   else if(str == "NORM2" || str == "2NORM" || str == "2 NORM" || str == "NORM 2")
-    normType = NORM2;
+    m_normType = NORM2;
   else if(str == "INFNORM" || str == "NORMINF" || str == "INF NORM" || str == "NORM INF")
-    normType = NORMINF;
+    m_normType = NORMINF;
   else if(str == "SYSNORM" || str == "SYS NORM" || str == "NORM SYS" || str == "NORMSYS")
-    normType = NORMSYS;
+    m_normType = NORMSYS;
   else if(str == "WEIGHTED NORM 2" || str == "WEIGHTED NORM2" || str == "WEIGHTED 2 NORM" \
-      || str == "WEIGHTED NORM2") normType = NORMW2;
+      || str == "WEIGHTED NORM2") m_normType = NORMW2;
   else{
         throw pw::Exception("Control::setNorm","Did not recognize error control Norm string"\
                 " (1 norm,2 norm,inf norm,...) ");
@@ -311,7 +319,7 @@ void Control::setIncrementThreshold(double val)
                 " because this parameter must be greater than or equal to 1";
         throw pw::Exception("Control::setIncrementThreshold",msg);
     }
-    incrFact = val;
+    m_incrFact = val;
 }
 
 void Control::setDecrementThreshold(double val)   
@@ -327,7 +335,7 @@ void Control::setDecrementThreshold(double val)
                 " because this parameter must be less than 1";
         throw pw::Exception("Control::setDecrementThreshold",msg);
     }
-    decrFact = val;
+    m_decrFact = val;
 }
 
 void Control::setEpsRel(double val)   
@@ -337,7 +345,7 @@ void Control::setEpsRel(double val)
              "Please check the epsRel value of " + std::to_string(val); 
         throw pw::Exception("Control::setEpsRel",msg);
     }
-    epsRel = val; 
+    m_epsRel = val; 
 }
 
 
@@ -348,14 +356,14 @@ double Control::computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew)
         return MIN_S;
     else if(std::isnan(s))
         return MIN_S;
-    double s_stab = safeFact*pow(s,1.0/q);
+    double s_stab = m_safeFact*pow(s,1.0/m_q);
     if(s_stab < 1.0){
         s_stab = std::max(s_stab,MIN_S);
-        if(s_stab > decrFact)
-            s_stab = decrFact;
+        if(s_stab > m_decrFact)
+            s_stab = m_decrFact;
     } else{
         s_stab = std::min(s_stab,MAX_S);
-        if(s_stab < incrFact)
+        if(s_stab < m_incrFact)
             s_stab = 1.0;
     }
     return s_stab;
@@ -374,21 +382,21 @@ void norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,\
 
 double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) noexcept
 {
-    std::fill(esum.begin(),esum.end(),0.0);
-    std::fill(ysum.begin(),ysum.end(),0.0);
-    unsigned int parts = th_manage.getNumThreads();
+    std::fill(m_esum.begin(),m_esum.end(),0.0);
+    std::fill(m_ysum.begin(),m_ysum.end(),0.0);
+    unsigned int parts = m_thmgt.getNumThreads();
     
     std::vector<std::thread*> threads;
-    std::vector<unsigned int> bounds = th_manage.getBounds(sz);
-    if(normType == NORM2){
+    std::vector<unsigned int> bounds = m_thmgt.getBounds(m_sz);
+    if(m_normType == NORM2){
         for(unsigned int i = 0; i < parts-1; i++)
-            threads.push_back(new std::thread(norm2,std::ref(errVec),std::ref(ynew),bounds[i],bounds[i+1],&esum[i],&ysum[i]));
-        norm2(errVec,ynew,bounds[parts-1],bounds[parts],&esum[parts-1],&ysum[parts-1]);
+            threads.push_back(new std::thread(norm2,std::ref(errVec),std::ref(ynew),bounds[i],bounds[i+1],&m_esum[i],&m_ysum[i]));
+        norm2(errVec,ynew,bounds[parts-1],bounds[parts],&m_esum[parts-1],&m_ysum[parts-1]);
     }
     else{
         for(unsigned int i = 0; i < parts-1; i++)
-            threads.push_back(new std::thread(norm2,std::ref(errVec),std::ref(ynew),bounds[i],bounds[i+1],&esum[i],&ysum[i]));
-        norm2(errVec,ynew,bounds[parts-1],bounds[parts],&esum[parts-1],&ysum[parts-1]);
+            threads.push_back(new std::thread(norm2,std::ref(errVec),std::ref(ynew),bounds[i],bounds[i+1],&m_esum[i],&m_ysum[i]));
+        norm2(errVec,ynew,bounds[parts-1],bounds[parts],&m_esum[parts-1],&m_ysum[parts-1]);
     }
     for(auto t : threads)
         t->join();
@@ -396,16 +404,16 @@ double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& yne
         delete t;
     threads.clear();
         
-    double enet = std::accumulate(esum.begin(),esum.end(),0.0);
-    double ynet = std::accumulate(ysum.begin(),ysum.end(),0.0);
-    if(normType == NORM2){
+    double enet = std::accumulate(m_esum.begin(),m_esum.end(),0.0);
+    double ynet = std::accumulate(m_ysum.begin(),m_ysum.end(),0.0);
+    if(m_normType == NORM2){
         enet = sqrt(enet);
         ynet = sqrt(ynet);
     } else{
         enet = sqrt(enet);
         ynet = sqrt(ynet);
     }
-    double errTol= epsRel*ynet;
+    double errTol= m_epsRel*ynet;
     return errTol/enet;
 }
 

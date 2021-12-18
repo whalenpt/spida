@@ -5,16 +5,16 @@
 
 namespace spida{
 
-SolverCS_ETD::SolverCS_ETD(const LinOp& Lop,const NLfunc& NL)
- :  SolverCV_CS(Lop,NL)
+SolverCS_ETD::SolverCS_ETD(const LinOp& Lop,const NLfunc& NL,bool use_refs)
+ :  SolverCV_CS(Lop,NL,use_refs)
 {
     m_mode_cutoff = 0.01;
     m_contour_radi = 1.0;
     m_contourM = 32;
 }
 
-ETD4::ETD4(const LinOp& Lop,const NLfunc& NL) :
-  SolverCS_ETD(Lop,NL),m_sz(SolverCV::size()),
+ETD4::ETD4(const LinOp& Lop,const NLfunc& NL,bool use_refs) :
+  SolverCS_ETD(Lop,NL,use_refs),m_sz(SolverCV::size()),
     L(SolverCV::L()), EL(m_sz), EL2(m_sz), N1(m_sz), N2(m_sz),
     N3(m_sz), N4(m_sz), tempK(m_sz), a21(m_sz), a31(m_sz), a32(m_sz), a41(m_sz), a43(m_sz),
     a51(m_sz), a52(m_sz), a54(m_sz)
