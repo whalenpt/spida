@@ -3,6 +3,7 @@
 *.json
 *.swp
 *~
+external/xtensor
 
 # Ignore FFTW library files
 #include/spida/spidaFFTWX.h
