@@ -97,6 +97,12 @@ target_link_libraries(spida PUBLIC
     nayukidct
 )
 
+if(HAVE_OPENBLAS)
+    target_link_libraries(spida PUBLIC ${OpenBLAS_LIBRARY})
+    message("OpenBLAS include directories: ${OpenBLAS_INCLUDE_DIRS}")
+    target_include_directories(spida PUBLIC ${OpenBLAS_INCLUDE_DIRS})
+endif()
+
 if(Boost_FOUND)
     target_include_directories(spida PUBLIC ${Boost_INCLUDE_DIRS})
 else()
@@ -112,6 +118,7 @@ set_target_properties(spida PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION 0
 )
+
 
 # Enforce usage of c++17 standard
 target_compile_features(spida PUBLIC cxx_std_17)

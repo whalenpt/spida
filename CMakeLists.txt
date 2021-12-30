@@ -7,6 +7,7 @@ project(SPIDA VERSION 0.0.1 LANGUAGES CXX)
 option(SPIDA_STATIC "Build spida as static (ON) or shared library (OFF)" ON)
 option(SPIDA_TEST "Build spida tests" OFF)
 option(SPIDA_DEMOS "Build spida demos" OFF)
+option(WITH_OPENBLAS "Use OpenBLAS" OFF)
 
 set(PWUTILS_TEST OFF CACHE BOOL "Build pwutils tests")
 set(PWUTILS_EXAMPLES OFF CACHE BOOL "Build pwutils examples")
@@ -63,18 +64,29 @@ endif()
 
 set(KISSFFT_TOOLS OFF CACHE BOOL "Build kissfft command-line tools")
 set(KISSFFT_PKGCONFIG OFF CACHE BOOL "Build pkg-config files")
-# KISSFFT_TEST requires fftw library installation
-set(KISSFFT_TEST OFF CACHE BOOL "Build kissfft tests")
+set(KISSFFT_TEST OFF CACHE BOOL "Build kissfft tests") # KISSFFT_TEST requires fftw library installation
 set(KISSFFT_DIR "external/kissfft")
 set(KISSFFT_DATATYPE "double" CACHE STRING "Principal datatype of kissfft: double, float (default), int16_t, int32_t, simd")
 add_subdirectory(${KISSFFT_DIR})
 
 
 find_package(Boost QUIET)
-if(NOT Boost_FOUND)
-    message(STATUS "Boost not found - use local version")
-else()
+if(Boost_FOUND)
     message(STATUS "Boost found")
+else()
+    message(STATUS "Boost not found - use local version")
+endif()
+
+set(HAVE_OPENBLAS OFF)
+if(WITH_OPENBLAS)
+    find_package(OpenBLAS)
+    if(OpenBLAS_FOUND)
+        message(STATUS "OpenBLAS found")
+        set(HAVE_OPENBLAS ON)
+        add_definitions(-DHAVE_OPENBLAS)
+    else()
+        message(STATUS "OpenBLAS not found")
+    endif()
 endif()
 
 add_subdirectory(src)
@@ -90,6 +102,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
         add_subdirectory(demos)
     endif()
 endif()
+
+message("Build with demos: ${SPIDA_DEMOS}")
+message("Build with tests: ${SPIDA_TEST}")
 
 
 

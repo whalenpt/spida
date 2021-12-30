@@ -7,12 +7,16 @@
 #include <boost/math/special_functions/bessel.hpp>
 #include "spida/transform/hankelR.h"
 #include "spida/grid/besselR.h" 
+#if defined(HAVE_OPENBLAS)
+    #include "cblas.h"
+#endif
 
 namespace spida {
 
   HankelTransformR::HankelTransformR(const BesselRootGridR& grid) : 
       m_nr(grid.getNr()),
-      m_Ymk(grid.getNr()*grid.getNr())
+      m_Ymk(m_nr*m_nr),
+      m_YmkC(m_nr*m_nr)
   {
       m_alpha = grid.getjN()/pow(grid.getMaxSR(),2);
       initDHT(grid);
@@ -20,43 +24,73 @@ namespace spida {
 
   void HankelTransformR::R_To_SR(const double* in,double* out) 
   {
-      for(unsigned m = 0; m < m_nr; m++){
+/*
+enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};
+enum CBLAS_TRANSPOSE    {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113};
+cblas_dgemv(const enum CBLAS_ORDER Order,
+           const enum CBLAS_TRANSPOSE TransA, const int M, const int N,
+           const double alpha, const double *A, const int lda,
+           const double *X, const int incX, const double beta,
+           double *Y, const int incY);
+dgemv y = alpha*A*x + beta*y
+lda -> first dimension of A
+*/
+
+      #if defined(HAVE_OPENBLAS)
+      cblas_dgemv(CblasRowMajor,CblasNoTrans,m_nr,m_nr,m_alpha,m_Ymk.data(),m_nr,in,1,0.0,out,1);
+      #else
+      for(int m = 0; m < m_nr; m++){
           double sum = 0.0;
-          for(unsigned k = 0; k < m_nr; k++)
+          for(int k = 0; k < m_nr; k++)
               sum += m_Ymk[m*m_nr+k]*in[k];
           out[m] = m_alpha*sum;
       }
+      #endif
   }
 
   void HankelTransformR::R_To_SR(const dcmplx* in,dcmplx* out) 
   {
-      for(unsigned m = 0; m < m_nr; m++){
+      #if defined(HAVE_OPENBLAS)
+      const double beta = 0.0;
+      cblas_zgemv(CblasRowMajor,CblasNoTrans,m_nr,m_nr,&m_alpha,m_YmkC.data(),m_nr,in,1,&beta,out,1);
+      #else
+      for(int m = 0; m < m_nr; m++){
           dcmplx sum = 0.0;
-          for(unsigned k = 0; k < m_nr; k++)
-              sum += m_Ymk[m*m_nr+k]*in[k];
+          for(int k = 0; k < m_nr; k++)
+              sum += m_YmkC[m*m_nr+k]*in[k];
           out[m] = m_alpha*sum;
       }
+      #endif
   }
 
   void HankelTransformR::SR_To_R(const double* in,double* out) 
   {
-      for(unsigned k = 0; k < m_nr; k++){
+      #if defined(HAVE_OPENBLAS)
+      cblas_dgemv(CblasRowMajor,CblasNoTrans,m_nr,m_nr,1.0/m_alpha,m_Ymk.data(),m_nr,in,1,0.0,out,1);
+      #else
+      for(int k = 0; k < m_nr; k++){
           double sum = 0.0;
-          for(unsigned m = 0; m < m_nr; m++)
+          for(int m = 0; m < m_nr; m++)
               sum += m_Ymk[k*m_nr+m]*in[m];
           out[k] = sum/m_alpha;
       }
+      #endif
   }
-
 
   void HankelTransformR::SR_To_R(const dcmplx* in,dcmplx* out) 
   {
-      for(unsigned k = 0; k < m_nr; k++){
+      #if defined(HAVE_OPENBLAS)
+      const dcmplx a = 1.0/m_alpha;
+      const dcmplx beta = 0.0;
+      cblas_zgemv(CblasRowMajor,CblasNoTrans,m_nr,m_nr,&a,m_YmkC.data(),m_nr,in,1,&beta,out,1);
+      #else
+      for(int k = 0; k < m_nr; k++){
           dcmplx sum = 0.0;
-          for(unsigned m = 0; m < m_nr; m++)
-              sum += m_Ymk[k*m_nr+m]*in[m];
+          for(int m = 0; m < m_nr; m++)
+              sum += m_YmkC[k*m_nr+m]*in[m];
           out[k] = sum/m_alpha;
       }
+      #endif
   }
 
   void HankelTransformR::initDHT(const BesselRootGridR& grid){
@@ -73,6 +107,7 @@ namespace spida {
               double arg = J0[m]*J0[k]/jN;
               double J0_mk = boost::math::cyl_bessel_j<double>(0.0,arg);
               m_Ymk[m*m_nr+k] = beta_mk*J0_mk;
+              m_YmkC[m*m_nr+k] = beta_mk*J0_mk;
           }
       }
   }

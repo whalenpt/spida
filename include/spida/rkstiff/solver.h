@@ -140,20 +140,7 @@ class SolverCV
       pw::ThreadManager m_thmgt; /**< Holds number of threads and helper functions */
 };
 
-
-/// @brief Squared error and squared field values
-/// @param errVec Vector of errors computed during stage update
-/// @param ynew Vector of newly computed field after taking a specified step size
-/// @param sti start index
-/// @param endi end index
-/// @param esum_val Sum of complex-valued errors squared over specified index range
-/// @param ysum_val Sum of complex-valued propagating field squared over specified index range
-//
-void norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,double* esum_val,double* ysum_val);
-
-
 ///  Helper class for computing step updates
-
 class Control{
     public:
         static constexpr double MAX_S = 4.0;
@@ -169,16 +156,14 @@ class Control{
         ///  @param inF Increment factor
         ///  @param decF Decrement factor
         ///  @param dim Dimension of system
-        ///  @param cthmgt Thread manager
         ///
 
-        Control(double safetyF,double qv,double epsR,double inF,double decF,int dim,pw::ThreadManager& thmgt);
+        Control(double safetyF,double qv,double epsR,double inF,double decF,int dim);
         ~Control() {}
         void setIncrementThreshold(double val); 
         void setDecrementThreshold(double val);
         void setEpsRel(double val);
         void setNorm(std::string);
-        void setNumThreads(int numThreads) {m_thmgt.setNumThreads(numThreads);}
         double computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew);
         double computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) noexcept;
         bool checkLoopCount(unsigned num_loops) noexcept;
@@ -192,10 +177,6 @@ class Control{
         double m_decrFact;
         int m_sz;
         int m_normType;
-        std::vector<unsigned> m_bounds;
-        std::vector<double> m_esum;
-        std::vector<double> m_ysum;
-        pw::ThreadManager& m_thmgt;
         enum {NORM1,NORM2,NORMINF,NORMSYS,NORMW2};
 };
 

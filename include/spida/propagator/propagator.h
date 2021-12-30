@@ -19,8 +19,8 @@ namespace spida{
 
 class BasePropagator
 {
-    unsigned DEFAULT_MAX_REPORTS_1D = 500;
-    unsigned DEFAULT_MAX_REPORTS_2D = 200;
+    static const int DEFAULT_MAX_REPORTS_1D = 500;
+    static const int DEFAULT_MAX_REPORTS_2D = 200;
 
   public:
       BasePropagator(const std::filesystem::path& dir_path);

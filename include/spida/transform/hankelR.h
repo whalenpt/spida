@@ -39,6 +39,7 @@ class HankelTransformR
         int m_nr;
         double m_alpha;
         std::vector<double> m_Ymk; 
+        std::vector<dcmplx> m_YmkC; 
         void initDHT(const BesselRootGridR& grid);
 };
 

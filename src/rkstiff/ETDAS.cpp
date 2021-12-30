@@ -26,9 +26,8 @@ ETD34::ETD34(const LinOp& Lop,const NLfunc& NL,bool use_refs)
     statCenter().addCounter("Nonlinear Function Evaluations");
 }
 
-void ETD34::worker_coeff(double dstep,int tid){
+void ETD34::worker_coeff(double dt,int tid){
 
-    double dt = dstep;
     std::vector<dcmplx> r(contourPoints(),0.0);
     for(auto j = 0; j < contourPoints(); j++){
         double expv = 2.0*PI*(j+0.5)/static_cast<double>(contourPoints());
@@ -137,9 +136,8 @@ ETD35::ETD35(const LinOp& Lop,const NLfunc& NL,bool use_refs)
     statCenter().addCounter("Nonlinear Function Evaluations");
 }
 
-void ETD35::worker_coeff(double dstep,int tid){
+void ETD35::worker_coeff(double ds,int tid){
 
-  double ds = dstep;
   std::vector<dcmplx> r(contourPoints(),0.0);
   for(auto j = 0; j < contourPoints(); j++){
     double expv = 2.0*PI*(j+0.5)/static_cast<double>(contourPoints());
@@ -225,9 +223,10 @@ void ETD35::worker_coeff(double dstep,int tid){
 void ETD35::updateCoefficients(double dt) noexcept
 {
   std::vector<std::thread> threads;
+//  std::cout << "Number of ETD35 updateCoefficient threads: "  << SolverCV::threadManager().getNumThreads() << std::endl;
   for(auto i = 1; i < SolverCV::threadManager().getNumThreads(); i++)
       threads.push_back(std::thread(&ETD35::worker_coeff,this,dt,i));
-  worker_coeff(dt,0);
+  ETD35::worker_coeff(dt,0);
   for(auto& thread : threads)
       thread.join();
 }

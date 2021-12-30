@@ -80,8 +80,7 @@ SolverCV_AS::SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv,boo
  :  SolverCV(L,NL,use_refs), m_yv(SolverCV::size()), m_errv(SolverCV::size())
 {
     m_accept = false;
-    m_control = std::unique_ptr<Control>(new Control(sf,qv,1.0e-3,1.25,0.85,SolverCV::size(),\
-                SolverCV::threadManager()));
+    m_control = std::unique_ptr<Control>(new Control(sf,qv,1.0e-3,1.25,0.85,SolverCV::size()));
 }
 
 SolverCV_AS::~SolverCV_AS() { }
@@ -278,12 +277,9 @@ bool SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double h) no
 }
 
 Control::Control(double safetyF,double qv,double epsR,\
-        double inF,double decF,int dim,pw::ThreadManager& thmgt)
+        double inF,double decF,int dim)
   : m_safeFact(safetyF),m_q(qv),m_epsRel(epsR),
-    m_incrFact(inF),m_decrFact(decF),m_sz(dim), 
-    m_thmgt(thmgt), 
-    m_esum(thmgt.getNumThreads(),0.0), 
-    m_ysum(thmgt.getNumThreads(),0.0)
+    m_incrFact(inF),m_decrFact(decF),m_sz(dim)
 {
   m_normType = NORM2;
 }
@@ -369,52 +365,28 @@ double Control::computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew)
     return s_stab;
 }
 
-void norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,\
-        int sti,int endi,double* esum_val,double* ysum_val)
-{
-    *esum_val = 0.0; 
-    *ysum_val = 0.0;
-    for(int i = sti; i < endi; i++){
-        *esum_val += pow(abs(errVec[i]),2);
-        *ysum_val += pow(abs(ynew[i]),2);
-    }
-}
-
 double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) noexcept
 {
-    std::fill(m_esum.begin(),m_esum.end(),0.0);
-    std::fill(m_ysum.begin(),m_ysum.end(),0.0);
-    unsigned int parts = m_thmgt.getNumThreads();
-    
-    std::vector<std::thread*> threads;
-    std::vector<unsigned int> bounds = m_thmgt.getBounds(m_sz);
+    double enorm = 0.0, ynorm = 0.0;
     if(m_normType == NORM2){
-        for(unsigned int i = 0; i < parts-1; i++)
-            threads.push_back(new std::thread(norm2,std::ref(errVec),std::ref(ynew),bounds[i],bounds[i+1],&m_esum[i],&m_ysum[i]));
-        norm2(errVec,ynew,bounds[parts-1],bounds[parts],&m_esum[parts-1],&m_ysum[parts-1]);
+        for(size_t i = 0; i < errVec.size(); i++){
+            enorm += pow(abs(errVec[i]),2);
+            ynorm += pow(abs(ynew[i]),2);
+        }
+        enorm = sqrt(enorm);
+        ynorm = sqrt(ynorm);
     }
     else{
-        for(unsigned int i = 0; i < parts-1; i++)
-            threads.push_back(new std::thread(norm2,std::ref(errVec),std::ref(ynew),bounds[i],bounds[i+1],&m_esum[i],&m_ysum[i]));
-        norm2(errVec,ynew,bounds[parts-1],bounds[parts],&m_esum[parts-1],&m_ysum[parts-1]);
+        for(size_t i = 0; i < errVec.size(); i++){
+            enorm += pow(abs(errVec[i]),2);
+            ynorm += pow(abs(ynew[i]),2);
+        }
+        enorm = sqrt(enorm);
+        ynorm = sqrt(ynorm);
     }
-    for(auto t : threads)
-        t->join();
-    for(auto t : threads)
-        delete t;
-    threads.clear();
-        
-    double enet = std::accumulate(m_esum.begin(),m_esum.end(),0.0);
-    double ynet = std::accumulate(m_ysum.begin(),m_ysum.end(),0.0);
-    if(m_normType == NORM2){
-        enet = sqrt(enet);
-        ynet = sqrt(ynet);
-    } else{
-        enet = sqrt(enet);
-        ynet = sqrt(ynet);
-    }
-    double errTol= m_epsRel*ynet;
-    return errTol/enet;
+
+    double errTol= m_epsRel*ynorm;
+    return errTol/enorm;
 }
 
 bool Control::checkLoopCount(unsigned num_loops) noexcept

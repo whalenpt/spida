@@ -179,20 +179,24 @@ int main()
     double b = 6.0;
     UniformGridCVT gridT(nt,a,b);
 
-    unsigned num_threads = 4;
+    unsigned num_threads = 8;
     NLSRT model(gridR,gridT,num_threads);
 
     std::filesystem::path dirpath("nlsRT_propagator_files");
     Propagator propagator(dirpath,model);
-    propagator.setStepsPerOutput(6);
-    propagator.setLogProgress(true);
-    propagator.setLogFrequency(12);
+    propagator.setStepsPerOutput(10000);
+//    propagator.setStepsPerOutput(200);
+    //propagator.setLogProgress(true);
+//    propagator.setLogFrequency(12);
+    propagator.setLogProgress(false);
 
     bool use_refs = true; // Use references to model.L and model.NL, rather than copying
     ETD35 solver(model.L(),model.NL(),use_refs);
     solver.setEpsRel(1e-4);
-    solver.setLogProgress(true);
+//    solver.setLogProgress(true);
+    solver.setLogProgress(false);
     solver.setLogFrequency(4);
+    solver.setNumThreads(num_threads);
     double z0 = 0.0;
     double zf = 0.3;
     propagator.report(z0);
