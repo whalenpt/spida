@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16.3)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(SPIDA VERSION 0.0.1 LANGUAGES CXX)
+project(SPIDA VERSION 0.0.2 LANGUAGES CXX)
 
 option(SPIDA_STATIC "Build spida as static (ON) or shared library (OFF)" ON)
 option(SPIDA_TEST "Build spida tests" OFF)
