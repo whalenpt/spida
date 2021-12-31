@@ -12,8 +12,7 @@
 namespace spida {
 
     // Transform using class specific thread pool (not much speed bump, but some)
-
-    HankelFFTRRVT::HankelFFTRRVT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,int threads) :
+    HankelFFTRRVT::HankelFFTRRVT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads) :
         m_nr(gridR.getNr()),
         m_nt(gridT.getNt()),
         m_nst(gridT.getNst()),
@@ -29,13 +28,13 @@ namespace spida {
         m_THCOUNT = 0; 
         m_processed = true;
 
-        for (int m = 1; m < m_nThreads; m++)
+        for (unsigned m = 1; m < m_nThreads; m++)
         {
             m_ready.push_back(false);
             m_thread.push_back(std::thread(&HankelFFTRRVT::worker_thread,this,m));
         }
 
-        for(int i = 0; i < m_nThreads; i++) {
+        for(unsigned i = 0; i < m_nThreads; i++) {
             FFTRVT* t_transform = new FFTRVT(gridT);
             HankelTransformR* r_transform = new HankelTransformR(gridR);
             m_transformT.push_back(t_transform);
@@ -56,156 +55,222 @@ namespace spida {
       m_transformR.clear();
   }
 
-  void HankelFFTRRVT::RT_To_SRT(const std::vector<double>& in,std::vector<double>& out) 
-  {
-      for(unsigned i = 0; i < m_nr; i++)
-          for (unsigned j = 0; j < m_nt; j++){
-              m_rr[j*m_nr+i] = in[i*m_nt+j];
-      }
-      ReadySTATE(State::RT_To_SRT);
-      worker_RT_To_SRT(0);
-      ProcessedSTATE(State::Wait);
-      for(unsigned i = 0; i < m_nr; i++)
-          for(unsigned j = 0; j < m_nt; j++)
-              out[i*m_nt+j] = m_sr[m_nr*j + i]; 
-  }                                  
-
-  void HankelFFTRRVT::SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
-  {
-      // Transpose array -> in has SR-ST row-column form
-      for(unsigned i = 0; i < m_nr; i++)
-          for(unsigned j = 0; j < m_nst; j++)
-              m_ss[m_nr*j+i] = in[m_nst*i + j]; 
-
-      ReadySTATE(State::STSR_To_STR);
-      worker_STSR_To_STR(0);
-      ProcessedSTATE(State::Wait);
-      // Transpose again
-      for(unsigned i = 0; i < m_nr; i++)
-          for(unsigned j = 0; j < m_nst; j++)
-              out[m_nst*i+j] = m_rs[m_nr*j + i]; 
-  }
-
-  void HankelFFTRRVT::SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out)
-  {
-      std::copy(std::begin(in),std::end(in),std::begin(m_ss));
-      ReadySTATE(State::SRST_To_SRT);
-      worker_SRST_To_SRT(0);
-      ProcessedSTATE(State::Wait);
-      std::copy(std::begin(m_sr),std::end(m_sr),std::begin(out));
-  }
-
-  void HankelFFTRRVT::RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out) 
-  {
-      std::copy(std::begin(in),std::end(in),std::begin(m_rr));
-      ReadySTATE(State::RT_To_RST);
-      worker_RT_To_RST(0);
-      ProcessedSTATE(State::Wait);
-      std::copy(std::begin(m_ss),std::end(m_ss),std::begin(out));
-  }                                  
-
-
-  void HankelFFTRRVT::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
-  {
-      std::copy(std::begin(in),std::end(in),std::begin(m_rr));
-      ReadySTATE(State::RT_To_RST);
-      worker_RT_To_RST(0);
-      ProcessedSTATE(State::Wait);
-
-      ReadySTATE(State::RST_To_STR);
-      worker_RST_To_STR(0);
-      ProcessedSTATE(State::Wait);
-
-      ReadySTATE(State::STR_To_STSR);
-      worker_STR_To_STSR(0);
-      ProcessedSTATE(State::Wait);
-
-      ReadySTATE(State::STSR_To_SRST);
-      worker_STSR_To_SRST(0);
-      ProcessedSTATE(State::Wait);
-      std::copy(std::begin(m_rs),std::end(m_rs),std::begin(out));
-  }                                  
-
-  void HankelFFTRRVT::worker_RT_To_RST(int tid)
+  // Updated (m_rr->m_ss)
+  void HankelFFTRRVT::worker_T_To_ST(unsigned tid)
   {
       for (unsigned i = tid; i < m_nr; i+=m_nThreads) 
           m_transformT[tid]->T_To_ST(m_rr.data()+m_nt*i,m_ss.data()+m_nst*i);
   }
 
-  void HankelFFTRRVT::worker_RST_To_STR(int tid)
-  {
-      for(unsigned i = tid; i < m_nr; i+=m_nThreads)
-          for (unsigned j = 0; j < m_nst; j++){
-              m_rs[j*m_nr+i] = m_ss[i*m_nst+j];
-      }
-  }
-
-  void HankelFFTRRVT::worker_STR_To_STSR(int tid)
-  {
-      for(unsigned i = tid; i < m_nst; i+=m_nThreads)
-          m_transformR[tid]->R_To_SR(reinterpret_cast<const dcmplx*>(m_rs.data()+m_nr*i),\
-                  m_ss.data()+m_nr*i);
-  }
-
-  void HankelFFTRRVT::worker_STSR_To_SRST(int tid)
-  {
-      for(unsigned i = tid; i < m_nr; i+=m_nThreads)
-          for(unsigned j = 0; j < m_nst; j++)
-              m_rs[i*m_nst+j] = m_ss[m_nr*j + i]; 
-  }
-
-
-  void HankelFFTRRVT::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) 
-  {
-      std::copy(std::begin(in),std::end(in),std::begin(m_rs));
-      ReadySTATE(State::SRST_To_STSR);
-      worker_SRST_To_STSR(0);
-      ProcessedSTATE(State::Wait);
-
-      ReadySTATE(State::STSR_To_STR);
-      worker_STSR_To_STR(0);
-      ProcessedSTATE(State::Wait);
-
-      ReadySTATE(State::STR_To_RST);
-      worker_STR_To_RST(0);
-      ProcessedSTATE(State::Wait);
-
-      ReadySTATE(State::RST_To_RT);
-      worker_RST_To_RT(0);
-      ProcessedSTATE(State::Wait);
-
-      std::copy(std::begin(m_rr),std::end(m_rr),std::begin(out));
-  }
-
-  void HankelFFTRRVT::worker_SRST_To_STSR(int tid)
-  {
-      for(unsigned i = tid; i < m_nr; i+=m_nThreads)
-          for(unsigned j = 0; j < m_nst; j++)
-              m_ss[m_nr*j+i] = m_rs[m_nst*i + j]; 
-  }
-
-
-  void HankelFFTRRVT::worker_STSR_To_STR(int tid)
-  {
-      for (unsigned j = tid; j < m_nst; j+=m_nThreads)  
-          m_transformR[tid]->SR_To_R(m_ss.data()+m_nr*j,m_rs.data()+m_nr*j);
-  }
-
-  void HankelFFTRRVT::worker_STR_To_RST(int tid)
-  {
-      for(unsigned i = tid; i < m_nr; i+=m_nThreads)
-          for(unsigned j = 0; j < m_nst; j++)
-              m_ss[m_nst*i+j] = m_rs[m_nr*j + i]; 
-  }
-
-
-  void HankelFFTRRVT::worker_RST_To_RT(int tid)
+  // Updated (m_ss->m_rr)
+  void HankelFFTRRVT::worker_ST_To_T(unsigned tid)
   {
       for (unsigned i = tid; i < m_nr; i+= m_nThreads)
           m_transformT[tid]->ST_To_T(m_ss.data()+m_nst*i,m_rr.data()+m_nt*i);
   }
 
-  void HankelFFTRRVT::worker_thread(int tid)
+  // New (m_rs->m_ss)
+  void HankelFFTRRVT::worker_CVT_To_ST(unsigned tid)
+  {
+      for(unsigned i = tid; i < m_nr; i+= m_nThreads)
+          m_transformT[tid]->CVT_To_ST(m_rs.data()+m_nt*i,m_ss.data()+m_nst*i);
+  }
+
+  // New (m_ss->m_rs)
+  void HankelFFTRRVT::worker_ST_To_CVT(unsigned tid)
+  {
+      for (unsigned i = tid; i < m_nr; i+= m_nThreads)
+          m_transformT[tid]->ST_To_CVT(m_ss.data()+m_nst*i,m_rs.data()+m_nt*i);
+  }
+
+  // Updated (m_rr->m_sr)
+  void HankelFFTRRVT::worker_R_To_SR(unsigned tid)
+  {
+      for(unsigned i = tid; i < m_nt; i+=m_nThreads)
+          m_transformR[tid]->R_To_SR(m_rr.data()+m_nr*i,m_sr.data()+m_nr*i);
+  }
+
+  // updated (m_sr->m_rr)
+  void HankelFFTRRVT::worker_SR_To_R(unsigned tid)
+  {
+      for (unsigned j = tid; j < m_nt; j+=m_nThreads)  
+          m_transformR[tid]->SR_To_R(m_sr.data()+m_nr*j,m_rr.data()+m_nr*j);
+  }
+
+  // New (m_rs->m_ss)
+  void HankelFFTRRVT::workerCMP_R_To_SR(unsigned tid)
+  {
+      for(unsigned i = tid; i < m_nst; i+=m_nThreads)
+          m_transformR[tid]->R_To_SR(m_rs.data()+m_nr*i,m_ss.data()+m_nr*i);
+  }
+
+  // New (m_ss->m_rs)
+  void HankelFFTRRVT::workerCMP_SR_To_R(unsigned tid)
+  {
+      for(unsigned i = tid; i < m_nst; i+=m_nThreads)
+          m_transformR[tid]->SR_To_R(m_ss.data()+m_nr*i,m_rs.data()+m_nr*i);
+  }
+
+  // Updated
+  void HankelFFTRRVT::RT_To_SRT(const std::vector<double>& in,std::vector<double>& out) 
+  {
+      transpose(in.data(),m_rr.data(),m_nr,m_nt);
+      ReadySTATE(State::R_To_SR); // (m_rr->m_sr)
+      worker_R_To_SR(0);
+      ProcessedSTATE(State::Wait);
+      transpose(m_sr.data(),out.data(),m_nt,m_nr);
+  }                                  
+
+  void HankelFFTRRVT::SRT_To_RT(const std::vector<double>& in,std::vector<double>& out) 
+  {
+      transpose(in.data(),m_sr.data(),m_nr,m_nt);
+      ReadySTATE(State::SR_To_R); // (m_sr->m_rr)
+      worker_SR_To_R(0);
+      ProcessedSTATE(State::Wait);
+      transpose(m_rr.data(),out.data(),m_nt,m_nr);
+  }
+
+
+  void HankelFFTRRVT::RST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out)
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_ss));
+      ReadySTATE(State::ST_To_T); // (m_ss->m_rr)
+      worker_ST_To_T(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_rr),std::end(m_rr),std::begin(out));
+  }                                  
+
+  void HankelFFTRRVT::SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+  {
+      // Transpose from SRST orientation to STSR orientation
+      transpose(in.data(),m_ss.data(),m_nr,m_nst);
+      // Compute transform over R coordindate
+      ReadySTATE(State::CMP_SR_To_R); // (m_ss->m_rs)
+      workerCMP_SR_To_R(0);
+      ProcessedSTATE(State::Wait);
+      // Transpose from STR orientation to RST orientation
+      transpose(m_rs.data(),out.data(),m_nst,m_nr);
+  }
+
+  // Added
+  void HankelFFTRRVT::RST_To_SRST(const std::vector<dcmplx>& in, std::vector<dcmplx>& out){
+      // Transpose from RST orientation to STR orientation
+      transpose(in.data(),m_rs.data(),m_nr,m_nst);
+      // Compute transform over R coordinate
+      ReadySTATE(State::CMP_R_To_SR); // (m_rs->m_ss)
+      workerCMP_R_To_SR(0);
+      ProcessedSTATE(State::Wait);
+      // Transpose from STSR orientation to SRST orientation
+      transpose(m_ss.data(),out.data(),m_nst,m_nr);
+  }
+
+
+  void HankelFFTRRVT::SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out)
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_ss));
+      ReadySTATE(State::ST_To_T); // (m_ss->m_rr)
+      worker_ST_To_T(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_rr),std::end(m_rr),std::begin(out));
+  }
+
+  void HankelFFTRRVT::SRT_To_SRST(const std::vector<double>& in, std::vector<dcmplx>& out)
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_rr));
+      ReadySTATE(State::T_To_ST); // (m_rr->m_ss)
+      worker_T_To_ST(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_ss),std::end(m_ss),std::begin(out));
+  }
+
+
+  void HankelFFTRRVT::RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out) 
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_rr));
+      ReadySTATE(State::T_To_ST); //(m_rr->m_ss)
+      worker_T_To_ST(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_ss),std::end(m_ss),std::begin(out));
+  }
+
+  void HankelFFTRRVT::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) 
+  {
+      transpose(in.data(),m_ss.data(),m_nr,m_nst);
+      ReadySTATE(State::CMP_SR_To_R); // (m_ss->m_rs)
+      workerCMP_SR_To_R(0);
+      ProcessedSTATE(State::Wait);
+
+      transpose(m_rs.data(),m_ss.data(),m_nst,m_nr);
+      ReadySTATE(State::ST_To_T); // (m_ss->m_rr)
+      worker_ST_To_T(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_rr),std::end(m_rr),std::begin(out));
+  }
+
+  void HankelFFTRRVT::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_rr));
+      ReadySTATE(State::T_To_ST); // (m_rr->m_ss)
+      worker_T_To_ST(0);
+      ProcessedSTATE(State::Wait);
+
+      transpose(m_ss.data(),m_rs.data(),m_nr,m_nst);
+
+      ReadySTATE(State::CMP_R_To_SR); // (m_rs->m_ss)
+      workerCMP_R_To_SR(0);
+      ProcessedSTATE(State::Wait);
+
+      transpose(m_ss.data(),out.data(),m_nst,m_nr);
+  }                                  
+
+  void HankelFFTRRVT::SRST_To_RCVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+  {
+      transpose(in.data(),m_ss.data(),m_nr,m_nst);
+      ReadySTATE(State::CMP_SR_To_R); // (m_ss->m_rs)
+      workerCMP_SR_To_R(0);
+      ProcessedSTATE(State::Wait);
+
+      transpose(m_rs.data(),m_ss.data(),m_nst,m_nr);
+      ReadySTATE(State::ST_To_CVT); // (m_ss->m_rs)
+      worker_ST_To_CVT(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_rs),std::end(m_rs),std::begin(out));
+  }
+
+  void HankelFFTRRVT::RCVT_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_rs));
+      ReadySTATE(State::CVT_To_ST); // (m_rs->m_ss)
+      worker_CVT_To_ST(0);
+      ProcessedSTATE(State::Wait);
+
+      transpose(m_ss.data(),m_rs.data(),m_nr,m_nst);
+
+      ReadySTATE(State::CMP_R_To_SR); // (m_rs->m_ss)
+      workerCMP_R_To_SR(0);
+      ProcessedSTATE(State::Wait);
+      transpose(m_ss.data(),out.data(),m_nst,m_nr);
+  }                                  
+
+  void HankelFFTRRVT::RCVT_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_rs));
+      ReadySTATE(State::CVT_To_ST); // (m_rs->m_ss)
+      worker_CVT_To_ST(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_ss),std::end(m_ss),std::begin(out));
+  }                              
+
+  void HankelFFTRRVT::RST_To_RCVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+  {
+      std::copy(std::begin(in),std::end(in),std::begin(m_ss));
+      ReadySTATE(State::ST_To_CVT); // (m_ss->m_rs)
+      worker_ST_To_CVT(0);
+      ProcessedSTATE(State::Wait);
+      std::copy(std::begin(m_rs),std::end(m_rs),std::begin(out));
+  }                                  
+
+  void HankelFFTRRVT::worker_thread(unsigned tid)
   {
     bool threads_done = false;
     while(!threads_done)
@@ -215,45 +280,37 @@ namespace spida {
         m_cv.wait(lock,[&]{return m_ready[tid-1];} );
       }
 
-      if(m_STATE == State::RT_To_RST) {
-        worker_RT_To_RST(tid);
+      if(m_STATE == State::T_To_ST) { // (m_rr->m_ss)
+        worker_T_To_ST(tid);
         worker_wait(tid);
       }
-      else if(m_STATE == State::RST_To_STR){
-        worker_RST_To_STR(tid);
-        worker_wait(tid);   
-      }
-      else if(m_STATE == State::STR_To_STSR){
-        worker_STR_To_STSR(tid);
+      else if(m_STATE == State::ST_To_T){ // (m_ss->m_rr)
+        worker_ST_To_T(tid);
         worker_wait(tid);
       }
-      else if(m_STATE == State::STSR_To_SRST){
-        worker_STSR_To_SRST(tid);
-        worker_wait(tid);   
-      }
-      else if(m_STATE == State::SRST_To_STSR){
-        worker_SRST_To_STSR(tid);
-        worker_wait(tid);   
-      }
-      else if(m_STATE == State::STSR_To_STR){ 
-        worker_STSR_To_STR(tid);
+      else if(m_STATE == State::CMP_R_To_SR){ // (m_rs->m_ss)
+        workerCMP_R_To_SR(tid);
         worker_wait(tid);
       }
-      else if(m_STATE == State::STR_To_RST){ 
-        worker_STR_To_RST(tid);
+      else if(m_STATE == State::CMP_SR_To_R){ // (m_ss->m_rs)
+        workerCMP_SR_To_R(tid);
         worker_wait(tid);
       }
-      else if(m_STATE == State::RST_To_RT){
-        worker_RST_To_RT(tid);
+      else if(m_STATE == State::R_To_SR){ // (m_rr->m_sr)
+        worker_R_To_SR(tid);
         worker_wait(tid);
       }
-      else if(m_STATE == State::RT_To_SRT){
-        worker_RT_To_SRT(tid);
+      else if(m_STATE == State::SR_To_R){ // (m_sr->m_rr)
+        worker_SR_To_R(tid);
         worker_wait(tid);
       }
-      else if(m_STATE == State::SRST_To_SRT){
-        worker_SRST_To_SRT(tid);
-        worker_wait(tid);   
+      else if(m_STATE == State::CVT_To_ST){ // (m_rs->m_ss)
+        worker_CVT_To_ST(tid);
+        worker_wait(tid);
+      }
+      else if(m_STATE == State::ST_To_CVT){ // (m_ss->m_rs)
+        worker_ST_To_CVT(tid);
+        worker_wait(tid);
       }
       else if(m_STATE == State::Wait)
         continue;
@@ -262,7 +319,7 @@ namespace spida {
     }
   }
 
-  void HankelFFTRRVT::worker_wait(int tid)
+  void HankelFFTRRVT::worker_wait(unsigned tid)
   {
       m_mut.lock();
       m_ready[tid - 1] = false;
@@ -274,18 +331,6 @@ namespace spida {
           m_cv.notify_all();
       }
       m_mut.unlock();
-  }
-
-  void HankelFFTRRVT::worker_RT_To_SRT(int tid)
-  {
-      for(unsigned j = tid; j < m_nt; j+=m_nThreads)
-          m_transformR[tid]->R_To_SR(m_rr.data()+j*m_nr,m_sr.data()+j*m_nr);
-  }
-
-  void HankelFFTRRVT::worker_SRST_To_SRT(int tid)
-  {
-      for (unsigned i = tid; i < m_nr; i+= m_nThreads)
-          m_transformT[tid]->ST_To_T(m_ss.data()+m_nst*i,m_sr.data()+m_nt*i);
   }
 
 
@@ -314,145 +359,13 @@ namespace spida {
   }
 
 
-  /* 
-   *
-   *
- 
-  // Attempt at using a third-party thread pool:
-  // -> some speed-up with multiple threads but slower in general and doesnt scale well
-
-  HankelFFTRRVTc::HankelFFTRRVTc(const BesselRootGridR& gridR,const UniformGridT& gridT) :
-        m_nr(gridR.getNr()),
-        m_nt(gridT.getNt()),
-        m_nst(gridT.getNst()),
-        m_rr(m_nr*m_nt),
-        m_rs(m_nr*m_nst),
-        m_sr(m_nr*m_nt),
-        m_ss(m_nr*m_nst),
-        m_gridR(new BesselRootGridR(gridR)),
-        m_gridT(new UniformGridT(gridT)),
-        m_fftblt(new FFTRVT(gridT)),
-        m_hankel(new HankelTransformR(gridR)),
-        m_transformT(),
-        m_transformR(),
-        m_pool(nullptr) { } 
-
-  HankelFFTRRVTc::~HankelFFTRRVTc(){
 
 
-      delete m_gridR;
-      delete m_gridT;
-      delete m_fftblt;
-      delete m_hankel;
-      for(auto item : m_transformT)
-          delete item.second;
-      for(auto item : m_transformR)
-          delete item.second;
-      m_transformT.clear();
-      m_transformR.clear();
-  }
-
-  bool HankelFFTRRVTc::setThreadPool(thread_pool* pool)
-  {
-      if(!pool)
-          return false;
-
-      m_pool = pool;
-      std::vector<std::thread::id> ids = m_pool->get_thread_ids();
-      for(auto i = 0; i < m_pool->get_thread_count(); i++){
-          FFTRVT* t_transform = new FFTRVT(*m_gridT);
-          HankelTransformR* r_transform = new HankelTransformR(*m_gridR);
-          m_transformT.insert(std::pair(ids[i],t_transform));
-          m_transformR.insert(std::pair(ids[i],r_transform));
-      }
-      return true;
-  }
-
-  void worker_RT_To_RST(const double* in,dcmplx* out,std::map<std::thread::id,FFTRVT*> fftblt_map)
-  {
-      std::thread::id this_id = std::this_thread::get_id();
-      fftblt_map[this_id]->T_To_ST(in,out);
-  }
-
-  void worker_STR_To_STSR(const dcmplx* in,dcmplx* out,std::map<std::thread::id,\
-          HankelTransformR*> hankel_map)
-  {
-      std::thread::id this_id = std::this_thread::get_id();
-      hankel_map[this_id]->R_To_SR(in,out);
-  }
-
-  void HankelFFTRRVTc::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
-  {
-      if(!m_pool){
-          for(unsigned i = 0; i < m_nr; i++)
-              m_fftblt->T_To_ST(in.data()+m_nt*i,m_ss.data()+m_nst*i);
-          // transpose
-          for(unsigned i = 0; i < m_nr; i++)
-              for (unsigned j = 0; j < m_nst; j++){
-                  m_rs[j*m_nr+i] = m_ss[i*m_nst+j];
-          }
-          for(unsigned i = 0; i < m_nst; i++)
-              m_hankel->R_To_SR(m_rs.data()+m_nr*i,m_ss.data()+m_nr*i);
-                // transpose again
-          for(unsigned i = 0; i < m_nr; i++)
-              for(unsigned j = 0; j < m_nst; j++)
-                  out[i*m_nst+j] = m_ss[m_nr*j + i]; 
-      } else {
-          for(unsigned i = 0; i < m_nr; i++){
-              m_pool->push_task(std::bind(spida::worker_RT_To_RST,\
-                      in.data()+m_nt*i,m_ss.data()+m_nst*i,m_transformT));
-          }
-          m_pool->wait_for_tasks();
-
-          auto transpose = [] (const uint32_t& iS,const uint32_t& iF,\
-                  uint32_t jS,uint32_t jF,dcmplx* A,dcmplx* B) {
-              for(uint32_t i = iS; i < iF; i++)
-                  for (uint32_t j = jS; j < jF; j++)
-                      B[j*iF+i] = A[i*jF+j];
-          };
-
-          m_pool->parallelize_loop(0,m_nr,std::bind(transpose,std::placeholders::_1,
-                      std::placeholders::_2,0,m_nst,m_ss.data(),m_rs.data()));
-
-          m_pool->wait_for_tasks();
-
-          for(unsigned i = 0; i < m_nst; i++){
-              m_pool->push_task(std::bind(spida::worker_STR_To_STSR,\
-                      m_rs.data()+m_nr*i,m_ss.data()+m_nr*i,m_transformR));
-          }
-          m_pool->wait_for_tasks();
 
 
-          m_pool->parallelize_loop(0,m_nr,std::bind(transpose,std::placeholders::_1,
-                      std::placeholders::_2,0,m_nst,m_ss.data(),out.data()));
-          m_pool->wait_for_tasks();
 
 
-      }
-  }                                  
 
-  void HankelFFTRRVTc::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) 
-  {
-      for(unsigned i = 0; i < m_nr; i++)
-            for(unsigned j = 0; j < m_nst; j++)
-                m_ss[m_nr*j+i] = in[m_nst*i + j]; 
-
-      if(!m_pool){
-          for (unsigned j = 0; j < m_nst; j++)  
-              m_hankel->SR_To_R(m_ss.data()+m_nr*j,m_rs.data()+m_nr*j);
-      }
-
-      for(unsigned i = 0; i < m_nr; i++)
-          for(unsigned j = 0; j < m_nst; j++)
-              m_ss[m_nst*i+j] = m_rs[m_nr*j + i]; 
-
-      if(!m_pool){
-          for (unsigned j = 0; j < m_nst; j++)  
-              m_fftblt->ST_To_T(m_ss.data()+m_nst*j,out.data()+m_nt*j);
-      }
-  }
-
-  */
 
 /*
   HankelFFTRRVT::HankelFFTRRVT(const BesselRootGridR& gridR,\
@@ -688,6 +601,148 @@ namespace spida {
       }
       wait_for_workers(workers);
   }
+  */
+
+
+
+  /* 
+   *
+   *
+ 
+  // Attempt at using a third-party thread pool:
+  // -> some speed-up with multiple threads but slower in general and doesnt scale well
+
+  HankelFFTRRVTc::HankelFFTRRVTc(const BesselRootGridR& gridR,const UniformGridT& gridT) :
+        m_nr(gridR.getNr()),
+        m_nt(gridT.getNt()),
+        m_nst(gridT.getNst()),
+        m_rr(m_nr*m_nt),
+        m_rs(m_nr*m_nst),
+        m_sr(m_nr*m_nt),
+        m_ss(m_nr*m_nst),
+        m_gridR(new BesselRootGridR(gridR)),
+        m_gridT(new UniformGridT(gridT)),
+        m_fftblt(new FFTRVT(gridT)),
+        m_hankel(new HankelTransformR(gridR)),
+        m_transformT(),
+        m_transformR(),
+        m_pool(nullptr) { } 
+
+  HankelFFTRRVTc::~HankelFFTRRVTc(){
+
+
+      delete m_gridR;
+      delete m_gridT;
+      delete m_fftblt;
+      delete m_hankel;
+      for(auto item : m_transformT)
+          delete item.second;
+      for(auto item : m_transformR)
+          delete item.second;
+      m_transformT.clear();
+      m_transformR.clear();
+  }
+
+  bool HankelFFTRRVTc::setThreadPool(thread_pool* pool)
+  {
+      if(!pool)
+          return false;
+
+      m_pool = pool;
+      std::vector<std::thread::id> ids = m_pool->get_thread_ids();
+      for(auto i = 0; i < m_pool->get_thread_count(); i++){
+          FFTRVT* t_transform = new FFTRVT(*m_gridT);
+          HankelTransformR* r_transform = new HankelTransformR(*m_gridR);
+          m_transformT.insert(std::pair(ids[i],t_transform));
+          m_transformR.insert(std::pair(ids[i],r_transform));
+      }
+      return true;
+  }
+
+  void worker_RT_To_RST(const double* in,dcmplx* out,std::map<std::thread::id,FFTRVT*> fftblt_map)
+  {
+      std::thread::id this_id = std::this_thread::get_id();
+      fftblt_map[this_id]->T_To_ST(in,out);
+  }
+
+  void worker_STR_To_STSR(const dcmplx* in,dcmplx* out,std::map<std::thread::id,\
+          HankelTransformR*> hankel_map)
+  {
+      std::thread::id this_id = std::this_thread::get_id();
+      hankel_map[this_id]->R_To_SR(in,out);
+  }
+
+  void HankelFFTRRVTc::RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out) 
+  {
+      if(!m_pool){
+          for(unsigned i = 0; i < m_nr; i++)
+              m_fftblt->T_To_ST(in.data()+m_nt*i,m_ss.data()+m_nst*i);
+          // transpose
+          for(unsigned i = 0; i < m_nr; i++)
+              for (unsigned j = 0; j < m_nst; j++){
+                  m_rs[j*m_nr+i] = m_ss[i*m_nst+j];
+          }
+          for(unsigned i = 0; i < m_nst; i++)
+              m_hankel->R_To_SR(m_rs.data()+m_nr*i,m_ss.data()+m_nr*i);
+                // transpose again
+          for(unsigned i = 0; i < m_nr; i++)
+              for(unsigned j = 0; j < m_nst; j++)
+                  out[i*m_nst+j] = m_ss[m_nr*j + i]; 
+      } else {
+          for(unsigned i = 0; i < m_nr; i++){
+              m_pool->push_task(std::bind(spida::worker_RT_To_RST,\
+                      in.data()+m_nt*i,m_ss.data()+m_nst*i,m_transformT));
+          }
+          m_pool->wait_for_tasks();
+
+          auto transpose = [] (const uint32_t& iS,const uint32_t& iF,\
+                  uint32_t jS,uint32_t jF,dcmplx* A,dcmplx* B) {
+              for(uint32_t i = iS; i < iF; i++)
+                  for (uint32_t j = jS; j < jF; j++)
+                      B[j*iF+i] = A[i*jF+j];
+          };
+
+          m_pool->parallelize_loop(0,m_nr,std::bind(transpose,std::placeholders::_1,
+                      std::placeholders::_2,0,m_nst,m_ss.data(),m_rs.data()));
+
+          m_pool->wait_for_tasks();
+
+          for(unsigned i = 0; i < m_nst; i++){
+              m_pool->push_task(std::bind(spida::worker_STR_To_STSR,\
+                      m_rs.data()+m_nr*i,m_ss.data()+m_nr*i,m_transformR));
+          }
+          m_pool->wait_for_tasks();
+
+
+          m_pool->parallelize_loop(0,m_nr,std::bind(transpose,std::placeholders::_1,
+                      std::placeholders::_2,0,m_nst,m_ss.data(),out.data()));
+          m_pool->wait_for_tasks();
+
+
+      }
+  }                                  
+
+  void HankelFFTRRVTc::SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out) 
+  {
+      for(unsigned i = 0; i < m_nr; i++)
+            for(unsigned j = 0; j < m_nst; j++)
+                m_ss[m_nr*j+i] = in[m_nst*i + j]; 
+
+      if(!m_pool){
+          for (unsigned j = 0; j < m_nst; j++)  
+              m_hankel->SR_To_R(m_ss.data()+m_nr*j,m_rs.data()+m_nr*j);
+      }
+
+      for(unsigned i = 0; i < m_nr; i++)
+          for(unsigned j = 0; j < m_nst; j++)
+              m_ss[m_nst*i+j] = m_rs[m_nr*j + i]; 
+
+      if(!m_pool){
+          for (unsigned j = 0; j < m_nst; j++)  
+              m_fftblt->ST_To_T(m_ss.data()+m_nst*j,out.data()+m_nt*j);
+      }
+  }
+
   */
 
 

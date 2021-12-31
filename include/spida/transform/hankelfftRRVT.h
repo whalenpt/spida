@@ -16,52 +16,59 @@ class HankelTransformR;
 class BesselRootGridR;
 class UniformGridRVT;
 
+
 class HankelFFTRRVT 
 {
     public:
-        explicit HankelFFTRRVT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,int threads=1);
+        explicit HankelFFTRRVT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads=1);
         ~HankelFFTRRVT();
         HankelFFTRRVT()=delete;
         HankelFFTRRVT(const HankelFFTRRVT& sp)=delete;
         HankelFFTRRVT& operator=(const HankelFFTRRVT& sp)=delete;
-        void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); 
-        void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); 
 
-        void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out); 
-        void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out); 
-        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
-        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out);
+        void RT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out);  // tested - success 
+        void SRST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out); // tested - success
+        void RCVT_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
+        void SRST_To_RCVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
+
+        void RT_To_RST(const std::vector<double>& in,std::vector<dcmplx>& out);  // tested - success
+        void RST_To_RT(const std::vector<dcmplx>& in,std::vector<double>& out);  // tested - success
+
+        void RT_To_SRT(const std::vector<double>& in,std::vector<double>& out);  // tested - success
+        void SRT_To_RT(const std::vector<double>& in,std::vector<double>& out);  // tested - success
+        void RCVT_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
+        void RST_To_RCVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
+
+        void RST_To_SRST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); // tested - success
+        void SRST_To_RST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); // tested - success
+
+        void SRT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); // tested - success
+        void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out); // tested - success
 
         enum class State{Wait,\
-            RT_To_RST,\
-            RST_To_STR,\
-            STR_To_STSR,\
-            STSR_To_SRST,\
-            SRST_To_STSR,\
-            STSR_To_STR,\
-            STR_To_RST,\
-            RST_To_RT,\
-            RT_To_SRT,\
-            SRST_To_SRT,\
+            T_To_ST,\
+            ST_To_T,\
+            CMP_R_To_SR,\
+            CMP_SR_To_R,\
+            R_To_SR,\
+            SR_To_R,\
+            CVT_To_ST,\
+            ST_To_CVT,\
             Done};
 
     private:
-        int m_nr;
-        int m_nt;
-        int m_nst;
-        int m_nThreads;
+        unsigned m_nr, m_nt, m_nst;
+        unsigned m_nThreads;
 
-        std::vector<double> m_rr;
-        std::vector<dcmplx> m_rs;
-        std::vector<double> m_sr;
-        std::vector<dcmplx> m_ss;
+        std::vector<double> m_rr, m_sr;
+        std::vector<dcmplx> m_rs, m_ss;
 
         std::vector<std::thread> m_thread;
         std::vector<FFTRVT*> m_transformT;
         std::vector<HankelTransformR*> m_transformR;
 
         State m_STATE;
-        int m_THCOUNT;
+        unsigned m_THCOUNT;
         std::vector<bool> m_ready;
         bool m_processed;
         std::mutex m_mut;
@@ -70,21 +77,16 @@ class HankelFFTRRVT
         void ReadySTATE(State state);
         void ProcessedSTATE(State state);
 
-        void worker_thread(int id);
-        void worker_wait(int id);
-
-        void worker_RT_To_RST(int tid);
-        void worker_RST_To_STR(int tid);
-        void worker_STR_To_STSR(int tid);
-        void worker_STSR_To_SRST(int tid);
-
-        void worker_SRST_To_STSR(int tid);
-        void worker_STSR_To_STR(int tid);
-        void worker_STR_To_RST(int tid);
-        void worker_RST_To_RT(int tid);
-
-        void worker_RT_To_SRT(int tid);
-        void worker_SRST_To_SRT(int tid);
+        void worker_thread(unsigned id);
+        void worker_wait(unsigned id);
+        void worker_T_To_ST(unsigned tid);
+        void worker_ST_To_T(unsigned tid);
+        void worker_ST_To_CVT(unsigned tid);
+        void worker_CVT_To_ST(unsigned tid);
+        void worker_R_To_SR(unsigned tid);
+        void worker_SR_To_R(unsigned tid);
+        void workerCMP_R_To_SR(unsigned tid);
+        void workerCMP_SR_To_R(unsigned tid);
 };
 
 /*
