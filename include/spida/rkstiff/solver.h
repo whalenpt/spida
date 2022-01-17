@@ -175,7 +175,6 @@ class Control{
         double m_epsRel;
         double m_incrFact;
         double m_decrFact;
-        int m_sz;
         int m_normType;
         enum {NORM1,NORM2,NORMINF,NORMSYS,NORMW2};
 };

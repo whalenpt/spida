@@ -279,7 +279,7 @@ bool SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double h) no
 Control::Control(double safetyF,double qv,double epsR,\
         double inF,double decF,int dim)
   : m_safeFact(safetyF),m_q(qv),m_epsRel(epsR),
-    m_incrFact(inF),m_decrFact(decF),m_sz(dim)
+    m_incrFact(inF),m_decrFact(decF)
 {
   m_normType = NORM2;
 }
