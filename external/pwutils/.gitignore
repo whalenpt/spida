@@ -1,0 +1,15 @@
+*.swp *.o bin/run test/test[0-5].o *.dylib test/*.swp
+.DS_Store
+[Bb]uild
+*.bat
+*.swap
+.cache
+*.swo
+*.swp
+*.dat
+*.txt
+*~
+compile_commands*
+
+
+
