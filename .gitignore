@@ -2,7 +2,6 @@
 [Bb]uild*
 *.json
 *.swp
-*~
 external/xtensor
 
 # Ignore FFTW library files
