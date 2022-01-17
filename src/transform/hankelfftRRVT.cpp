@@ -18,8 +18,8 @@ namespace spida {
         m_nst(gridT.getNst()),
         m_nThreads(threads),
         m_rr(m_nr*m_nt),
-        m_rs(m_nr*m_nst),
         m_sr(m_nr*m_nt),
+        m_rs(m_nr*m_nst),
         m_ss(m_nr*m_nst),
         m_thread(),
         m_ready()
