@@ -109,7 +109,6 @@ class Propagator : public PropagatorCV
             m_spi.SRST_To_RT(m_usp,m_uphys);
             m_spi.mirrorR(m_uphys,m_mirror_uphys);
             // output mirrored grids with negative radial components (for better graphs)
-            
             //m_spi.getGridR().mirrorGrid(m_uphys,m_mirror_uphys);
             //m_spi.getGridR().mirrorGrid(m_usp,m_mirror_usp);
         }
@@ -179,27 +178,23 @@ int main()
     double b = 6.0;
     UniformGridCVT gridT(nt,a,b);
 
-    unsigned num_threads = 8;
+    unsigned num_threads = 4;
     NLSRT model(gridR,gridT,num_threads);
 
     std::filesystem::path dirpath("nlsRT_propagator_files");
     Propagator propagator(dirpath,model);
-    propagator.setStepsPerOutput(10000);
-//    propagator.setStepsPerOutput(200);
-    //propagator.setLogProgress(true);
-//    propagator.setLogFrequency(12);
-    propagator.setLogProgress(false);
+    propagator.setStepsPerOutput(4);
+    propagator.setLogProgress(true);
+    propagator.setLogFrequency(12);
 
     bool use_refs = true; // Use references to model.L and model.NL, rather than copying
     ETD35 solver(model.L(),model.NL(),use_refs);
     solver.setEpsRel(1e-4);
-//    solver.setLogProgress(true);
-    solver.setLogProgress(false);
-    solver.setLogFrequency(4);
+    solver.setLogProgress(true);
+    solver.setLogFrequency(12);
     solver.setNumThreads(num_threads);
     double z0 = 0.0;
     double zf = 0.3;
-    propagator.report(z0);
     solver.evolve(propagator,z0,zf,zf/100.0);
     propagator.report(zf);
     return 0;
