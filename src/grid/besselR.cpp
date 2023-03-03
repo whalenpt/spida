@@ -1,23 +1,15 @@
 
 #include <cmath>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <boost/math/special_functions/bessel.hpp>
 #include "spida/grid/besselR.h"
-#include <iostream>
 
 namespace spida{
-
 
 BesselRootGridR::BesselRootGridR(int nr,double maxr) : GridR(nr,maxr),
     m_r(nr), m_sr(nr)
 {
-    //OutputIterator cyl_bessel_j_zero(
-    //                 T v,                       // Floating-point value for Jv.
-    //                 int start_index,           // 1-based index of first zero.
-    //                 unsigned number_of_roots,  // How many roots to generate.
-    //                 OutputIterator out_it);
-
     // Want J0 -> v = 0, starting with first root -> start_index=1
     boost::math::cyl_bessel_j_zero<double>(0.0,1,nr,std::back_inserter(m_roots));
     // 1-based index of zero (use nr+1 for m_jN rather than nr)
@@ -30,11 +22,4 @@ BesselRootGridR::BesselRootGridR(int nr,double maxr) : GridR(nr,maxr),
         m_sr[i] = m_roots[i]*getMaxSR()/m_jN;
 }
 
-
 }
-
-
-
-
-
-

@@ -12,17 +12,14 @@ class UniformGridRVT : public UniformGridT
     public:
         explicit UniformGridRVT(unsigned nt,double minT,double maxT,double minST,double maxST); 
         explicit UniformGridRVT(unsigned nt,double minT,double maxT); 
-        explicit UniformGridRVT(const UniformGridRVT& grid);
-        ~UniformGridRVT() {}; 
-        const std::vector<double>& getST() const {return m_st;}
-        unsigned getNst() const {return m_nst;}
-        double getMinST() const {return m_minST;}
-        double getMaxST() const {return m_maxST;}
+        ~UniformGridRVT() final = default; 
+        const std::vector<double>& getST() const final {return m_st;}
+        unsigned getNst() const final {return m_nst;}
+        double getMinST() const final {return m_minST;}
+        double getMaxST() const final {return m_maxST;}
         unsigned getMinI() const {return m_minI;}
         unsigned getMaxI() const {return m_maxI;}
         double getDST() const {return getLST()/(getNst()-1);}
-        double getDT() const {return getLT()/(getNt()-1);}
-        double getLST() const {return m_maxST-m_minST;}
         double maxPossibleFreq() const;
         unsigned freqToIndx(double omeg) const;
         double indxToFreq(unsigned indx) const;
@@ -34,11 +31,7 @@ class UniformGridRVT : public UniformGridT
         unsigned m_minI;
         unsigned m_maxI;
         unsigned resFreqToIndxT(double omeg) const;
-        std::vector<double> constructGridST(unsigned nt,double minST,double maxST);
         void verifyFrequencyRange(double minST,double maxST) const;
 };
 
 }
-
-
-

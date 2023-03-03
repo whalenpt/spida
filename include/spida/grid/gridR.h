@@ -1,4 +1,3 @@
-// gridR.h
 #pragma once
 
 #include <vector>
@@ -12,7 +11,7 @@ class GridR : public Grid
   public:
       GridR(unsigned nr,double rmax)  : 
           m_nr(nr),m_rmax(rmax) {}
-      virtual ~GridR() {}
+      ~GridR() override = default;
       virtual const std::vector<double>& getR() const = 0;
       virtual const std::vector<double>& getSR() const = 0;
       int getNr() const {return m_nr;}
@@ -37,9 +36,4 @@ class GridR : public Grid
       double m_rmax;
 };
 
-
-
 }
-
-
-

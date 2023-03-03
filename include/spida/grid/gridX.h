@@ -1,4 +1,3 @@
-// gridX.h
 #pragma once
 
 #include <vector>
@@ -11,7 +10,7 @@ class GridX : public Grid
   public:
       GridX(unsigned nx,double minX,double maxX)  : 
           m_nx(nx),m_minX(minX),m_maxX(maxX) {}
-      virtual ~GridX() {}
+      ~GridX() override = default;
       virtual const std::vector<double>& getX() const = 0;
       virtual const std::vector<double>& getSX() const = 0;
       unsigned getNx() const {return m_nx;}
@@ -28,9 +27,4 @@ class GridX : public Grid
       double m_maxX;
 };
 
-
-
 }
-
-
-
