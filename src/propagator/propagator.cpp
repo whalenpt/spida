@@ -6,17 +6,7 @@
 namespace spida{
 
 BasePropagator::BasePropagator(const std::filesystem::path& dir_path) :
-    m_dir_path(dir_path),
-    m_steps_taken(0),
-    m_report_count1D(0),
-    m_steps_per_out1D(1),
-    m_max_reports1D(DEFAULT_MAX_REPORTS_1D),
-    m_report_count2D(0),
-    m_steps_per_out2D(1),
-    m_max_reports2D(DEFAULT_MAX_REPORTS_2D),
-    m_steps_per_track(1),
-    m_log_progress(false),
-    m_log_freq(1)
+    m_dir_path(dir_path)
 {
     m_stat.setHeader("REPORT STATS");
     m_stat.addTracker("t",0.0);
@@ -32,24 +22,24 @@ void BasePropagator::setStepsPerOutput(unsigned val)
 void BasePropagator::setStepsPerOutput1D(unsigned val)
 {
     if(val < 1)
-        throw std::invalid_argument("BasePropagator::setStepsPerOutput1D requires a value \
-                greater than zero.");
+        throw std::invalid_argument("BasePropagator::setStepsPerOutput1D requires a value "
+                "greater than zero.");
     m_steps_per_out1D = val;
 }
 
 void BasePropagator::setStepsPerOutput2D(unsigned val)
 {
     if(val < 1)
-        throw std::invalid_argument("BasePropagator::setStepsPerOutput2D requires a value \
-                greater than zero.");
+        throw std::invalid_argument("BasePropagator::setStepsPerOutput2D requires a value "
+                "greater than zero.");
     m_steps_per_out2D = val;
 }
 
 void BasePropagator::setStepsPerOutputTrack(unsigned val)
 {
     if(val < 1)
-        throw std::invalid_argument("BasePropagator::setStepsPerOutputTrack requires a value \
-                greater than zero.");
+        throw std::invalid_argument("BasePropagator::setStepsPerOutputTrack requires a value "
+                "greater than zero.");
     m_steps_per_track = val;
 }
 
@@ -62,16 +52,16 @@ void BasePropagator::setMaxReports(unsigned val)
 void BasePropagator::setMaxReports1D(unsigned val)
 {
     if(val < 1)
-        throw std::invalid_argument("BasePropagator::setMaxReports1D requires a value \
-                greater than zero.");
+        throw std::invalid_argument("BasePropagator::setMaxReports1D requires a value "
+                "greater than zero.");
     m_max_reports1D = val;
 }
 
 void BasePropagator::setMaxReports2D(unsigned val)
 {
     if(val < 1)
-        throw std::invalid_argument("BasePropagator::setMaxReports2D requires a value \
-                greater than zero.");
+        throw std::invalid_argument("BasePropagator::setMaxReports2D requires a value "
+                "greater than zero.");
     m_max_reports2D = val;
 }
 
@@ -165,9 +155,4 @@ void BasePropagator::reportTrack(double t)
     m_stat.endTimer("Time Reporting Trackers");
 }
 
-
-
 }
-
-
-
