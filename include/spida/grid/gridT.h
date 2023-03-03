@@ -10,7 +10,7 @@ class GridT : public Grid
   public:
       explicit GridT(unsigned nt,double minT,double maxT)  : 
           m_nt(nt),m_minT(minT),m_maxT(maxT) {}
-      ~GridT() override = default;
+      virtual ~GridT() = default;
       virtual const std::vector<double>& getT() const = 0;
       virtual const std::vector<double>& getST() const = 0;
       unsigned getNt() const {return m_nt;}

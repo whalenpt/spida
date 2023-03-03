@@ -34,7 +34,7 @@ std::vector<double> UniformGridCVX::freqshift(const std::vector<double>& in) con
 std::vector<dcmplx> UniformGridCVX::freqshift(const std::vector<dcmplx>& in) const
 {
     std::vector<dcmplx> out(in.size());
-    unsigned sz = in.size();
+    auto sz = in.size();
     for(auto i = sz/2+1; i < sz; i++)
         out[i-(sz/2+1)] = in[i];
     for(auto i = 0; i <= sz/2; i++)
@@ -44,7 +44,7 @@ std::vector<dcmplx> UniformGridCVX::freqshift(const std::vector<dcmplx>& in) con
 
 void UniformGridCVX::freqshift(const std::vector<double>& in,std::vector<double>& out) const
 {
-    unsigned nx = getNx();
+    auto nx = getNx();
     for(auto i = nx/2+1; i < nx; i++)
         out[i-(nx/2+1)] = in[i];
     for(auto i = 0; i <= nx/2; i++)
@@ -53,15 +53,11 @@ void UniformGridCVX::freqshift(const std::vector<double>& in,std::vector<double>
 
 void UniformGridCVX::freqshift(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) const
 {
-    unsigned nsx = getNsx();
+    auto nsx = getNsx();
     for(auto i = nsx/2+1; i < nsx; i++)
         out[i-(nsx/2+1)] = in[i];
     for(auto i = 0; i <= nsx/2; i++)
         out[i+(nsx/2-1)] = in[i];
 }
 
-
 }
-
-
-

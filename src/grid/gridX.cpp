@@ -1,8 +1,8 @@
 
-#include "spida/grid/gridX.h"
-#include <vector>
 #include <stdexcept>
+#include <vector>
 #include <pwutils/pwindexing.hpp>
+#include "spida/grid/gridX.h"
 
 unsigned int GridX::getIndexX(double xval) const
 {

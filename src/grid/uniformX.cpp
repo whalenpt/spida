@@ -1,6 +1,5 @@
-
-#include <string>
 #include <stdexcept>
+#include <string>
 #include "spida/grid/uniformX.h"
 
 namespace spida{
@@ -18,6 +17,3 @@ UniformGridX::UniformGridX(unsigned nx,double minX,double maxX) :
 }
 
 }
-
-
-

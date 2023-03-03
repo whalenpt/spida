@@ -1,7 +1,5 @@
-
-
-#include <string>
 #include <stdexcept>
+#include <string>
 #include "spida/grid/gridT.h"
 #include "spida/grid/uniformT.h"
 
@@ -20,7 +18,3 @@ UniformGridT::UniformGridT(unsigned nt,double minT,double maxT) :
 }
 
 }
-
-
-
-

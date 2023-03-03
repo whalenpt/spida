@@ -1,13 +1,13 @@
 
 
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <pwutils/pwindexing.hpp>
 #include "spida/grid/uniformRVT.h"
 
 namespace spida{
 
-std::vector<double> UniformGridRVT::constructGridST(unsigned nt,double minT,double maxT)
+std::vector<double> UniformGridRVT::constructGridST(unsigned nt,double minT,double maxT) const
 {
     std::vector<double> st(nt/2+1);
     double dst = 2.0*PI/(maxT-minT);
@@ -32,28 +32,13 @@ UniformGridRVT::UniformGridRVT(unsigned nt,double minT,double maxT,\
     m_maxST = m_st.back();
 }
 
-UniformGridRVT::UniformGridRVT(const UniformGridRVT& grid) : 
-    UniformGridT(grid.getNt(),grid.getMinT(),grid.getMaxT()),
-    m_st(grid.getNst()),
-    m_nst(grid.getNst()),
-    m_minST(grid.getMinST()),
-    m_maxST(grid.getMaxST()),
-    m_minI(grid.getMinI()),
-    m_maxI(grid.getMaxI())
-{
-    const std::vector<double>& st = grid.getST();
-    std::copy(std::cbegin(st),std::cend(st),std::begin(m_st));
-}
-
 UniformGridRVT::UniformGridRVT(unsigned nt,double minT,double maxT) : 
     UniformGridT(nt,minT,maxT),
     m_st(nt/2+1),
     m_nst(nt/2+1),
     m_minST(indxToFreq(0)),
     m_maxST(indxToFreq(nt/2)),
-    m_minI(0),
     m_maxI(nt/2)
-
 {
     m_st = constructGridST(nt,minT,maxT);
 }
@@ -62,7 +47,7 @@ double UniformGridRVT::maxPossibleFreq() const {
     return indxToFreq(getNt()/2);
 }
 
-unsigned int UniformGridRVT::freqToIndx(double omeg) const
+unsigned UniformGridRVT::freqToIndx(double omeg) const
 {
     if(omeg < 0.0){
         std::string msg = "freqToIndx only processes positive frequencies ";
@@ -74,7 +59,7 @@ unsigned int UniformGridRVT::freqToIndx(double omeg) const
         throw std::domain_error(msg);
     }
     double dst = 2.0*PI/getLT();
-    return round(omeg/dst);
+    return static_cast<unsigned>(round(omeg/dst));
 }
 
 double UniformGridRVT::indxToFreq(unsigned indx) const
@@ -109,11 +94,4 @@ void UniformGridRVT::verifyFrequencyRange(double minST,double maxST) const
     }
 }
 
-
-
-
-
-
 }
-
-

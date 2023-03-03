@@ -62,16 +62,4 @@ void GridR::mirrorGrid(const dcmplx* in,dcmplx* out,bool sign_reverse) const
         out[i+m_nr] = in[i];
 }
 
-
-
 }
-
-
-
-
-
-
-
-
-
-

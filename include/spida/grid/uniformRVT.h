@@ -28,10 +28,10 @@ class UniformGridRVT : public UniformGridT
         unsigned m_nst;
         double m_minST;
         double m_maxST;
-        unsigned m_minI;
+        unsigned m_minI{0};
         unsigned m_maxI;
-        unsigned resFreqToIndxT(double omeg) const;
         void verifyFrequencyRange(double minST,double maxST) const;
+        std::vector<double> constructGridST(unsigned nt,double minT,double maxT) const;
 };
 
 }

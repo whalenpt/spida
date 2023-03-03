@@ -14,27 +14,21 @@ void setChebExtremaX(double a,double b,std::vector<double>& x)
                            " must be less than " + std::to_string(b);
         throw std::invalid_argument(msg);
     }
-//    int N = x.size() - 1;
     auto nx = x.size();
-    double dc = spida::PI/(nx-1);
+    double dc = spida::PI/(static_cast<double>(nx)-1);
     double L = b - a;
-    //for(int i = 0; i <= N; i++) x[i] = a + L*(1.0-cos(i*dc))/2.0; 
-    for(int j = 0; j < nx; j++) x[nx-j-1] = (cos(j*dc)*L+b+a)/2.0; 
+    for(auto j = 0; j < nx; j++) x[nx-j-1] = (cos(j*dc)*L+b+a)/2.0; 
 }
 
 void setChebExtremaSX(std::vector<double>& sx)
 {
-    int nsx = sx.size();
-    double dc = spida::PI/(nsx-1);
-    for(int j = 0; j < nsx; j++) sx[j] = j*dc;
+    auto nsx = sx.size();
+    double dc = spida::PI/(static_cast<double>(nsx)-1);
+    for(auto j = 0; j < nsx; j++) sx[j] = j*dc;
 }
 
 void setChebRootX(double a,double b,std::vector<double>& x)
 {
-//   if(a >= b){
-//        std::string msg = "Error in setChebRootX: interval [a,b] -> a must be less than b.";
-//        throw std::invalid_argument(msg);
-//    }
    if(a >= b){
         std::string msg = "Error in setChebRootX: interval [a,b] -> " + std::to_string(a) + \
                            " must be less than " + std::to_string(b);
@@ -44,15 +38,14 @@ void setChebRootX(double a,double b,std::vector<double>& x)
     auto nx = x.size();
     auto dc = spida::PI/static_cast<double>(nx);
     auto L = b - a;
-    //for(int i = 0; i < N; i++) x[i] = a + L*(1.0-cos((i+0.5)*dc))/2.0; 
-    for(int j = 0; j < nx; j++) x[nx-j-1] = (cos((j+0.5)*dc)*L+b+a)/2.0; 
+    for(auto j = 0; j < nx; j++) x[nx-j-1] = (cos((j+0.5)*dc)*L+b+a)/2.0; 
 }
 
 void setChebRootSX(std::vector<double>& sx)
 {
-    int nsx = sx.size();
+    auto nsx = sx.size();
     double dc = spida::PI/static_cast<double>(nsx);
-    for(int j = 0; j < nsx; j++) sx[j] = (j+0.5)*dc;
+    for(auto j = 0; j < nsx; j++) sx[j] = (j+0.5)*dc;
 }
 
 ChebExtremaGridX::ChebExtremaGridX(int nx,double min,double max) : ChebGridX(nx,min,max),
@@ -72,4 +65,3 @@ ChebRootGridX::ChebRootGridX(int nx,double min,double max) : ChebGridX(nx,min,ma
 }
 
 }
-

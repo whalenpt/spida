@@ -4,9 +4,9 @@ namespace spida{
 
 // Base interface class
 class Grid{
-  public:
+  protected:
       Grid() = default;
-      virtual ~Grid() = 0;
+      ~Grid() = default;
 };
 
 }

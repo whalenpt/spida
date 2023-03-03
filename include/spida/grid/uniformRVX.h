@@ -11,7 +11,7 @@ class UniformGridRVX : public UniformGridX
 {
     public:
         UniformGridRVX(unsigned nx,double min,double max);
-        ~UniformGridRVX() final = default;
+        ~UniformGridRVX() override = default;
         const std::vector<double>& getSX() const final {return m_sx;}
         double getMinSX() const final {return 0.0;}
         double getMaxSX() const final {return getNx()*spida::PI/getLX();}
