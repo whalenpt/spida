@@ -11,7 +11,4 @@ void transpose(const T* in,T* out,unsigned nd1,unsigned nd2)
             out[j*nd1+i] = in[i*nd2+j];
 }
 
-
 }
-
-

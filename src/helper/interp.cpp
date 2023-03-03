@@ -1,8 +1,7 @@
-
-#include "spida/helper/interp.h"
-#include <pwutils/pwexcept.h>
-#include <iostream>
 #include <algorithm>
+#include <iostream>
+#include <pwutils/pwexcept.h>
+#include "spida/helper/interp.h"
 
 namespace spida {
 
@@ -10,19 +9,19 @@ namespace spida {
     void checkXInterp(const std::vector<double>& xinterp,const std::vector<double>& xdata)
     {
         if(xinterp.empty()){
-          throw pw::Exception("eval(std::vector<double> xinterp) \
-                   xinterp must be a non-empty vector");
+          throw pw::Exception("eval(std::vector<double> xinterp) "
+                   "xinterp must be a non-empty vector");
         }
         if(xinterp[0] < xdata[0]){
-            std::string str("eval(std::vector<double> xinterp) \
-                    failed: xinterp[0] is less than the class m_xvec[0], increase \
-                    xinterp[0] to at least ");
+            std::string str("eval(std::vector<double> xinterp) "
+                    "failed: xinterp[0] is less than the class m_xvec[0], increase "
+                    "xinterp[0] to at least ");
             throw pw::Exception(str + std::to_string(xdata[0]));
         }
         if(xinterp.back() > xdata.back()){
-            std::string str("eval(std::vector<double> xinterp) \
-                    failed: xinterp[size-1] is greater than the class m_xvec[m_size-1], \
-                    decrease xinterp[size-1] to below or equal to ");
+            std::string str("eval(std::vector<double> xinterp) "
+                    "failed: xinterp[size-1] is greater than the class m_xvec[m_size-1], "
+                    "decrease xinterp[size-1] to below or equal to ");
             throw pw::Exception(str + std::to_string(xdata.back()));
         }
     }
@@ -30,15 +29,15 @@ namespace spida {
     void checkXInterp(double xinterp,const std::vector<double>& xdata)
     {
         if(xinterp < xdata[0]){
-            std::string str("eval(double xinterp) \
-                    failed: xinterp is less than the class m_xvec[0], increase \
-                    xinterp[0] to at least ");
+            std::string str("eval(double xinterp) "
+                    "failed: xinterp is less than the class m_xvec[0], increase "
+                    "xinterp[0] to at least ");
             throw pw::Exception(str + std::to_string(xdata[0]));
         }
         if(xinterp > xdata.back()){
-            std::string str("eval(double xinterp) \
-                    failed: xinterp is greater than the class m_xvec[m_size-1], \
-                    decrease xinterp to below or equal to ");
+            std::string str("eval(double xinterp) "
+                    "failed: xinterp is greater than the class m_xvec[m_size-1], "
+                    "decrease xinterp to below or equal to ");
             throw pw::Exception(str + std::to_string(xdata.back()));
         }
     }
@@ -62,7 +61,7 @@ namespace spida {
     {
         yinterp.clear();
         yinterp.reserve(xinterp.size());
-        unsigned int j = 0;
+        unsigned j = 0;
         for(auto xval : xinterp){
             while(xval > m_xvec[j])
                 j += 1;
@@ -97,7 +96,7 @@ namespace spida {
     double LinearInterp::eval(double xinterp) const
     {
         checkXInterp(xinterp,m_xvec);
-        for(unsigned int i = 0; i < m_xvec.size(); i++){
+        for(unsigned i = 0; i < m_xvec.size(); i++){
             if(m_xvec[i] == xinterp)
                 return m_yvec[i];
             else if(m_xvec[i] > xinterp){
@@ -136,22 +135,22 @@ namespace spida {
           throw pw::Exception(str);
        }
        if(b.size() != d.size()){
-          throw pw::Exception("tridisolve(a,b,c,d,x) error: diagonal 'd' size must be\
-              equal to the R.H.S. 'd' size");
+          throw pw::Exception("tridisolve(a,b,c,d,x) error: diagonal 'd' size must be "
+              "equal to the R.H.S. 'd' size");
        }
-       unsigned int sz = b.size();
+       auto sz = b.size();
        x = std::vector<double>(sz,0.0);
        std::vector<double> bhat(sz);
        std::vector<double> dhat(sz);
        bhat[0] = b[0];
        dhat[0] = d[0];
-       for(unsigned int i = 1; i < sz; i++){
+       for(unsigned i = 1; i < sz; i++){
            double mu = a[i-1]/bhat[i-1];
            bhat[i] = b[i] - mu*c[i-1];
            dhat[i] = d[i] - mu*dhat[i-1];
        }
        x[sz-1] = dhat[sz-1]/bhat[sz-1];
-       for(int i = sz-2; i>=0; i--)
+       for(int i = static_cast<int>(sz)-2; i>=0; i--)
            x[i] = (dhat[i] - c[i]*x[i+1])/bhat[i];
    }
 
@@ -165,7 +164,7 @@ namespace spida {
     }
 
     void SplineInterp::initializeCoefficients(){
-        unsigned int sz(m_xvec.size());
+        auto sz(m_xvec.size());
         std::vector<double> delta(sz-1);
         std::vector<double> h(sz-1);
         std::vector<double> a(sz-1);
@@ -173,27 +172,27 @@ namespace spida {
         std::vector<double> c(sz-1);
         std::vector<double> r(sz);
 
-        for(unsigned int i = 0; i < sz-1; i++){
+        for(unsigned i = 0; i < sz-1; i++){
             h[i] = m_xvec[i+1] - m_xvec[i];
             delta[i] = (m_yvec[i+1] - m_yvec[i])/h[i];
         }
-        for(unsigned int i = 0; i < sz-2; i++)
+        for(unsigned i = 0; i < sz-2; i++)
             a[i] = h[i+1];
         a[sz-2] = h[sz-2] + h[sz-3];
         b[0] = h[1];
-        for(unsigned int i = 1; i < sz-1; i++)
+        for(unsigned i = 1; i < sz-1; i++)
             b[i] = 2*(h[i-1] + h[i]);
         b[sz-1] = h[sz-3];
         c[0] = h[0] + h[1];
-        for(unsigned int i = 1; i < sz-1; i++)
+        for(unsigned i = 1; i < sz-1; i++)
             c[i] = h[i-1];
         r[0] = ((h[0]+2*c[0])*h[1]*delta[0] + h[0]*h[0]*delta[1])/c[0];
-        for(unsigned int i = 1; i < sz-1; i++)
+        for(unsigned i = 1; i < sz-1; i++)
             r[i] = 3*(h[i-1]*delta[i] + h[i]*delta[i-1]);
         r[sz-1] = (h[sz-2]*h[sz-2]*delta[sz-3]+(2*a[sz-2]+h[sz-2])*h[sz-3]*delta[sz-2])/a[sz-2];
 
         tridisolve(a,b,c,r,m_dk);
-        for(unsigned int i = 0; i < sz-1; i++){
+        for(unsigned i = 0; i < sz-1; i++){
             m_ck[i] = (3*delta[i] - 2*m_dk[i] - m_dk[i+1])/h[i];
             m_bk[i] = (m_dk[i] - 2*delta[i] + m_dk[i+1])/(h[i]*h[i]);
         }
@@ -204,7 +203,7 @@ namespace spida {
         yinterp.clear();
         yinterp.reserve(xinterp.size());
 
-        unsigned int j = 0;
+        unsigned j = 0;
         for(auto xval : xinterp){
             while(xval > m_xvec[j])
                 j += 1;
@@ -235,7 +234,7 @@ namespace spida {
     double SplineInterp::eval(double xinterp) const
     {
         checkXInterp(xinterp,m_xvec);
-        for(unsigned int i = 0; i < m_xvec.size(); i++){
+        for(unsigned i = 0; i < m_xvec.size(); i++){
             if(m_xvec[i] == xinterp)
                 return m_yvec[i];
             else if(m_xvec[i] > xinterp){
@@ -247,5 +246,3 @@ namespace spida {
         throw pw::Exception("xinterp was not found with the xdata range");
     }
 }
-
-
