@@ -3,18 +3,17 @@
 
 #include <vector>
 #include "spida/helper/constants.h"
+#include "spida/grid/besselR.h"
+#include "spida/transform/hankelR.h"
 
 namespace spida{
-  class BesselRootGridR;
-  class HankelTransformR;
-
   // Assumes real data
   class SpidaR 
   {
     public:
-      SpidaR(const BesselRootGridR& gridR);
+      explicit SpidaR(const BesselRootGridR& gridR);
       SpidaR() = delete;
-      ~SpidaR();
+      ~SpidaR() = default;
       const BesselRootGridR& getGridR() const;
       const HankelTransformR& getTransformR() const;
       const std::vector<double>& getR() const;
@@ -28,6 +27,3 @@ namespace spida{
       std::unique_ptr<HankelTransformR> m_tr;
   };
 }
-
-
-

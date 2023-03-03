@@ -1,4 +1,3 @@
-// SpidaRVX.h
 /*  
  *  Spectral integration/differentiation algorithms for 
  *  real-valued data on uniform grids with periodic boundaries. 
@@ -15,7 +14,9 @@
 #pragma once
 
 #include <vector>
+#include "spida/grid/uniformRVX.h"
 #include "spida/helper/constants.h"
+#include "spida/transform/fftRVX.h"
 
 namespace spida{
   class UniformGridRVX;
@@ -25,9 +26,9 @@ namespace spida{
   class SpidaRVX
   {
     public:
-      SpidaRVX(const UniformGridRVX& grid);
+      explicit SpidaRVX(const UniformGridRVX& grid);
       SpidaRVX() = delete;
-      ~SpidaRVX();
+      ~SpidaRVX() = default;
       void dX(const std::vector<double>& in,std::vector<double>& out,unsigned n = 1) noexcept; 
       void dSX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) noexcept; 
       void dSX(std::vector<dcmplx>& in,unsigned n = 1) noexcept; 
@@ -43,6 +44,3 @@ namespace spida{
       std::vector<dcmplx> m_vs;
   };
 }
-
-
-

@@ -1,4 +1,3 @@
-// SpidaCVX.h
 /*  
  *  Spectral integration/differentiation algorithms for 
  *  complex data on uniform grids with periodic boundaries. 
@@ -16,20 +15,20 @@
 
 #include <vector>
 #include "spida/helper/constants.h"
+#include "spida/grid/uniformCVX.h"
+#include "spida/transform/fftCVX.h"
 
 namespace spida{
-  class UniformGridCVX;
-  class FFTCVX;
 
   // Assumes complex data
   class SpidaCVX
   {
     public:
-      SpidaCVX(const UniformGridCVX& grid);
+      explicit SpidaCVX(const UniformGridCVX& grid);
       SpidaCVX() = delete;
-      ~SpidaCVX();
+      ~SpidaCVX() = default;
       void dX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) noexcept; 
-      void dSX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) noexcept; 
+      void dSX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) const noexcept; 
       const std::vector<double>& getX() const;
       const std::vector<double>& getSX() const;
       void X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept;
@@ -42,6 +41,3 @@ namespace spida{
       std::vector<dcmplx> m_vs;
   };
 }
-
-
-

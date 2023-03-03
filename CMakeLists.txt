@@ -109,9 +109,3 @@ endif()
 message("Build with demos: ${SPIDA_DEMOS}")
 message("Build with tests: ${SPIDA_TEST}")
 
-
-
-
-
-
-

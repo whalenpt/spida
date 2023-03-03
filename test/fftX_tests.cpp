@@ -1,12 +1,12 @@
 
 #include <gtest/gtest.h>
+#include <spida/CVX.h>
+#include <spida/RVX.h>
 #include <spida/shape/shapeX.h>
 #include <spida/transform/fftCVX.h>
 #include <spida/transform/fftRVX.h>
 #include <spida/grid/uniformCVX.h>
 #include <spida/grid/uniformRVX.h>
-#include <spida/SpidaCVX.h>
-#include <spida/SpidaRVX.h>
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <random>

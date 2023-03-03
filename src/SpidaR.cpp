@@ -1,7 +1,7 @@
 
 #include <cmath>
 #include <memory>
-#include "spida/SpidaR.h"
+#include "spida/R.h"
 #include "spida/helper/constants.h"
 #include "spida/grid/besselR.h"
 #include "spida/transform/hankelR.h"
@@ -13,7 +13,6 @@ namespace spida{
       m_gridR(std::make_unique<BesselRootGridR>(gridR)),
       m_tr(std::make_unique<HankelTransformR>(gridR)) { }
   
-  SpidaR::~SpidaR() {}
   const BesselRootGridR& SpidaR::getGridR() const { return *m_gridR; }
   const HankelTransformR& SpidaR::getTransformR() const { return *m_tr; }
   const std::vector<double>& SpidaR::getR() const {return m_gridR->getR();}

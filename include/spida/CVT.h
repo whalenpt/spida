@@ -1,4 +1,3 @@
-// SpidaCVT.h
 /*  
  *  Spectral integration/differentiation algorithms for 
  *  complex data on uniform grids with periodic boundaries. 
@@ -16,18 +15,18 @@
 
 #include <vector>
 #include "spida/helper/constants.h"
+#include "spida/grid/uniformCVT.h"
+#include "spida/transform/fftCVT.h"
 
 namespace spida{
-  class UniformGridCVT;
-  class FFTCVT;
 
   // Assumes complex data
   class SpidaCVT
   {
     public:
-      SpidaCVT(const UniformGridCVT& grid);
+      explicit SpidaCVT(const UniformGridCVT& grid);
       SpidaCVT() = delete;
-      ~SpidaCVT();
+      ~SpidaCVT() = default;
       void dT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) noexcept; 
       void dST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) noexcept; 
       const std::vector<double>& getT() const;
@@ -41,7 +40,5 @@ namespace spida{
       std::unique_ptr<FFTCVT> m_tr;
       std::vector<dcmplx> m_vs;
   };
+
 }
-
-
-

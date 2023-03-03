@@ -1,21 +1,18 @@
+#pragma once
 
-#ifndef SPIDACHEBX_H_
-#define SPIDACHEBX_H_
-
+#include <memory>
 #include <vector>
+#include "spida/grid/chebX.h"
+#include "spida/transform/chebX.h"
 
 namespace spida{
 
-class ChebTransformX;
-class ChebRootGridX;
-class GridX;
-
-class SpidaCHEBX 
+class SpidaChebX 
 {
     public:
-        SpidaCHEBX(const ChebRootGridX& grid);
-        SpidaCHEBX() = delete;
-        ~SpidaCHEBX();
+        explicit SpidaChebX(const ChebRootGridX& grid);
+        SpidaChebX() = delete;
+        ~SpidaChebX() = default;
         void X_To_SX(const std::vector<double>& in,std::vector<double>& out); 
         void SX_To_X(const std::vector<double>& in,std::vector<double>& out);
         void dX(const std::vector<double>& in,std::vector<double>& out,int n); 
@@ -23,8 +20,8 @@ class SpidaCHEBX
         const GridX& getGridX(); 
         const ChebTransformX& getTransformX();
     private:
-        ChebRootGridX* m_gr;
-        ChebTransformX* m_tr;
+        std::unique_ptr<ChebRootGridX> m_gr;
+        std::unique_ptr<ChebTransformX> m_tr;
         std::vector<double> m_sp;
         std::vector<double> m_dsp;
         void dSX(const std::vector<double>& in,std::vector<double>& out,int n); 
@@ -34,7 +31,3 @@ class SpidaCHEBX
 };
 
 }
-
-#endif
-
-

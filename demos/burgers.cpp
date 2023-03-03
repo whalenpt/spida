@@ -12,7 +12,7 @@
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
 #include <spida/grid/uniformRVX.h>
-#include <spida/SpidaRVX.h>
+#include <spida/RVX.h>
 #include <spida/helper/constants.h>
 #include <spida/rkstiff/ETDAS.h>
 #include <spida/propagator/propagator.h>

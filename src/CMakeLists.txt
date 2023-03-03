@@ -6,7 +6,7 @@ set(SRC_FILES
     SpidaRRVT.cpp
     SpidaCVX.cpp
     SpidaRVX.cpp
-    SpidaCHEBX.cpp
+    SpidaChebX.cpp
     SpidaR.cpp
     ChebInterpX.cpp
 	helper/interp.cpp
@@ -40,15 +40,15 @@ set(SRC_FILES
 
 set(INCL_DIR "${SPIDA_SOURCE_DIR}/include/spida")
 set(SPIDA_INCLUDES
-   "${INCL_DIR}/SpidaCVX.h"
-   "${INCL_DIR}/SpidaRVX.h"
-   "${INCL_DIR}/SpidaCHEBX.h"
+   "${INCL_DIR}/chebX.h"
    "${INCL_DIR}/ChebInterpX.h"
-   "${INCL_DIR}/SpidaCVT.h"
-   "${INCL_DIR}/SpidaRVT.h"
-   "${INCL_DIR}/SpidaR.h"
-   "${INCL_DIR}/SpidaRCVT.h"
-   "${INCL_DIR}/SpidaRRVT.h"
+   "${INCL_DIR}/CVT.h"
+   "${INCL_DIR}/CVX.h"
+   "${INCL_DIR}/R.h"
+   "${INCL_DIR}/RCVT.h"
+   "${INCL_DIR}/RRVT.h"
+   "${INCL_DIR}/RVT.h"
+   "${INCL_DIR}/RVX.h"
    "${INCL_DIR}/helper/constants.h"
    "${INCL_DIR}/helper/interp.h"
    "${INCL_DIR}/helper/funcs.hpp"

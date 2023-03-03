@@ -1,7 +1,7 @@
 
 #include <cmath>
 #include <memory>
-#include "spida/SpidaRVT.h"
+#include "spida/RVT.h"
 #include "spida/grid/uniformRVT.h"
 #include "spida/transform/fftRVT.h"
 #include <pwutils/pwexcept.h>
@@ -13,7 +13,6 @@ namespace spida{
       m_tr(std::make_unique<FFTRVT>(grid)),
       m_vs(grid.getNst()) {}
 
-  SpidaRVT::~SpidaRVT() {}
   const UniformGridRVT& SpidaRVT::getGridT() const { return *m_gr; }
   const FFTRVT& SpidaRVT::getTransformT() const { return *m_tr; }
   const std::vector<double>& SpidaRVT::getT() const {return m_gr->getT();}

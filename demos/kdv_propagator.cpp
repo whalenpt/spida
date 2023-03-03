@@ -10,11 +10,11 @@
 
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
+#include <spida/RVX.h>
 #include <spida/grid/uniformRVX.h>
-#include <spida/SpidaRVX.h>
 #include <spida/helper/constants.h>
-#include <spida/rkstiff/ETDAS.h>
 #include <spida/propagator/propagator.h>
+#include <spida/rkstiff/ETDAS.h>
 #include <pwutils/report/dat.hpp>
 #include <fstream>
 

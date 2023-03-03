@@ -1,21 +1,20 @@
-// SpidaRRVT.h
+// RRVT.h
 #pragma once
 
 #include <vector>
+#include "spida/grid/besselR.h"
+#include "spida/grid/uniformRVT.h"
 #include "spida/helper/constants.h"
+#include "spida/transform/hankelfftRRVT.h"
 
 namespace spida{
-  class UniformGridRVT;
-  class BesselRootGridR;
-  class HankelFFTRRVT;
-
   // Assumes real data
   class SpidaRRVT 
   {
     public:
       SpidaRRVT(const BesselRootGridR& gridR,const UniformGridRVT& gridT,unsigned threads=1);
       SpidaRRVT() = delete;
-      ~SpidaRRVT();
+      ~SpidaRRVT() = default;
       const BesselRootGridR& getGridR() const;
       const UniformGridRVT& getGridT() const;
       const HankelFFTRRVT& getTransformRT() const;
@@ -33,6 +32,5 @@ namespace spida{
       std::unique_ptr<UniformGridRVT> m_gridT;
       std::unique_ptr<HankelFFTRRVT> m_tr;
   };
+
 }
-
-

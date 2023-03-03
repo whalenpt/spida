@@ -10,8 +10,8 @@
 
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
+#include <spida/R.h>
 #include <spida/grid/besselR.h>
-#include <spida/SpidaR.h>
 #include <spida/helper/constants.h>
 #include <spida/rkstiff/ETDAS.h>
 #include <spida/propagator/propagator.h>

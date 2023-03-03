@@ -2,10 +2,10 @@
 // Class for 2D functions of radius (R) and band-limited time (RVT)
 #pragma once
 
-#include <vector>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 #include "spida/helper/constants.h"
 

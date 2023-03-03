@@ -1,7 +1,7 @@
 
 #include <cmath>
 #include <memory>
-#include "spida/SpidaRCVT.h"
+#include "spida/RCVT.h"
 #include "spida/grid/uniformCVT.h"
 #include "spida/grid/besselR.h"
 #include "spida/transform/hankelfftRCVT.h"
@@ -15,8 +15,6 @@ SpidaRCVT::SpidaRCVT(const BesselRootGridR& gridR,\
     m_gridT(std::make_unique<UniformGridCVT>(gridT)),
     m_tr(std::make_unique<HankelFFTRCVT>(gridR,gridT,threads)) { }
   
-SpidaRCVT::~SpidaRCVT() {}
-
 
 const BesselRootGridR& SpidaRCVT::getGridR() const { return *m_gridR; }
 const UniformGridCVT& SpidaRCVT::getGridT() const { return *m_gridT; }

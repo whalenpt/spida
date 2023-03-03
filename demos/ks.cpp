@@ -10,11 +10,11 @@
 
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
+#include <spida/RVX.h>
 #include <spida/grid/uniformRVX.h>
-#include <spida/SpidaRVX.h>
 #include <spida/helper/constants.h>
-#include <spida/rkstiff/ETDAS.h>
 #include <spida/propagator/propagator.h>
+#include <spida/rkstiff/ETDAS.h>
 #include <pwutils/report/dat.hpp>
 #include <fstream>
 
@@ -39,7 +39,7 @@ class KS_RV
 		/// @param grid UniformGridRVX object for describing a real-valued uniform numerical grid 
 		/// 
 
-        KS_RV(const UniformGridRVX& grid) : 
+        explicit KS_RV(const UniformGridRVX& grid) : 
             m_grid(grid), 
             m_spi(grid), 
             m_uphys(grid.getNx()),
@@ -112,16 +112,16 @@ class PropagatorKS : public PropagatorCV
          }
 
 		/// Destructor
-        ~PropagatorKS() {}
+        ~PropagatorKS() override = default;
 
         /// @brief Pure virtual function of PropagatorCV that must be implemented.
         /// This function is called before each Solver report (allows for updating of real space fields)
 		/// @param t Current propagation time
 
-        void updateFields(double t) { m_spi.SX_To_X(m_usp,m_uphys);}
+        void updateFields(double t) override { m_spi.SX_To_X(m_usp,m_uphys);}
 
 		/// Returns propagating field array
-        std::vector<dcmplx>& propagator() {return m_usp;}
+        std::vector<dcmplx>& propagator() override {return m_usp;}
 
     private:
 
@@ -165,8 +165,3 @@ int main()
 
     return 0;
 }
-
-
-
-
-

@@ -1,13 +1,13 @@
-// SpidaRCVT.h
+// RCVT.h
 #pragma once
 
 #include <vector>
+#include "spida/grid/besselR.h"
+#include "spida/grid/uniformCVT.h"
 #include "spida/helper/constants.h"
+#include "spida/transform/hankelfftRCVT.h"
 
 namespace spida{
-  class UniformGridCVT;
-  class BesselRootGridR;
-  class HankelFFTRCVT;
 
   // Assumes real data
   class SpidaRCVT
@@ -15,7 +15,7 @@ namespace spida{
     public:
       SpidaRCVT(const BesselRootGridR& gridR,const UniformGridCVT& gridT,unsigned threads=1);
       SpidaRCVT() = delete;
-      ~SpidaRCVT();
+      ~SpidaRCVT() = default;
       const BesselRootGridR& getGridR() const;
       const UniformGridCVT& getGridT() const;
       const HankelFFTRCVT& getTransformRT() const;
@@ -28,7 +28,6 @@ namespace spida{
       unsigned spectralSize() const;
       unsigned physicalSize() const;
       void mirrorR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) const;
-//      void mirrorGrid(
 
     private:
       std::unique_ptr<BesselRootGridR> m_gridR;

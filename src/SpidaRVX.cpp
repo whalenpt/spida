@@ -1,7 +1,7 @@
 
 #include <cmath>
 #include <memory>
-#include "spida/SpidaRVX.h"
+#include "spida/RVX.h"
 #include "spida/grid/uniformRVX.h"
 #include "spida/transform/fftRVX.h"
 
@@ -12,7 +12,6 @@ namespace spida{
       m_tr(std::make_unique<FFTRVX>(grid)),
       m_vs(grid.getNsx()) {}
 
-  SpidaRVX::~SpidaRVX() {}
   const UniformGridRVX& SpidaRVX::getGridX() const { return *m_gr; }
   const FFTRVX& SpidaRVX::getTransformX() const { return *m_tr; }
   const std::vector<double>& SpidaRVX::getX() const {return m_gr->getX();}

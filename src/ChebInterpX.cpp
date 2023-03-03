@@ -1,6 +1,6 @@
 
-#include "spida/ChebInterpX.h"
-#include "spida/SpidaCHEBX.h"
+#include "spida/chebInterpX.h"
+#include "spida/chebX.h"
 #include "spida/grid/chebX.h"
 #include "spida/helper/interp.h"
 #include "spida/helper/constants.h"
@@ -9,11 +9,9 @@
 namespace spida{
 
   ChebInterpX::ChebInterpX(int ninterp,double minx,double maxx) :
-      m_chebx(std::make_unique<SpidaCHEBX>(ChebRootGridX{ninterp,minx,maxx})),
+      m_chebx(std::make_unique<SpidaChebX>(ChebRootGridX{ninterp,minx,maxx})),
       m_ycheb(ninterp),
       m_dycheb(ninterp) { }
-
-  ChebInterpX::~ChebInterpX() {}
 
   double ChebInterpX::dXInterp(const std::vector<double>& xin,\
           const std::vector<double>& yin,double xout,int n) 
@@ -34,13 +32,5 @@ namespace spida{
       SplineInterp spline_from_cheb(m_chebx->getGridX().getX(),m_dycheb);
       return spline_from_cheb.eval(xout,dyout);
   }
-    
+
 }
-
-
-
-
-
-
-
-

@@ -1,22 +1,20 @@
-// SpidaRVT.h 
+// RVT.h 
 // Class for (spectrally) band-limited temporal functions
 #pragma once
 
 #include <vector>
 #include "spida/helper/constants.h"
+#include "spida/grid/uniformRVT.h"
+#include "spida/transform/fftRVT.h"
 
 namespace spida{
-  class UniformGridRVT;
-  class FFTRVT;
-
   // Assumes real data
   class SpidaRVT 
   {
     public:
-      //SpidaRVT(int nt,double minT,double maxT,double minST,double maxST);
-      SpidaRVT(const UniformGridRVT& grid);
+      explicit SpidaRVT(const UniformGridRVT& grid);
       SpidaRVT() = delete;
-      ~SpidaRVT();
+      ~SpidaRVT() = default;
       void dT(const std::vector<double>& in,std::vector<double>& out,int n = 1); 
       const std::vector<double>& getT() const;
       const std::vector<double>& getST() const;
@@ -31,7 +29,5 @@ namespace spida{
       std::unique_ptr<FFTRVT> m_tr;
       std::vector<dcmplx> m_vs;
   };
+
 }
-
-
-

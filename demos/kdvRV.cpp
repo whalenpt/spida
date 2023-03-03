@@ -10,8 +10,8 @@
 
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
+#include <spida/RVX.h>
 #include <spida/grid/uniformRVX.h>
-#include <spida/SpidaRVX.h>
 #include <spida/helper/constants.h>
 #include <spida/rkstiff/ETDAS.h>
 #include <pwutils/report/dat.hpp>
@@ -38,7 +38,7 @@ class KdV_RV
 		/// @param grid UniformGridRVX object for describing a real-valued uniform numerical grid 
 		/// 
 
-        KdV_RV(const UniformGridRVX& grid) : 
+        explicit KdV_RV(const UniformGridRVX& grid) : 
             L(grid.getNsx()),
             m_grid(grid), 
             m_spida(grid), 
@@ -63,7 +63,6 @@ class KdV_RV
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)> NL; /**< Nonlinear function */
         SpidaRVX& spida() {return m_spida;}
 
-    private:
         UniformGridRVX m_grid; /**< Grid class holding both real-space uniform grid and spectral-space grid */
         SpidaRVX m_spida; /** < Spida object which contains ffts and differentiation functions */
         std::vector<double> m_uphys; /**< Physical space field */
@@ -77,7 +76,7 @@ int main()
     unsigned nx = 512; // Number of points in numerical grid
     double minx = -150.0; // Minimum of X-grid. 
     double maxx = 150.0; // Maximum of X-grid. 
-    std::string outdir("kdv_files_RV"); // Output directory for simulation 
+    std::filesystem::path outdir("kdv_files_RV"); // Output directory for simulation 
 
     UniformGridRVX grid(nx,minx,maxx); // Construct numerical grid. 
     KdV_RV model(grid); // Construct KdV_RV model object 
@@ -110,13 +109,13 @@ int main()
     std::copy(std::cbegin(u0),std::cend(u0),std::begin(uphys));
 
 	// report initial physical field
-    dat::ReportData1D<double,double> report("X_0",x,uphys);
+    dat::ReportData1D report{"X_0",x,uphys};
     report.setDirPath(outdir);
     report.setItem("t",t0);
     std::cout << "First physical space report file location: " << report.path() << std::endl;
 
 	// report initial spectral field
-    dat::ReportData1D<double,dcmplx> reportS("SX_0",grid.getSX(),usp);
+    dat::ReportData1D reportS{"SX_0",grid.getSX(),usp};
     reportS.setDirPath(outdir);
     std::cout << "First spectral space report file location: " << reportS.path() << std::endl;
 
@@ -163,8 +162,3 @@ int main()
     os.close();
     return 0;
 }
-
-
-
-
-

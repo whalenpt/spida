@@ -1,6 +1,6 @@
 
 
-#include "spida/SpidaCHEBX.h"
+#include "spida/chebX.h"
 #include "spida/grid/chebX.h"
 #include "spida/transform/chebX.h"
 #include "spida/helper/constants.h"
@@ -13,60 +13,52 @@
 
 namespace spida{
 
-  SpidaCHEBX::SpidaCHEBX(const ChebRootGridX& grid) :
-    m_gr(new ChebRootGridX(grid)),
-    m_tr(new ChebTransformX(grid)),
+  SpidaChebX::SpidaChebX(const ChebRootGridX& grid) :
+    m_gr(std::make_unique<ChebRootGridX>(grid)),
+    m_tr(std::make_unique<ChebTransformX>(grid)),
     m_sp(grid.getNx()), 
-    m_dsp(grid.getNsx())
-  {
-  }
+    m_dsp(grid.getNsx()) { }
 
-  SpidaCHEBX::~SpidaCHEBX()
-  {
-      delete m_tr;
-      delete m_gr;
-  }
-
-  const GridX& SpidaCHEBX::getGridX() {
+  const GridX& SpidaChebX::getGridX() {
       return *m_gr;
   }
-  const ChebTransformX& SpidaCHEBX::getTransformX() {
+  const ChebTransformX& SpidaChebX::getTransformX() {
       return *m_tr;
   }
 
-  void SpidaCHEBX::X_To_SX(const std::vector<double>& in,std::vector<double>& out) {
+  void SpidaChebX::X_To_SX(const std::vector<double>& in,std::vector<double>& out) {
       m_tr->X_To_SX(in,out);
   } 
-  void SpidaCHEBX::SX_To_X(const std::vector<double>& in,std::vector<double>& out) {
+  void SpidaChebX::SX_To_X(const std::vector<double>& in,std::vector<double>& out) {
       m_tr->SX_To_X(in,out);
   } 
 
-  void SpidaCHEBX::dX(const std::vector<double>& in,std::vector<double>& out,int n) 
+  void SpidaChebX::dX(const std::vector<double>& in,std::vector<double>& out,int n) 
   {
       X_To_SX(in,m_sp);
       dSX(m_sp,n);
       SX_To_X(m_sp,out);
   }
 
-  void SpidaCHEBX::dX(const std::vector<double>& in,std::vector<double>& out) 
+  void SpidaChebX::dX(const std::vector<double>& in,std::vector<double>& out) 
   {
-      SpidaCHEBX::dX(in,out,1);
+      SpidaChebX::dX(in,out,1);
   }
 
-  void SpidaCHEBX::dSX(std::vector<double>& a,int n)
+  void SpidaChebX::dSX(std::vector<double>& a,int n)
   {
       if(n < 0){ 
-          throw std::invalid_argument("SpidaCHEBX::dSX(std::vector<double>& a,int n) \
-                  n must be a non-negative integer");
+          throw std::invalid_argument("SpidaChebX::dSX(std::vector<double>& a,int n) "
+                  "n must be a non-negative integer");
       } else if(n > 8){
-          throw std::invalid_argument("SpidaCHEBX::dSX(std::vector<double>& a,int n) \
-                  n must be less than or equal to 8");
+          throw std::invalid_argument("SpidaChebX::dSX(std::vector<double>& a,int n) "
+                  "n must be less than or equal to 8");
       }
       for(int i = 0; i < n; i++)
-          SpidaCHEBX::dSX(a);
+          SpidaChebX::dSX(a);
   }
 
-  void SpidaCHEBX::dSX(std::vector<double>& a)
+  void SpidaChebX::dSX(std::vector<double>& a)
   {
       int N = m_gr->getNsx();
       double sf = 2.0/m_gr->getL();
@@ -77,63 +69,16 @@ namespace spida{
       std::copy(std::begin(m_dsp),std::end(m_dsp),std::begin(a));
   }
 
-  void SpidaCHEBX::dSX(const std::vector<double>& a,std::vector<double>& b,int n) 
+  void SpidaChebX::dSX(const std::vector<double>& a,std::vector<double>& b,int n) 
   {
       std::copy(std::cbegin(a),std::cend(a),std::begin(b));
       dSX(b,n);
   }
 
-  void SpidaCHEBX::dSX(const std::vector<double>& a,std::vector<double>& b) 
+  void SpidaChebX::dSX(const std::vector<double>& a,std::vector<double>& b) 
   {
       std::copy(std::cbegin(a),std::cend(a),std::begin(b));
       dSX(b);
   }
 
 }
-
-
-
-//  void SpidaCHEBX::dSX(std::vector<double>& a,int n)
-//  {
-//      if(n == 0)
-//          return;
-//      if(n < 0){ 
-//          throw std::invalid_argument("SpidaCHEBX::dSX(std::vector<double>& a,int n) \
-//                  n must be a non-negative integer");
-//      }
-//      if(m_gr.gridType() == ChebGridType::EXTREMA){
-//          int N = m_gr.getNx()-1;
-//          double sf = 2.0/m_gr.getL();
-//          //double sf = 1.0;
-//          for(int i = 0; i < n; i++){
-//              m_dico[N] = 0.0;
-//              m_dico[N-1] =  2.0*N*a[N]*sf; // Weideman
-//              for(int k = N-2; k > 0; k--)
-//                m_dico[k] = (m_dico[k+2] + 2.0*sf*(k + 1)*a[k+1]) ;
-//              m_dico[0] = 0.5*m_dico[2] + sf*a[1];
-//              std::copy(std::begin(m_dico),std::end(m_dico),std::begin(a));
-//          }
-//      } else if(m_gr.gridType() == ChebGridType::ROOTS){
-//          int N = m_gr.getNx()-1;
-//          int nx = m_gr.getNx();
-//          double sf = 2.0/m_gr.getL();
-//          assert(m_gr.getL() == 2.0);
-//          for(int i = 0; i < n; i++){
-//              m_dico[N] = 0.0;
-//              m_dico[N-1] =  2.0*N*a[N]*sf; // Weideman
-//              for(int k = N-2; k > 0; k--)
-//                m_dico[k] = (m_dico[k+2] + 2.0*sf*(k + 1)*a[k+1]) ;
-//              m_dico[0] = 0.5*m_dico[2] + sf*a[1];
-//              std::copy(std::begin(m_dico),std::end(m_dico),std::begin(a));
-//          }
-//
-//          //for(int i = 0; i < n; i++){
-//          //    m_dico[nx-1] = 0.0;
-//          //    m_dico[nx-2] =  2.0*(nx-2)*a[nx-1]*sf; // Weideman
-//          //    for(int k = nx-1; k > 1; k--)
-//          //        m_dico[k-1] = m_dico[k+1] + 2.0*sf*(k - 1)*a[k];
-//          //    std::copy(std::begin(m_dico),std::end(m_dico),std::begin(a));
-//          //}
-//      }
-//  }
-

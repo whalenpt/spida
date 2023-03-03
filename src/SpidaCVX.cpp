@@ -1,7 +1,7 @@
 
 #include <cmath>
 #include <memory>
-#include "spida/SpidaCVX.h"
+#include "spida/CVX.h"
 #include "spida/grid/uniformCVX.h"
 #include "spida/transform/fftCVX.h"
 
@@ -12,7 +12,6 @@ namespace spida{
       m_tr(std::make_unique<FFTCVX>(grid)),
       m_vs(grid.getNsx()) {}
 
-  SpidaCVX::~SpidaCVX() {}
   const UniformGridCVX& SpidaCVX::getGridX() const { return *m_gr; }
   const FFTCVX& SpidaCVX::getTransformX() const { return *m_tr; }
   const std::vector<double>& SpidaCVX::getX() const {return m_gr->getX();}
@@ -29,7 +28,7 @@ namespace spida{
     m_tr->SX_To_X(m_vs,out);
   }
 
-  void SpidaCVX::dSX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n) noexcept
+  void SpidaCVX::dSX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n) const noexcept
   {
     if(n == 0)
         return;

@@ -1,7 +1,7 @@
 
 #include <cmath>
 #include <memory>
-#include "spida/SpidaCVT.h"
+#include "spida/CVT.h"
 #include "spida/grid/uniformCVT.h"
 #include "spida/transform/fftCVT.h"
 
@@ -12,7 +12,6 @@ namespace spida{
       m_tr(std::make_unique<FFTCVT>(grid)),
       m_vs(grid.getNst()) {}
 
-  SpidaCVT::~SpidaCVT() {}
   const UniformGridCVT& SpidaCVT::getGridT() const { return *m_gr; }
   const FFTCVT& SpidaCVT::getTransformT() const { return *m_tr; }
   const std::vector<double>& SpidaCVT::getT() const {return m_gr->getT();}
