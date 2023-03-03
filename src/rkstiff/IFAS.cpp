@@ -11,17 +11,13 @@ IF34::IF34(const LinOp& Lop,const NLfunc& NL,double sf,double qv,bool use_refs)
     tempK(m_sz), a21(m_sz), a43(m_sz), 
     a51(m_sz), a52(m_sz)
 {
-  c1 = 0.0; c2 = 1.0/2; c3 = 1.0/2; c4 = 1.0; c5 = 1.0;
-  a32 = 0.0;
-  a54 = 0.0;
-  N1_init = false;
   statCenter().setHeader("IF34 STATS");
   statCenter().addCounter("Nonlinear Function Evaluations");
 }
 
 void IF34::updateCoefficients(double dt) noexcept
 {
-    for(int i = 0; i < m_sz; i++) {
+    for(unsigned i = 0; i < m_sz; i++) {
         EL[i] = exp(dt*L[i]);
         EL2[i] = exp(c2*dt*L[i]);
         a21[i] = (1.0/2.0)*dt*exp(dt*L[i]/2.0);
@@ -42,26 +38,26 @@ void IF34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew,
         statCenter().incrementCounter("Nonlinear Function Evaluations",1);
     }
     else if(SolverCV_AS::accept()){
-        for(auto i = 0; i < m_sz; i++) 
+        for(unsigned i = 0; i < m_sz; i++) 
             N1[i] = N5[i]; 
     }
-    for(auto i = 0; i < m_sz; i++)
+    for(unsigned i = 0; i < m_sz; i++)
         tempK[i] =  EL2[i]*in[i] + a21[i]*N1[i];
     SolverCV::NL()(tempK,N2);
 
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         tempK[i] = EL2[i]*in[i] + a32*N2[i];
     SolverCV::NL()(tempK,N3);
 
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         tempK[i] = EL[i]*in[i] + a43[i]*N3[i];
     SolverCV::NL()(tempK,N4);
 
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         ynew[i] = EL[i]*in[i] + a51[i]*N1[i] + a52[i]*(N2[i]+N3[i]) + a54*N4[i];
     SolverCV::NL()(ynew,N5);
 
-    for (auto i = 0; i < m_sz; i++)
+    for (unsigned i = 0; i < m_sz; i++)
         errVec[i] = a54*(N4[i] - N5[i]);
 
     statCenter().incrementCounter("Nonlinear Function Evaluations",4);
@@ -77,18 +73,13 @@ IF45DP::IF45DP(const LinOp& Lop,const NLfunc& NL,double sf,double qv,bool use_re
     a71(m_sz), a73(m_sz), a74(m_sz), a75(m_sz),
     r1(m_sz), r3(m_sz), r4(m_sz), r5(m_sz)
 {
-    c1 = 0.0; c2 = 1.0/5.0; c3 = 3.0/10.0; c4 = 4.0/5.0;  
-    c5 = 8.0/9.0; c6 = 1.0; c7 = 1.0; 
-    a76 = 0.0; r6 = 0.0; r7 = 0.0;
-  
-    N1_init = false;
-    statCenter().setHeader("IF45DP STATS");
-    statCenter().addCounter("Nonlinear Function Evaluations");
+    SolverCV::statCenter().setHeader("IF45DP STATS");
+    SolverCV::statCenter().addCounter("Nonlinear Function Evaluations");
 }
 
 void IF45DP::updateCoefficients(double dt) noexcept
 {
-    for(int i = 0; i < m_sz; i++) {
+    for(unsigned i = 0; i < m_sz; i++) {
         EL[i] = exp(dt*L[i]);
         EL2[i] = exp(c2*dt*L[i]);
         EL3[i] = exp(c3*dt*L[i]);
@@ -132,46 +123,39 @@ void IF45DP::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& yne
         statCenter().incrementCounter("Nonlinear Function Evaluations",1);
     }
     else if(SolverCV_AS::accept()){
-        for(auto i = 0; i < m_sz; i++) 
+        for(unsigned i = 0; i < m_sz; i++) 
             N1[i] = N7[i]; 
     }
-    for(auto i = 0; i < m_sz; i++)
+    for(unsigned i = 0; i < m_sz; i++)
         tempK[i] =  EL2[i]*in[i] + a21[i]*N1[i];
     SolverCV::NL()(tempK,N2);
 
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         tempK[i] = EL3[i]*in[i] + a31[i]*N1[i] + a32[i]*N2[i];
     SolverCV::NL()(tempK,N3);
 
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         tempK[i] = EL4[i]*in[i] + a41[i]*N1[i] + a42[i]*N2[i] + a43[i]*N3[i];
     SolverCV::NL()(tempK,N4);
 
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         tempK[i] = EL5[i]*in[i] + a51[i]*N1[i] + a52[i]*N2[i] + a53[i]*N3[i]+ a54[i]*N4[i];
     SolverCV::NL()(tempK,N5);
 
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         tempK[i] = EL[i]*in[i] + a61[i]*N1[i] + a62[i]*N2[i] + a63[i]*N3[i] \
                    + a64[i]*N4[i] + a65[i]*N5[i];
     SolverCV::NL()(tempK,N6);
 
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         ynew[i] = EL[i]*in[i] + a71[i]*N1[i] + a73[i]*N3[i] \
                    + a74[i]*N4[i] + a75[i]*N5[i] + a76*N6[i];
     SolverCV::NL()(tempK,N7);
 
-    for (auto i = 0; i < m_sz; i++)
+    for (unsigned i = 0; i < m_sz; i++)
         errVec[i] = r1[i]*N1[i]+r3[i]*N3[i] + r4[i]*N4[i] + r5[i]*N5[i] + r6*N6[i] + r7*N7[i];
 
     statCenter().incrementCounter("Nonlinear Function Evaluations",6);
 }
 
-
-
-
 }
-
-
-
-

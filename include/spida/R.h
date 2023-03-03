@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include "spida/helper/constants.h"
 #include "spida/grid/besselR.h"

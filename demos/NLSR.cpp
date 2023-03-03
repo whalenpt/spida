@@ -26,20 +26,20 @@ using namespace spida;
 class NLSR
 {
     public: 
-        NLSR(const BesselRootGridR& grid) : 
+        explicit NLSR(const BesselRootGridR& grid) : 
             m_spi(grid), 
             m_uphys(grid.getNr()),
             m_L(grid.getNsr())
             {
                 const std::vector<double>& kr = grid.getSR();
                 // ii is spida::ii which is imaginary an number
-                for(auto i = 0; i < kr.size(); i++)
+                for(size_t i = 0; i < kr.size(); i++)
                    m_L[i] = -ii*pow(kr[i],2);
                  m_NL = [this](const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
                     double gamma = 2.0;
                     m_spi.SR_To_R(in,m_uphys);
-                    for(auto i = 0; i < m_uphys.size(); i++)
-                        m_uphys[i] = ii*gamma*m_uphys[i]*std::norm(m_uphys[i]);
+                    for(auto& val : m_uphys)
+                        val = ii*gamma*val*std::norm(val);
                     m_spi.R_To_SR(m_uphys,out);
                 };
             }
@@ -72,7 +72,7 @@ class PropagatorNLSR : public PropagatorCV
              const std::vector<double>& r  = m_spi.getR();
              double A0 = 2.0; // amplitude
              double a = 1.0; // width of gaussian
-             for(auto i = 0; i < r.size(); i++)
+             for(size_t i = 0; i < r.size(); i++)
                  m_uphys[i] = A0*exp(-a*pow(r[i],2));
              // Need to initialize the propagator which is the spectral space representation of m_uphys
              m_spi.R_To_SR(m_uphys,m_usp);
@@ -86,16 +86,16 @@ class PropagatorNLSR : public PropagatorCV
              m_spi.getGridR().mirrorGrid(m_usp,m_mirror_usp);
              initReport();
          }
-        ~PropagatorNLSR() {}
+        ~PropagatorNLSR() override = default;
         // updateFields is a pure virtual function of PropagatorCV and must be implemented 
         // This function is called before each Solver report (allows for updating of real space fields)
-        void updateFields(double t) { 
+        void updateFields(double t) override { 
             m_spi.SR_To_R(m_usp,m_uphys);
             // output mirrored grids with negative radial components (for better graphs, not necessary)
             m_spi.getGridR().mirrorGrid(m_uphys,m_mirror_uphys);
             m_spi.getGridR().mirrorGrid(m_usp,m_mirror_usp);
         }
-        std::vector<dcmplx>& propagator() {return m_usp;}
+        std::vector<dcmplx>& propagator() override {return m_usp;}
     private:
         // initReport is a helper function that feeds PropagatorCV information on what to report out to files
         void initReport() {
@@ -143,12 +143,6 @@ int main()
     solver.setEpsRel(1e-5);
     solver.setLogProgress(true);
     solver.setLogFrequency(10);
-    // evolve(propagator,t0,tf,initial step size)
     solver.evolve(propagator,0.0,0.8,0.01);
     return 0;
 }
-
-
-
-
-

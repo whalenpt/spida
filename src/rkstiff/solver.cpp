@@ -17,33 +17,23 @@
 namespace spida{
 
 SolverCV::SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs) :
-    m_use_refs(use_refs),
-    m_thmgt(1)
+    m_use_refs(use_refs)
 { 
     if(use_refs){
         m_L = &L;
         m_NL = &NL;
     } else {
-        m_L = new LinOp(L);
-        m_NL = new NLfunc(NL);
+        m_Lptr = std::make_unique<LinOp>(L);
+        m_NLptr = std::make_unique<NLfunc>(NL);
+        m_L = m_Lptr.get();
+        m_NL = m_NLptr.get();
     }
-    m_tcurrent = 0.0;
-    m_dt_last = 0.0;
-    m_log_progress = false;
     m_stat.setLogFrequency(1);
 }
 
-SolverCV::~SolverCV() {
-    if(!m_use_refs){
-        delete m_L;
-        delete m_NL;
-    }
-}
-
-
 unsigned SolverCV::size() const
 {
-    return m_L->size();
+    return static_cast<unsigned>(m_L->size());
 }
 
 void SolverCV::computeCo(double dt) noexcept
@@ -63,45 +53,81 @@ void SolverCV::computeCo(double dt) noexcept
     }
 }
 
-void SolverCV::fileReportStats(std::filesystem::path& dirpath) {
+void SolverCV::fileReportStats(const std::filesystem::path& dirpath) const {
     std::filesystem::path full_path = dirpath / std::filesystem::path("solver_stat.dat");
     std::ofstream fout(full_path);
     m_stat.report(fout);
     fout.close();
 }
 
-void SolverCV::reportStats()
+void SolverCV::reportStats() const
 {
     m_stat.report(std::cout);
 }
 
-
 SolverCV_AS::SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv,bool use_refs)
- :  SolverCV(L,NL,use_refs), m_yv(SolverCV::size()), m_errv(SolverCV::size())
-{
-    m_accept = false;
-    m_control = std::unique_ptr<Control>(new Control(sf,qv,1.0e-3,1.25,0.85,SolverCV::size()));
+ :  SolverCV(L,NL,use_refs), 
+    m_control(std::make_unique<Control>(sf,qv,1.0e-3,1.25,0.85)),
+    m_yv(SolverCV::size()), 
+    m_errv(SolverCV::size()) { }
+
+void SolverCV_AS::setIncrementThreshold(double val) {
+    m_control->setIncrementThreshold(val);
 }
 
-SolverCV_AS::~SolverCV_AS() { }
+void SolverCV_AS::setDecrementThreshold(double val) {
+    m_control->setDecrementThreshold(val);
+}
 
-void SolverCV_AS::setIncrementThreshold(double val) 
-{m_control->setIncrementThreshold(val);}
-void SolverCV_AS::setDecrementThreshold(double val)
-{m_control->setDecrementThreshold(val);}
-void SolverCV_AS::setNorm(std::string str) 
-{m_control->setNorm(str);}
-void SolverCV_AS::setEpsRel(double val) 
-{m_control->setEpsRel(val);}
+void SolverCV_AS::setEpsRel(double val) {
+    m_control->setEpsRel(val);
+}
 
+void SolverCV_AS::logStartComputeTime() {
+    if(SolverCV::logProgress()){
+        SolverCV::statCenter().startClock("Clock Computer Time");
+        SolverCV::statCenter().startTimer("Computer Time");
+    }
+}
+
+void SolverCV_AS::logEndComputeTime() {
+    if(SolverCV::logProgress()){
+        SolverCV::statCenter().endClock("Clock Computer Time");
+        SolverCV::statCenter().endTimer("Computer Time");
+    }
+}
+
+void SolverCV_AS::logStartStepTime() {
+    if(SolverCV::logProgress()){
+        SolverCV::statCenter().startTimer("Solver Stepping");
+        SolverCV::statCenter().startClock("Clock Stepping");
+    }
+}
+
+void SolverCV_AS::logEndStepTime() {
+    if(SolverCV::logProgress()){
+        SolverCV::statCenter().endClock("Clock Stepping");
+        SolverCV::statCenter().endTimer("Solver Stepping");
+    }
+}
+
+void SolverCV_AS::logStepRejected(double s) {
+    if(SolverCV::logProgress()){
+        std::cout << "Step rejected with s = " << s << std::endl;
+        SolverCV::statCenter().incrementCounter("Step Size Reductions");
+    }
+}
+
+void SolverCV_AS::logStepSizeIncreased(double s) {
+    if(SolverCV::logProgress()){
+        std::cout << "step increased with s = " << s << std::endl;
+        SolverCV::statCenter().incrementCounter("Step Size Increases");
+    }
+}
 
 bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
-    
 {
-    if(SolverCV::logProgress()){
-        statCenter().startClock("Clock Computer Time");
-        statCenter().startTimer("Computer Time");
-    }
+    this->logStartComputeTime();
     double h_cur = h;
     if(!(m_control->checkStepSize(h_cur)))
         return false;
@@ -114,24 +140,14 @@ bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
         if(!(m_control->checkLoopCount(num_loops)))
             return false;
         computeCo(h_cur);
-        if(SolverCV::logProgress()){
-            statCenter().startTimer("Solver Stepping");
-            statCenter().startClock("Clock Stepping");
-        }
+        this->logStartStepTime();
         updateStages(in,m_yv,m_errv);
-        if(SolverCV::logProgress()){
-            statCenter().endClock("Clock Stepping");
-            statCenter().endTimer("Solver Stepping");
-        }
-  
+        this->logEndStepTime();
         s = m_control->computeS(m_errv,m_yv);
         if(s < 1.0){
             h_cur = s*h_cur;
             m_accept = false;
-            if(SolverCV::logProgress()){
-                std::cout << "Step rejected with s = " << s << std::endl;
-                statCenter().incrementCounter("Step Size Reductions");
-            }
+            this->logStepRejected(s);
         }
         else{
             SolverCV::setCurrentTime(SolverCV::currentTime()+h_cur);
@@ -139,10 +155,7 @@ bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
                 in[i] = m_yv[i];
             if(s > 1.0) {
                 hNext = s*h_cur;
-                if(SolverCV::logProgress()){
-                    std::cout << "step increased with s = " << s << std::endl;
-                    statCenter().incrementCounter("Step Size Increases");
-                }
+                this->logStepSizeIncreased(s);
             }
             else
                 hNext = h_cur;
@@ -153,11 +166,7 @@ bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
         if(!(m_control->checkStepSize(h_cur)))
             return false;
     }
-    if(SolverCV::logProgress()){
-        statCenter().endClock("Clock Computer Time");
-        statCenter().endTimer("Computer Time");
-        statCenter().statUpdate();
-    }
+    this->logEndComputeTime();
     return true;
 }
 
@@ -206,13 +215,6 @@ bool SolverCV_AS::evolve(PropagatorCV& propagator,double t0,double tf,double h) 
     if(propagator.logProgress())
         propagator.reportStats();
     return true;
-}
-
-
-SolverCV_CS::SolverCV_CS(const LinOp& L,const NLfunc& NL,bool use_refs) :
-    SolverCV(L,NL,use_refs)
-{
-    m_count_time = true;
 }
 
 void SolverCV_CS::step(std::vector<dcmplx>& in,double dt) noexcept
@@ -276,32 +278,6 @@ bool SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double h) no
     return true;
 }
 
-Control::Control(double safetyF,double qv,double epsR,\
-        double inF,double decF,int dim)
-  : m_safeFact(safetyF),m_q(qv),m_epsRel(epsR),
-    m_incrFact(inF),m_decrFact(decF)
-{
-  m_normType = NORM2;
-}
-
-void Control::setNorm(std::string str)
-{
-  if(str == "NORM1" || str == "1NORM" || str == "NORM 1" || str == "1 NORM")
-    m_normType = NORM1;
-  else if(str == "NORM2" || str == "2NORM" || str == "2 NORM" || str == "NORM 2")
-    m_normType = NORM2;
-  else if(str == "INFNORM" || str == "NORMINF" || str == "INF NORM" || str == "NORM INF")
-    m_normType = NORMINF;
-  else if(str == "SYSNORM" || str == "SYS NORM" || str == "NORM SYS" || str == "NORMSYS")
-    m_normType = NORMSYS;
-  else if(str == "WEIGHTED NORM 2" || str == "WEIGHTED NORM2" || str == "WEIGHTED 2 NORM" \
-      || str == "WEIGHTED NORM2") m_normType = NORMW2;
-  else{
-        throw pw::Exception("Control::setNorm","Did not recognize error control Norm string"\
-                " (1 norm,2 norm,inf norm,...) ");
-  }
-}
-
 void Control::setIncrementThreshold(double val)   
 {
     if(val > MAX_S){
@@ -345,7 +321,7 @@ void Control::setEpsRel(double val)
 }
 
 
-double Control::computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew)
+double Control::computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) const noexcept
 {
     double s = computeRawS(errVec,ynew);
     if(std::isinf(s))
@@ -365,10 +341,11 @@ double Control::computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew)
     return s_stab;
 }
 
-double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) noexcept
+double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) const noexcept
 {
-    double enorm = 0.0, ynorm = 0.0;
-    if(m_normType == NORM2){
+    double enorm = 0.0;
+    double ynorm = 0.0;
+    if(m_normType == ErrorNorm::NORM2){
         for(size_t i = 0; i < errVec.size(); i++){
             enorm += pow(abs(errVec[i]),2);
             ynorm += pow(abs(ynew[i]),2);
@@ -389,7 +366,7 @@ double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& yne
     return errTol/enorm;
 }
 
-bool Control::checkLoopCount(unsigned num_loops) noexcept
+bool Control::checkLoopCount(unsigned num_loops) const noexcept
 {
     if(num_loops >= MAX_LOOP){
         return false;
@@ -397,7 +374,7 @@ bool Control::checkLoopCount(unsigned num_loops) noexcept
     return true;
 }
 
-bool Control::checkStepSize(double step_size) noexcept
+bool Control::checkStepSize(double step_size) const noexcept 
 {
     if(step_size < MIN_H){
         return false;
@@ -405,73 +382,4 @@ bool Control::checkStepSize(double step_size) noexcept
     return true;
 }
 
-
-
-/*
-void Control::worker_norm1(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,double* esum,double* ysum) 
-{
-  double loc_esum = 0.0; 
-  double loc_ysum = 0.0;
-
-  for(int i = sti; i < endi+1; i++){
-      loc_esum += abs(errVec[i]);
-      loc_ysum += abs(ynew[i]);
-  }
-  *esum = loc_esum;
-  *ysum = loc_ysum;
 }
-
-void Control::worker_norminf(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,double* emax,double* ymax) 
-{
-  double loc_emax = 0.0; 
-  double loc_ymax = 0.0;
-
-  for(int i = sti; i < endi+1; i++){
-    double errVal = abs(errVec[i]);
-    if(errVal > loc_emax)
-      loc_emax = errVal;
-    double yval = abs(ynew[i]);
-    if(yval > loc_ymax)
-      loc_ymax = yval;
-  }
-  *emax = loc_emax;
-  *ymax = loc_ymax;
-}
-
-
-void Control::worker_normsys(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,double cutoff,double* sval) 
-{
-  double loc_epsRel = epsRel; 
-  double loc_sval = 1.0e16;
-  for(int i = sti; i < endi+1; i++){
-    double yval = abs(ynew[i]);
-    if(yval > cutoff){
-      double temp_s = loc_epsRel*yval/abs(errVec[i]);
-      if(temp_s < loc_sval)
-        loc_sval = temp_s; 
-    }
-  }
-  *sval = loc_sval;
-}
-
-void Control::worker_weighted_norm2(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew,int sti,int endi,int tid,double cutoff,double* esq_sum,double* ysq_sum) 
-{
-  double loc_esq_sum = 0.0; 
-  double loc_ysq_sum = 0.0;
-  for(int i = sti; i < endi+1; i++){
-    double yval = abs(ynew[i]);
-    if(yval > cutoff){
-      loc_esq_sum += pow(abs(errVec[i]),2);
-      loc_ysq_sum += pow(abs(ynew[i]),2);
-    }
-  }
-  *esq_sum = loc_esq_sum;
-  *ysq_sum = loc_ysq_sum;
-}
-
-*/
-
-
-
-}
-
