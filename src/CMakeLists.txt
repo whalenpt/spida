@@ -41,7 +41,7 @@ set(SRC_FILES
 set(INCL_DIR "${SPIDA_SOURCE_DIR}/include/spida")
 set(SPIDA_INCLUDES
    "${INCL_DIR}/chebX.h"
-   "${INCL_DIR}/ChebInterpX.h"
+   "${INCL_DIR}/chebInterpX.h"
    "${INCL_DIR}/CVT.h"
    "${INCL_DIR}/CVX.h"
    "${INCL_DIR}/R.h"
