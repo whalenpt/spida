@@ -1,11 +1,11 @@
-#include <cmath>
-#include <stdexcept>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
-#include "spida/transform/fftRVX.h"
+#include <stdexcept>
+#include "kiss_fftr.h"
 #include "spida/grid/uniformRVX.h" 
 #include "spida/helper/constants.h"
-#include "kiss_fftr.h"
+#include "spida/transform/fftRVX.h"
 
 namespace spida{
 
@@ -46,20 +46,12 @@ void FFTRVX::SX_To_X(const dcmplx* in,double* out) noexcept
                   reinterpret_cast<kiss_fft_scalar*>(out));
 }
 
-void FFTRVX::X_To_SX(const std::vector<double>& in,std::vector<dcmplx>& out) noexcept
-{ X_To_SX(in.data(),out.data()); }
-
-
-void FFTRVX::SX_To_X(const std::vector<dcmplx>& in,std::vector<double>& out) noexcept
-{ SX_To_X(in.data(),out.data()); }
-
-
-
+void FFTRVX::X_To_SX(const std::vector<double>& in,std::vector<dcmplx>& out) noexcept { 
+    X_To_SX(in.data(),out.data()); 
 }
 
+void FFTRVX::SX_To_X(const std::vector<dcmplx>& in,std::vector<double>& out) noexcept { 
+    SX_To_X(in.data(),out.data()); 
+}
 
-
-
-
-
-
+}

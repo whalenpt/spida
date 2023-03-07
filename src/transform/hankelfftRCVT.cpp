@@ -20,22 +20,13 @@ namespace spida {
         m_rs(m_nr*m_nst),
         m_ss(m_nr*m_nst),
         m_rr(m_nr*m_nt),
-        m_sr(m_nr*m_nt),
-        m_transformT(threads,nullptr),
-        m_transformR(threads,nullptr)
+        m_sr(m_nr*m_nt)
     {
         for(auto i = 0; i < threads; i++){
-            m_transformT[i] = new FFTCVT(gridT);
-            m_transformR[i] = new HankelTransformR(gridR);
+            m_transformT.push_back(std::make_unique<FFTCVT>(gridT));
+            m_transformR.push_back(std::make_unique<HankelTransformR>(gridR));
         }
     }
-
-  HankelFFTRCVT::~HankelFFTRCVT(){
-      for(auto item : m_transformT)
-          delete item;
-      for(auto item : m_transformR)
-          delete item;
-  }
 
   void HankelFFTRCVT::worker_T_To_ST(unsigned tid,const dcmplx* in,dcmplx* out){
       for(unsigned i = tid; i < m_nr; i+= m_threads)
@@ -196,20 +187,4 @@ namespace spida {
       wait_for_workers(workers);
   }
 
-
-
-
-
-
-
-
 }
-
-
-
-
-
-
-
-
-

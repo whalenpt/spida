@@ -1,14 +1,14 @@
-// hankelfftRCVT.h
 #pragma once
 
-#include <vector>
+#include <memory>
 #include <thread>
+#include <vector>
 #include "spida/helper/constants.h"
+#include "spida/transform/fftCVT.h"
+#include "spida/transform/hankelR.h"
 
 namespace spida{
 
-class FFTCVT;
-class HankelTransformR;
 class BesselRootGridR;
 class UniformGridCVT;
 
@@ -16,7 +16,7 @@ class HankelFFTRCVT
 {
     public:
         explicit HankelFFTRCVT(const BesselRootGridR& gridR,const UniformGridCVT& gridT,unsigned threads = 1);
-        ~HankelFFTRCVT();
+        ~HankelFFTRCVT() = default;
         HankelFFTRCVT()=delete;
         HankelFFTRCVT(const HankelFFTRCVT& sp)=delete;
         HankelFFTRCVT& operator=(const HankelFFTRCVT& sp)=delete;
@@ -46,8 +46,8 @@ class HankelFFTRCVT
         std::vector<dcmplx> m_rr;
         std::vector<dcmplx> m_sr;
 
-        std::vector<FFTCVT*> m_transformT;
-        std::vector<HankelTransformR*> m_transformR;
+        std::vector<std::unique_ptr<FFTCVT>> m_transformT;
+        std::vector<std::unique_ptr<HankelTransformR>> m_transformR;
 
         void worker_T_To_ST(unsigned tid,const dcmplx* in,dcmplx* out);
         void worker_ST_To_T(unsigned tid,const dcmplx* in,dcmplx* out);
@@ -60,10 +60,4 @@ class HankelFFTRCVT
         void hSTSR_To_STR(const std::vector<dcmplx>& in, std::vector<dcmplx>& out);
 };
 
-
-
 }
-
-
-
-

@@ -138,7 +138,6 @@ class SolverCV
       double m_tcurrent{0.0}; /**< Current time */
       double m_dt_last{0.0}; /**< Previous step size */
       bool m_log_progress{false}; /**< Determines whether to log data from propagation */
-      bool m_use_refs; /**< Use L and NL passed into class constructor (dont copy) */
       pw::ThreadManager m_thmgt{1}; /**< Holds number of threads and helper functions */
 };
 
@@ -248,7 +247,7 @@ class SolverCV_AS : public SolverCV
 
         /// Setter for error norm, default is the 2-norm
         /// @param Control::ErrorNorm enum value for norm 
-        void setNorm(Control::ErrorNorm norm) {m_control->setNorm(norm);}
+        void setNorm(Control::ErrorNorm norm) const {m_control->setNorm(norm);}
 
         void setAccept(bool val) {m_accept = val;}
         bool accept() const {return m_accept;}
@@ -340,10 +339,4 @@ class LoopException : public SolverException
         std::string m_msg;
 };
 
-
-
-
 }
-
-
-

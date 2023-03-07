@@ -1,23 +1,20 @@
-
-#include "spida/rkstiff/solver.h"
-#include "spida/helper/constants.h"
-#include "spida/propagator/propagator.h"
-
 #include <cmath>
-#include <iostream>
-#include <fstream>
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <numeric>
+#include <thread>
 #include <pwutils/pwexcept.h>
 #include <pwutils/pwthreads.h>
+#include "spida/helper/constants.h"
+#include "spida/propagator/propagator.h"
+#include "spida/rkstiff/solver.h"
 
-#include <thread>
-#include <numeric>
-#include <memory>
 
 namespace spida{
 
-SolverCV::SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs) :
-    m_use_refs(use_refs)
+SolverCV::SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs)
 { 
     if(use_refs){
         m_L = &L;

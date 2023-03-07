@@ -5,7 +5,8 @@ set(SPIDA_FILES
 	fftX_tests.cpp
 	fftT_tests.cpp
 	hankel_tests.cpp
-	hankelfft_tests.cpp
+    hankelfftRRVT_tests.cpp
+    hankelfftRCVT_tests.cpp
 	shape_tests.cpp
 	grid_tests.cpp
 )
@@ -54,9 +55,3 @@ add_test(
 	NAME nayukitest
 	COMMAND nayukitest
 )
-
-
-
-
-
-
