@@ -1,19 +1,22 @@
+// hankelfftRRVT.h
 // Class for 2D functions of radius (R) and band-limited time (RVT)
 #pragma once
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
 
 #include "spida/helper/constants.h"
-#include "spida/transform/fftRVT.h"
 #include "spida/transform/hankelR.h"
+#include "spida/transform/fftRVT.h"
 
 namespace spida{
 
 class BesselRootGridR;
 class UniformGridRVT;
+
 
 class HankelFFTRRVT 
 {
@@ -60,19 +63,22 @@ class HankelFFTRRVT
         unsigned m_nst;
         unsigned m_nThreads;
 
-        std::vector<double> m_rr; std::vector<double> m_sr;
-        std::vector<dcmplx> m_rs; std::vector<dcmplx> m_ss;
+        std::vector<double> m_rr;
+        std::vector<double> m_sr;
+        std::vector<dcmplx> m_rs;
+        std::vector<dcmplx> m_ss;
 
         std::vector<std::thread> m_thread;
         std::vector<std::unique_ptr<FFTRVT>> m_transformT;
         std::vector<std::unique_ptr<HankelTransformR>> m_transformR;
 
         State m_state{State::Wait};
-        unsigned m_th_count{0};
+        unsigned m_threads_processed{0};
         std::vector<bool> m_ready;
+        bool m_processed{true};
         std::mutex m_mut;
         std::condition_variable m_cv;
-        void setState(State state);
+        void setState(State state); 
 
         void worker_thread(unsigned id);
         void worker_wait(unsigned id);
@@ -85,5 +91,6 @@ class HankelFFTRRVT
         void workerCMP_R_To_SR(unsigned tid);
         void workerCMP_SR_To_R(unsigned tid);
 };
+
 
 }
