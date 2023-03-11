@@ -5,9 +5,11 @@ set(GRID_FILES grid_tests.cpp)
 set(SHAPE_FILES shape_tests.cpp)
 set(TRANSFORM_FILES dct_tests.cpp 
 	            fftT_tests.cpp
-                    fftX_tests.cpp
-                    hankel_tests.cpp
-                    hankelfft_tests.cpp)
+                fftX_tests.cpp
+                hankel_tests.cpp
+                hankelfftRRVT_tests.cpp
+                hankelfftRCVT_tests.cpp)
+
 set(SPIDA_FILES ${GRID_FILES} ${SHAPE_FILES} ${TRANSFORM_FILES})
 
 set(KISS_FILES kiss_tests.cpp)

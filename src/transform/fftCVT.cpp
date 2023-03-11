@@ -1,11 +1,11 @@
-#include <cmath>
-#include <stdexcept>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
-#include "spida/transform/fftCVT.h"
+#include <stdexcept>
+#include "kiss_fft.h"
 #include "spida/grid/uniformCVT.h" 
 #include "spida/helper/constants.h"
-#include "kiss_fft.h"
+#include "spida/transform/fftCVT.h"
 
 namespace spida{
 
@@ -35,6 +35,8 @@ FFTCVT::~FFTCVT()
 
 void FFTCVT::T_To_ST(const dcmplx* in,dcmplx* out) noexcept
 {
+    // Stuck with kiss_fft_cpx definition of complex -> use reinterpret and assume 
+    // kiss interface won't change :(
     kiss_fft(m_cfg_forward,reinterpret_cast<const kiss_fft_cpx*>(in),\
                   reinterpret_cast<kiss_fft_cpx*>(out));
     // Divide by FFT multiplier m_nx
@@ -49,17 +51,10 @@ void FFTCVT::ST_To_T(const dcmplx* in,dcmplx* out) noexcept
     // Undo phase adjustment and length adjustment for inverse
     for(auto i = 0; i < m_nt; i++)
         m_temp[i] = in[i]*exp(ii*m_omega[i]*m_mint)/m_L;
+    // Stuck with kiss_fft_cpx definition of complex -> use reinterpret and assume 
+    // kiss interface won't change :(
     kiss_fft(m_cfg_reverse,reinterpret_cast<const kiss_fft_cpx*>(m_temp.data()),\
                   reinterpret_cast<kiss_fft_cpx*>(out));
 }
 
-
-
 }
-
-
-
-
-
-
-

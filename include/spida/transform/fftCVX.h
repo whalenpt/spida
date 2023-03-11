@@ -1,4 +1,3 @@
-// fftCVX.h
 /*
  * Wrappers for Fourier transform applied on a UniformGridX grid.
  * Transforms are non-unitary and assume angular frequency (kx = 2pi/L where L is grid length)
@@ -37,7 +36,3 @@ class FFTCVX
 };
 
 }
-
-
-
-

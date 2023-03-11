@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <vector>
@@ -12,7 +11,7 @@ class HankelTransformR
 {
     public:
         explicit HankelTransformR(const BesselRootGridR& grid);
-        ~HankelTransformR() {};
+        ~HankelTransformR() = default;
         HankelTransformR()=delete;
         HankelTransformR(const HankelTransformR& sp)=delete;
         HankelTransformR& operator=(const HankelTransformR& sp)=delete;
@@ -47,7 +46,7 @@ class HankelTransformRb
 {
     public:
         explicit HankelTransformRb(const BesselRootGridR& grid,unsigned threads=1);
-        ~HankelTransformRb() {};
+        ~HankelTransformRb() = default;
         HankelTransformRb()=delete;
         HankelTransformRb(const HankelTransformRb& sp)=delete;
         HankelTransformRb& operator=(const HankelTransformRb& sp)=delete;
@@ -78,9 +77,4 @@ class HankelTransformRb
         void initDHT(const BesselRootGridR& grid);
 };
 
-
-
 }
-
-
-
