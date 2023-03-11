@@ -47,10 +47,8 @@ int main()
     shapeT.setFastPhase(omega0);
     spida::GaussR shapeR(gridR,1.0,w0);
 
-    std::vector<double> u0t(nt);
-    shapeT.shapeRV(u0t);
-    std::vector<double> u0r(nr);
-    shapeR.shapeRV(u0r);
+    auto u0t = shapeT.shapeRV();
+    auto u0r = shapeR.shapeRV();
     std::vector<double> u(nr*nt);
 
     for(auto i = 0; i < nr; i++)
@@ -58,7 +56,7 @@ int main()
             u[i*nt + j] = u0r[i]*u0t[j];
 
     // Report inputs
-    dat::ReportData2D<double,double,double> in_report("RT",gridR.getR(),gridT.getT(),u);
+    dat::ReportData2D in_report{"RT",gridR.getR(),gridT.getT(),u};
     in_report.setItem("xlabel","r");
     in_report.setItem("ylabel","t");
 
@@ -67,8 +65,8 @@ int main()
     std::cout << in_report.path() << std::endl;
     os << in_report;
 
-    dat::ReportData1D<double,double> r_rpd("R",gridR.getR(),u0r);
-    dat::ReportData1D<double,double> t_rpd("T",gridT.getT(),u0t);
+    dat::ReportData1D r_rpd{"R",gridR.getR(),u0r};
+    dat::ReportData1D t_rpd{"T",gridT.getT(),u0t};
     os << r_rpd;
     os << t_rpd;
 
@@ -90,7 +88,7 @@ int main()
     std::cout << out_report.path() << std::endl;
     os << out_report;
 
-    dat::ReportData2D<double,double,double> rinop("RTb",gridR.getR(),gridT.getT(),uop);
+    dat::ReportData2D rinop{"RTb",gridR.getR(),gridT.getT(),uop};
     rinop.setItem("xlabel","r");
     rinop.setItem("ylabel","t");
 
@@ -108,25 +106,25 @@ int main()
     transform.SRST_To_RST(v,w2);
     transform.SRST_To_SRT(v,zeta2);
 
-    dat::ReportComplexData2D<double,double,double> rst_report("RST",gridR.getR(),gridT.getST(),w);
+    dat::ReportComplexData2D rst_report{"RST",gridR.getR(),gridT.getST(),w};
     rst_report.setItem("xlabel","r");
     rst_report.setItem("ylabel","omega");
     std::cout << rst_report.path() << std::endl;
     os << rst_report;
 
-    dat::ReportData2D<double,double,double> srt_report("SRT",gridR.getSR(),gridT.getT(),zeta);
+    dat::ReportData2D srt_report{"SRT",gridR.getSR(),gridT.getT(),zeta};
 
     srt_report.setItem("xlabel","kr");
     srt_report.setItem("ylabel","t");
     std::cout << srt_report.path() << std::endl;
     os << srt_report;
 
-    dat::ReportComplexData2D<double,double,double> rst_report2("RSTb",gridR.getR(),gridT.getST(),w2);
+    dat::ReportComplexData2D rst_report2{"RSTb",gridR.getR(),gridT.getST(),w2};
     rst_report2.setItem("xlabel","r");
     rst_report2.setItem("ylabel","omega");
     os << rst_report2;
 
-    dat::ReportData2D<double,double,double> srt_report2("SRTb",gridR.getSR(),gridT.getT(),zeta2);
+    dat::ReportData2D srt_report2{"SRTb",gridR.getSR(),gridT.getT(),zeta2};
     srt_report2.setItem("xlabel","kr");
     srt_report2.setItem("ylabel","t");
     os << srt_report2;
@@ -143,16 +141,16 @@ int main()
         for(auto i = 0; i < NUM_LOOPS; i++)
             transform_threaded.RT_To_SRST(u,v);
         auto elapsed_time = std::chrono::steady_clock::now() - start_time;
-
-        rt_srst_timings[threads] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
+        auto rt_srst_timing = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
+        rt_srst_timings[threads] = static_cast<int>(rt_srst_timing);
 
         start_time = std::chrono::steady_clock::now();
         for(auto i = 0; i < NUM_LOOPS; i++)
             transform_threaded.SRST_To_RT(v,u);
         elapsed_time = std::chrono::steady_clock::now() - start_time;
 
-        srst_rt_timings[threads] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
-
+        auto srst_rt_timing = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
+        srst_rt_timings[threads] = static_cast<int>(srst_rt_timing);
     }
 
     for(auto threads = 1; threads < MAX_THREADS; threads++){
@@ -165,38 +163,6 @@ int main()
                   << srst_rt_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;
-
-    /*
-    for(auto threads = 1; threads < MAX_THREADS; threads++){
-        spida::HankelFFTRRVTb transform_threaded(gridR,gridT,threads);
-
-        auto start_time = std::chrono::steady_clock::now();
-        for(auto i = 0; i < NUM_LOOPS; i++)
-            transform_threaded.RT_To_SRST(u,v);
-        auto elapsed_time = std::chrono::steady_clock::now() - start_time;
-
-        rt_srst_timings[threads] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
-
-        start_time = std::chrono::steady_clock::now();
-        for(auto i = 0; i < NUM_LOOPS; i++)
-            transform_threaded.SRST_To_RT(v,u);
-        elapsed_time = std::chrono::steady_clock::now() - start_time;
-
-        srst_rt_timings[threads] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
-    }
-
-    for(auto threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelFFTRRVTb RT_To_SRST duration with " << threads << " thread(s): "\
-                  << rt_srst_timings[threads] << "us" << std::endl;
-    }
-    std::cout << std::endl;
-    for(auto threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelFFTRRVTb SRST_To_RT duration with " << threads << " thread(s): "\
-                  << srst_rt_timings[threads] << "us" << std::endl;
-    }
-    std::cout << std::endl;
-    */
-
 
     return 0;
 }

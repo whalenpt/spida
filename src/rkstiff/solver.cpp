@@ -151,7 +151,7 @@ bool SolverCV_AS::step(std::vector<dcmplx>& in,double& h,double& hNext) noexcept
         }
         else{
             SolverCV::setCurrentTime(SolverCV::currentTime()+h_cur);
-            for(int i = 0; i < SolverCV::size(); i++)
+            for(unsigned i = 0; i < SolverCV::size(); i++)
                 in[i] = m_yv[i];
             if(s > 1.0) {
                 hNext = s*h_cur;

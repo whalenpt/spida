@@ -1,5 +1,5 @@
-
 #include <cmath>
+#include <vector>
 #include "spida/shape/shapeR.h"
 
 namespace spida{
@@ -8,10 +8,7 @@ ShapeR::ShapeR(const GridR& grid,double A,double w0) :
             Shape(grid),
             m_r(grid.getR()),
             m_A(A),
-            m_w0(w0),
-            m_bool_focus(false),
-            m_f(0.0)
-    {}
+            m_w0(w0) {}
 
 void ShapeR::setFocus(double f)
 {
@@ -27,53 +24,31 @@ dcmplx ShapeR::focusPhaseFactor(double r) const {
     return 1.0;
 }
 
-dcmplx ShapeR::shapeCV(double r) const {
-    if(m_bool_focus)
-        return m_A*compute(r)*focusPhaseFactor(r);
-    return m_A*compute(r);
-}
-
 std::vector<dcmplx> ShapeR::shapeCV() const
 {
-    std::vector<dcmplx> v;
-    shapeCV(v);
+    std::vector<dcmplx> v(m_r.size());
+    for(size_t i = 0; i < m_r.size(); i++)
+        v[i] = m_A*this->compute(m_r[i]/m_w0);
+    if(m_bool_focus){
+        for(size_t i = 0; i < m_r.size(); i++){
+            v[i] = v[i]*this->focusPhaseFactor(m_r[i]);
+        }
+    }
     return v;
 }
 
 std::vector<double> ShapeR::shapeRV() const
 {
-    std::vector<double> v;
-    shapeRV(v);
+    auto cv = this->shapeCV();
+    std::vector<double> v(m_r.size());
+    for(size_t i = 0; i < m_r.size(); i++)
+        v[i] = cv[i].real();
     return v;
-}
-
-void ShapeR::shapeCV(std::vector<dcmplx>& v) const
-{
-    v.clear();
-    v.resize(m_r.size());
-    for(auto i = 0; i < m_r.size(); i++)
-        v[i] = shapeCV(m_r[i]);
-}
-
-void ShapeR::shapeRV(std::vector<double>& v) const
-{
-    v.clear();
-    v.resize(m_r.size());
-    for(auto i = 0; i < m_r.size(); i++)
-        v[i] = shapeRV(m_r[i]);
 }
 
 double GaussR::compute(double r) const
 {
-    return exp(-pow(r/ShapeR::width(),2));
+    return exp(-pow(r,2));
 }
 
 }
-
-
-
-
-
-
-
-

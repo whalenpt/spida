@@ -52,13 +52,16 @@ class HankelFFT_RCVTTEST : public ::testing::Test
             spida::GaussR shapeR(*gridR,1.0,1.0);
             std::vector<spida::dcmplx> u0t = shapeT.shapeCV();
             std::vector<spida::dcmplx> u0r = shapeR.shapeCV();
-            for(auto i = 0; i < nr; i++)
-                for(auto j = 0; j < nt; j++)
+            for(unsigned i = 0; i < nr; i++)
+                for(unsigned j = 0; j < nt; j++)
                     arr[i*nt+j] = u0r[i]*u0t[j];
         }
 
-        unsigned nr, nt, nst;
-        double minT, maxT;
+        unsigned nr;
+        unsigned nt;
+        unsigned nst;
+        double minT; 
+        double maxT;
         double maxR;
         unsigned threads;
         spida::HankelFFTRCVT* transform;
@@ -262,16 +265,14 @@ class HankelFFT_RRVTTEST : public ::testing::Test
         }
 
         // initialize arrays as gauss-gauss field
-        void initGaussRT(std::vector<double>& arr){
+        void initGaussRT(std::vector<double>& arr) const{
 
             spida::GaussT shapeT(*gridT,std::sqrt(I0),tp);
             shapeT.setFastPhase(omega0);
             spida::GaussR shapeR(*gridR,1.0,w0);
 
-            std::vector<double> u0t(nt);
-            shapeT.shapeRV(u0t);
-            std::vector<double> u0r(nr);
-            shapeR.shapeRV(u0r);
+            auto u0t = shapeT.shapeRV();
+            auto u0r = shapeR.shapeRV();
             for(size_t i = 0; i < nr; i++)
                 for(size_t j = 0; j < nt; j++)
                     arr[i*nt + j] = u0r[i]*u0t[j];

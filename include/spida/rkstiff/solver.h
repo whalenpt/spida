@@ -340,10 +340,4 @@ class LoopException : public SolverException
         std::string m_msg;
 };
 
-
-
-
 }
-
-
-

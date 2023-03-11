@@ -64,10 +64,4 @@ class IF45DP : public SolverCV_AS
     bool N1_init{false};
 };
 
-
-
-
 }
-
-
-
