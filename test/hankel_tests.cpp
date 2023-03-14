@@ -19,17 +19,17 @@ TEST(HANKEL_TRANSFORM_TEST,GAUSS)
     spida::BesselRootGridR grid(N,rmax);
     spida::HankelTransformR transform(grid);
 
-    const std::vector<double>& r = grid.getR();
-    const std::vector<double>& kr = grid.getSR();
+    const auto& r = grid.getR();
+    const auto& kr = grid.getSR();
 
     std::vector<double> in(N);
     std::vector<double> out(N);
     std::vector<double> exact(N);
 
     double a = 5.0;
-    for(auto i = 0; i < N; i++)
+    for(int i = 0; i < N; i++)
         in[i] = exp(-a*pow(r[i],2));
-    for(auto i = 0; i < N; i++){
+    for(int i = 0; i < N; i++){
         double beta = 1.0/(2.0*a);
         exact[i] = beta*exp(-pow(kr[i],2)/(4.0*a));
     }
@@ -37,25 +37,25 @@ TEST(HANKEL_TRANSFORM_TEST,GAUSS)
     EXPECT_LT(pw::relative_error(out,exact),1e-6);
 }
 
-// H0{exp(-a*r)/r} = 1.0/(sqrt(a^2+kr^2))
 TEST(HANKEL_TRANSFORM_TEST,EXP_OVER_R)
 {
+    // H0{exp(-a*r)/r} = 1.0/(sqrt(a^2+kr^2))
     int N = 64;
     double rmax = 6.0;
     double a = 1.0;
 
     spida::BesselRootGridR grid(N,rmax);
     spida::HankelTransformR transform(grid);
-    const std::vector<double>& r = grid.getR();
-    const std::vector<double>& kr = grid.getSR();
+    const auto& r = grid.getR();
+    const auto& kr = grid.getSR();
 
     std::vector<double> in(N);
     std::vector<double> out(N);
     std::vector<double> exact(N);
 
-    for(auto i = 0; i < N; i++)
+    for(int i = 0; i < N; i++)
         in[i] = exp(-a*r[i])/r[i];
-    for(auto i = 0; i < N; i++){
+    for(int i = 0; i < N; i++){
         exact[i] = 1.0/sqrt(pow(a,2)+pow(kr[i],2));
     }
     transform.R_To_SR(in,out);
@@ -73,16 +73,16 @@ TEST(HANKEL_TRANSFORM_TEST,SINC_TEST)
 
     spida::BesselRootGridR grid(N,rmax);
     spida::HankelTransformR transform(grid);
-    const std::vector<double>& r = grid.getR();
-    const std::vector<double>& kr = grid.getSR();
+    const auto& r = grid.getR();
+    const auto& kr = grid.getSR();
 
     std::vector<double> in(N);
     std::vector<double> out(N);
     std::vector<double> exact(N);
 
-    for(auto i = 0; i < N; i++)
+    for(int i = 0; i < N; i++)
         in[i] = r[i] < 1e-4 ? 1.0-pow(a*r[i],2) : sin(a*r[i])/(a*r[i]);
-    for(auto i = 0; i < N; i++)
+    for(int i = 0; i < N; i++)
         exact[i] = kr[i] < a ? 1.0/(pow(a,2)*sqrt(1.0-pow(kr[i]/a,2))) : 0.0;
 
     transform.R_To_SR(in,out);
@@ -98,11 +98,11 @@ TEST(HANKEL_TRANSFORM_TEST,INVERSES)
     spida::HankelTransformR tr(grid);
 
     std::default_random_engine generator;
-    std::normal_distribution<double> distribution(1.0,1.0);
+    std::normal_distribution distribution{1.0,1.0};
     std::vector<double> in(N);
     std::vector<double> out(N);
     std::vector<double> expect(N);
-    for(unsigned int i = 0; i < N; i++)
+    for(int i = 0; i < N; i++)
         in[i] = distribution(generator);
     tr.R_To_SR(in,out);
     tr.SR_To_R(out,expect);
@@ -117,12 +117,12 @@ TEST(HANKEL_TRANSFORM_TEST,ORTHOGONALITY)
     spida::BesselRootGridR grid(N,rmax);
     spida::HankelTransformR tr(grid);
 
-    const std::vector<double>& Ymk = tr.getYmk();
+    const auto& Ymk = tr.getYmk();
     double zero_sum = 0.0;
-    for(auto i = 0; i < N; i++){
-        for(auto m = 0; m < N; m++){
+    for(int i = 0; i < N; i++){
+        for(int m = 0; m < N; m++){
             double sum = 0.0;
-            for(auto k = 0; k < N; k++){
+            for(int k = 0; k < N; k++){
                 sum += Ymk[i*N+k]*Ymk[k*N+m];
             }
             if(i == m)
@@ -133,11 +133,3 @@ TEST(HANKEL_TRANSFORM_TEST,ORTHOGONALITY)
     }
     EXPECT_NEAR(zero_sum,0,1e-6);
 }
-
-
-
-
-
-
-
-

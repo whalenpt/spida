@@ -204,10 +204,10 @@ TEST_F(HankelFFT_RRVTTEST,GAUSSTGAUSSR)
     using spida::PI;
     std::vector<double> in(nr*nt);
     std::vector<dcmplx> out(nr*nst);
-    const std::vector<double>& r = gridR->getR();
-    const std::vector<double>& t = gridT->getT();
-    const std::vector<double>& kr = gridR->getSR();
-    const std::vector<double>& omega = gridT->getST();
+    const auto& r = gridR->getR();
+    const auto& t = gridT->getT();
+    const auto& kr = gridR->getSR();
+    const auto& omega = gridT->getST();
 
     for(unsigned i = 0; i < nr; i++)
         for(unsigned j = 0; j < nt; j++)
@@ -218,8 +218,8 @@ TEST_F(HankelFFT_RRVTTEST,GAUSSTGAUSSR)
     // y = f(t)*cos(i\omega0t) - > FFT{y} = (FFT{f(\omega - \omega0)}+FFT{f(\omega+\omega0)})/2
     // For real fields, fft taken over positive frequencies: FFT_real{y} = FFT_real{f(\omega-\omega0)}/2  
     std::vector<dcmplx> expect(nr*nst);
-    for(unsigned i = 0; i < kr.size(); i++)
-        for(unsigned j = 0; j < omega.size(); j++)
+    for(size_t i = 0; i < kr.size(); i++)
+        for(size_t j = 0; j < omega.size(); j++)
             expect[i*nst+j] = 0.5*(std::sqrt(I0)*tp*pow(w0,2)*sqrt(PI)/2.0)*exp(\
                     -pow(w0,2)*pow(kr[i],2)/4.0-pow(tp,2)*pow(omega[j]-omega0,2)/4.0);
 

@@ -141,10 +141,10 @@ TEST_F(HankelFFT_RCVTTEST,GAUSSTGAUSSR)
     std::vector<dcmplx> out(nr*nst);
     double a = 1.0;
     double b = 2.0;
-    const std::vector<double>& r = gridR->getR();
-    const std::vector<double>& t = gridT->getT();
-    const std::vector<double>& kr = gridR->getSR();
-    const std::vector<double>& omega = gridT->getST();
+    const auto& r = gridR->getR();
+    const auto& t = gridT->getT();
+    const auto& kr = gridR->getSR();
+    const auto& omega = gridT->getST();
     for(unsigned i = 0; i < nr; i++)
         for(unsigned j = 0; j < nt; j++)
             in[i*nt+j] = exp(-a*pow(r[i],2) - b*pow(t[j],2));
