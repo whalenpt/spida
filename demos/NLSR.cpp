@@ -20,13 +20,14 @@
 
 //------------------------------------------------------------------------------
 
-using namespace spida;
+using spida::dcmplx;
+using spida::ii;
 
 // NLS model for complex-valued physical space fields and spectral fields
 class NLSR
 {
     public: 
-        explicit NLSR(const BesselRootGridR& grid) : 
+        explicit NLSR(const spida::BesselRootGridR& grid) : 
             m_spi(grid), 
             m_uphys(grid.getNr()),
             m_L(grid.getNsr())
@@ -45,17 +46,17 @@ class NLSR
             }
         std::vector<dcmplx>& L() {return m_L;}
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)>& NL() {return m_NL;}
-        SpidaR& spida() {return m_spi;}
+        spida::SpidaR& spida() {return m_spi;}
 
     private:
-        SpidaR m_spi;
+        spida::SpidaR m_spi;
         std::vector<dcmplx> m_uphys;
         std::vector<dcmplx> m_L;
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)> m_NL;
 };
 
 // Helper class for reporting files based on data generated from the Solver used
-class PropagatorNLSR : public PropagatorCV
+class PropagatorNLSR : public spida::PropagatorCV
 {
     public:
         PropagatorNLSR(const std::filesystem::path& path,NLSR& md) : 
@@ -117,7 +118,7 @@ class PropagatorNLSR : public PropagatorCV
             reportsppow->setPower(true);
             PropagatorCV::addReport(std::move(reportsppow));
         }
-        SpidaR& m_spi;
+        spida::SpidaR& m_spi;
         std::vector<dcmplx> m_usp;
         std::vector<dcmplx> m_uphys;
         std::vector<double> m_mirror_r;
@@ -130,7 +131,7 @@ int main()
 {
     unsigned N = 100;
     double rmax = 5.0;
-    BesselRootGridR grid(N,rmax);
+    spida::BesselRootGridR grid(N,rmax);
     NLSR model(grid);
 
     std::filesystem::path dirpath("nlsR_propagator_files");
@@ -139,7 +140,7 @@ int main()
     propagator.setLogProgress(true);
     propagator.setLogFrequency(10);
 
-    ETD35 solver(model.L(),model.NL());
+    spida::ETD35 solver(model.L(),model.NL());
     solver.setEpsRel(1e-5);
     solver.setLogProgress(true);
     solver.setLogFrequency(10);

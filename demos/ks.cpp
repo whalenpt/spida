@@ -20,7 +20,7 @@
 
 //------------------------------------------------------------------------------
 
-using namespace spida;
+using spida::dcmplx;
 
 /// 
 /// @brief Class for holding a linear operator and nonlinear function
@@ -39,7 +39,7 @@ class KS_RV
 		/// @param grid UniformGridRVX object for describing a real-valued uniform numerical grid 
 		/// 
 
-        explicit KS_RV(const UniformGridRVX& grid) : 
+        explicit KS_RV(const spida::UniformGridRVX& grid) : 
             m_grid(grid), 
             m_spi(grid), 
             m_uphys(grid.getNx()),
@@ -47,14 +47,14 @@ class KS_RV
             m_uxsp(grid.getNsx()),
             m_L(grid.getNsx())
             {
-                const std::vector<double>& sx = grid.getSX();
-                for(auto i = 0; i < sx.size(); i++)
+                const auto& sx = grid.getSX();
+                for(size_t i = 0; i < sx.size(); i++)
                     m_L[i] = pow(sx[i],2)*(1.0-pow(sx[i],2));
                 m_NL = [this](const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
                     m_spi.SX_To_X(in,m_uphys); // Transform from spectral-space to physical-space
                     m_spi.dSX(in,m_uxsp); // Take derivative of function in spectral-space
                     m_spi.SX_To_X(m_uxsp,m_uxphys); // Convert spectral-space derivative to real-space derivative
-                    for(auto i = 0; i < m_grid.getNx(); i++)
+                    for(unsigned i = 0; i < m_grid.getNx(); i++)
                         m_uphys[i] = -m_uphys[i]*m_uxphys[i];
                     m_spi.X_To_SX(m_uphys,out);
                 };
@@ -67,11 +67,11 @@ class KS_RV
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)>& NL() {return m_NL;}
 
         /// Spida object access
-        SpidaRVX& spida() {return m_spi;}
+        spida::SpidaRVX& spida() {return m_spi;}
 
     private:
-        UniformGridRVX m_grid; /**< Uniformly spaced numerical grid for real-valued functions */
-        SpidaRVX m_spi; /**< FFTs and differentiation functions */
+        spida::UniformGridRVX m_grid; /**< Uniformly spaced numerical grid for real-valued functions */
+        spida::SpidaRVX m_spi; /**< FFTs and differentiation functions */
         std::vector<double> m_uphys; 
         std::vector<double> m_uxphys;
         std::vector<dcmplx> m_uxsp;
@@ -83,7 +83,7 @@ class KS_RV
 /// Helper class for reporting files based on data generated from the Solver 
 ///
 
-class PropagatorKS : public PropagatorCV
+class PropagatorKS : public spida::PropagatorCV
 {
     public:
 
@@ -102,8 +102,8 @@ class PropagatorKS : public PropagatorCV
          {
 
              // initialize propagator m_usp
-             const std::vector<double>& x  = m_spi.getX();
-             for(auto i = 0; i < x.size(); i++)
+             const auto& x  = m_spi.getX();
+             for(size_t i = 0; i < x.size(); i++)
                  m_uphys[i] = cos(x[i]/16.0)*(1.0+sin(x[i]/16.0));
 
             // Need to initialize the propagator which is the spectral space representation of m_uphys
@@ -129,15 +129,15 @@ class PropagatorKS : public PropagatorCV
         void initReport() {
 
             // add report for real space KS field
-            const std::vector<double>& x  = m_spi.getGridX().getX();
+            const auto& x  = m_spi.getGridX().getX();
             PropagatorCV::addReport(std::make_unique<dat::ReportData1D<double,double>>("X",x,m_uphys));
 
             // add report for spectral space KS field (the propagator)
-            const std::vector<double>& sx  = m_spi.getGridX().getSX();
+            const auto& sx  = m_spi.getGridX().getSX();
             PropagatorCV::addReport(std::make_unique<dat::ReportComplexData1D<double,double>>("SX",sx,m_usp));
         }
 
-        SpidaRVX& m_spi;
+        spida::SpidaRVX& m_spi;
         std::vector<dcmplx> m_usp;
         std::vector<double> m_uphys;
 };
@@ -148,7 +148,7 @@ int main()
     double a = 0.0; // Numerical grid left end point
     double b = 32.0*spida::PI; // Numerical grid right end point
 
-    UniformGridRVX grid(N,a,b); // Numerical grid
+    spida::UniformGridRVX grid(N,a,b); // Numerical grid
     KS_RV model(grid); // KS model
 
     std::filesystem::path dirpath("ks_propagator_files"); 
@@ -157,7 +157,7 @@ int main()
     propagator.setLogProgress(true);
     propagator.setLogFrequency(200);
 
-    ETD34 solver(model.L(),model.NL());
+    spida::ETD34 solver(model.L(),model.NL());
     solver.setEpsRel(1e-4);
     solver.setLogProgress(true);
     solver.setLogFrequency(200);

@@ -22,20 +22,23 @@
 
 //------------------------------------------------------------------------------
 
-using namespace spida;
+using spida::dcmplx;
+using spida::ii;
 // dzA = -0.5*i*dt^2A -i\laplace_perpA  + i|U|^2U
 
 // NLS model for complex-valued physical space fields and spectral fields
 class NLSRT
 {
     public: 
-        NLSRT(const BesselRootGridR& gridR,const UniformGridCVT& gridT,unsigned threads) : 
+        NLSRT(const spida::BesselRootGridR& gridR,\
+              const spida::UniformGridCVT& gridT,\
+              unsigned threads) : 
             m_spi(gridR,gridT,threads), 
             m_uphys(gridR.getNr()*gridT.getNt()),
             m_L(gridR.getNsr()*gridT.getNst())
             {
-                const std::vector<double>& kr = gridR.getSR();
-                const std::vector<double>& omega = gridT.getST();
+                const auto& kr = gridR.getSR();
+                const auto& omega = gridT.getST();
                 double sigma = 0.5;
                 // ii is spida::ii which is imaginary an number sqrt(-1)
                 for(size_t i = 0; i < kr.size(); i++)
@@ -52,17 +55,17 @@ class NLSRT
             }
         std::vector<dcmplx>& L() {return m_L;}
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)>& NL() {return m_NL;}
-        SpidaRCVT& spida() {return m_spi;}
+        spida::SpidaRCVT& spida() {return m_spi;}
 
     private:
-        SpidaRCVT m_spi;
+        spida::SpidaRCVT m_spi;
         std::vector<dcmplx> m_uphys;
         std::vector<dcmplx> m_L;
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)> m_NL;
 };
 
 // Helper class for reporting files based on data generated from the Solver used
-class Propagator : public PropagatorCV
+class Propagator : public spida::PropagatorCV
 {
     public:
         Propagator(const std::filesystem::path& path,NLSRT& md) : 
@@ -80,8 +83,8 @@ class Propagator : public PropagatorCV
              double A0 = 4.0; // amplitude
              double w0 = 1.0;
              double tp = 0.5; // width of gaussian
-             const std::vector<double>& r  = m_spi.getGridR().getR();
-             const std::vector<double>& t  = m_spi.getGridT().getT();
+             const auto& r  = m_spi.getGridR().getR();
+             const auto& t  = m_spi.getGridT().getT();
              for(size_t i = 0; i < r.size(); i++)
                  for(size_t j = 0; j < t.size(); j++)
                      m_uphys[i*t.size()+j] = A0*exp(-pow(r[i]/w0,2)-pow(t[j]/tp,2));
@@ -144,7 +147,7 @@ class Propagator : public PropagatorCV
             reportsp->setStrideY(8);
             PropagatorCV::addReport(std::move(reportsp));
         }
-        SpidaRCVT& m_spi;
+        spida::SpidaRCVT& m_spi;
         std::vector<dcmplx> m_usp;
         std::vector<dcmplx> m_uphys;
         std::vector<double> m_mirror_r;
@@ -159,11 +162,11 @@ int main()
 {
     unsigned nr = 80;
     double rmax = 4.0;
-    BesselRootGridR gridR(nr,rmax);
+    spida::BesselRootGridR gridR(nr,rmax);
     unsigned nt = 512;
     double a = -6.0;
     double b = 6.0;
-    UniformGridCVT gridT(nt,a,b);
+    spida::UniformGridCVT gridT(nt,a,b);
 
     unsigned num_threads = 4;
     NLSRT model(gridR,gridT,num_threads);
@@ -175,7 +178,7 @@ int main()
     propagator.setLogFrequency(12);
 
     bool use_refs = true; // Use references to model.L and model.NL, rather than copying
-    ETD35 solver(model.L(),model.NL(),use_refs);
+    spida::ETD35 solver(model.L(),model.NL(),use_refs);
     solver.setEpsRel(1e-4);
     solver.setLogProgress(true);
     solver.setLogFrequency(12);

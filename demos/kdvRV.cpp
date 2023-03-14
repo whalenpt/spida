@@ -19,7 +19,8 @@
 
 //------------------------------------------------------------------------------
 
-using namespace spida;
+using spida::dcmplx;
+using spida::ii;
 
 ///
 /// @brief Class for holding a linear operator and nonlinear function
@@ -38,7 +39,7 @@ class KdV_RV
 		/// @param grid UniformGridRVX object for describing a real-valued uniform numerical grid 
 		/// 
 
-        explicit KdV_RV(const UniformGridRVX& grid) : 
+        explicit KdV_RV(const spida::UniformGridRVX& grid) : 
             L(grid.getNsx()),
             m_grid(grid), 
             m_spida(grid), 
@@ -46,14 +47,14 @@ class KdV_RV
             m_uxphys(m_grid.getNx()),
             m_uxsp(grid.getNsx())
             {
-                const std::vector<double>& sx = grid.getSX();
-                for(auto i = 0; i < sx.size(); i++)
+                const auto& sx = grid.getSX();
+                for(size_t i = 0; i < sx.size(); i++)
                     L[i] = ii*pow(sx[i],3);
                 NL = [this](const std::vector<dcmplx>& in,std::vector<dcmplx>& out){
                     m_spida.SX_To_X(in,m_uphys);
                     m_spida.dSX(in,m_uxsp);
                     m_spida.SX_To_X(m_uxsp,m_uxphys);
-                    for(auto i = 0; i < m_grid.getNx(); i++)
+                    for(unsigned i = 0; i < m_grid.getNx(); i++)
                         m_uphys[i] = -6.0*m_uphys[i]*m_uxphys[i];
                     m_spida.X_To_SX(m_uphys,out);
                 };
@@ -61,10 +62,10 @@ class KdV_RV
 
         std::vector<dcmplx> L; /**< Linear operator, dcmplx is equivalent to std::complex<double> */
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)> NL; /**< Nonlinear function */
-        SpidaRVX& spida() {return m_spida;}
+        spida::SpidaRVX& spida() {return m_spida;}
 
-        UniformGridRVX m_grid; /**< Grid class holding both real-space uniform grid and spectral-space grid */
-        SpidaRVX m_spida; /** < Spida object which contains ffts and differentiation functions */
+        spida::UniformGridRVX m_grid; /**< Grid class holding both real-space uniform grid and spectral-space grid */
+        spida::SpidaRVX m_spida; /** < Spida object which contains ffts and differentiation functions */
         std::vector<double> m_uphys; /**< Physical space field */
         std::vector<double> m_uxphys; /**< Spatial derivative */
         std::vector<dcmplx> m_uxsp; /**< Spatial derivative in spectral-space */
@@ -78,18 +79,18 @@ int main()
     double maxx = 150.0; // Maximum of X-grid. 
     std::filesystem::path outdir("kdv_files_RV"); // Output directory for simulation 
 
-    UniformGridRVX grid(nx,minx,maxx); // Construct numerical grid. 
+    spida::UniformGridRVX grid(nx,minx,maxx); // Construct numerical grid. 
     KdV_RV model(grid); // Construct KdV_RV model object 
-    ETD34 solver(model.L,model.NL); // Setup up ETD34 solver
+    spida::ETD34 solver(model.L,model.NL); // Setup up ETD34 solver
     solver.setEpsRel(1e-4); // Specify error tolerance 
 
 	// set up initial wave profile (5-solitons)
     std::vector<double> u0(nx,0.0);
     std::vector<double> A0{0.6,0.5,0.4,0.3,0.2};
     std::vector<double> x0{-120.0,-90.0,-60.0,-30.0,0.0};
-    const std::vector<double>& x  = grid.getX();
-    for(auto i = 0; i < nx; i++){
-        for(auto k = 0; k < A0.size(); k++){
+    const auto& x  = grid.getX();
+    for(unsigned i = 0; i < nx; i++){
+        for(size_t k = 0; k < A0.size(); k++){
             u0[i] += 0.5*pow(A0[k],2)/pow(cosh(A0[k]*(x[i]-x0[k])/2.0),2);
         }
     }
