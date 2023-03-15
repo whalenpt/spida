@@ -57,9 +57,9 @@ TEST(FFTCVT_TEST,GAUSS)
     const std::vector<double> omega = grid.getST();
     
     double a = 2.0;
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         in[i] = exp(-a*pow(t[i],2));
-    for(auto i = 0; i < omega.size(); i++)
+    for(size_t i = 0; i < omega.size(); i++)
         expect[i] = sqrt(PI/a)*exp(-pow(omega[i],2)/(4.0*a));
 
     spida::FFTCVT tr(grid);
@@ -67,9 +67,9 @@ TEST(FFTCVT_TEST,GAUSS)
     EXPECT_LT(pw::relative_error(expect,out),1e-5);
 }
 
-// F{cos(at)} = PI*(delta(omega-a) + delta(omega+a))
 TEST(FFTCVT_TEST,COS)
 {
+    // F{cos(at)} = PI*(delta(omega-a) + delta(omega+a))
 	unsigned N = 32;
     using spida::dcmplx;
     using spida::PI;
@@ -78,7 +78,7 @@ TEST(FFTCVT_TEST,COS)
     std::vector<dcmplx> out(N);
     spida::UniformGridCVT grid(N,0.0,2.0*PI);
     const std::vector<double> t = grid.getT();
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         in[i] = cos(8*t[i]);
 
     spida::FFTCVT tr(grid);
@@ -98,9 +98,9 @@ TEST(FFTCVT_TEST,DERIVATIVE_SIN)
 
     spida::UniformGridCVT grid(N,0,2*PI);
     const std::vector<double> t = grid.getT();
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         in[i] = sin(t[i]);
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         expect[i] = cos(t[i]);
 
     spida::SpidaCVT spi{grid};
@@ -119,9 +119,9 @@ TEST(FFTCVT_TEST,DERIVATIVE_GAUSS)
 
     spida::UniformGridCVT grid(N,-6,6);
     const std::vector<double> t = grid.getT();
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         in[i] = exp(-pow(t[i],2));
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         expect[i] = -2.0*t[i]*exp(-pow(t[i],2));
 
     spida::SpidaCVT spi{grid};
@@ -171,14 +171,13 @@ TEST(FFTRVT_TEST,GAUSST)
 
     spida::UniformGridRVT grid(nt,minT,maxT,minST,maxST);
     unsigned nst = grid.getNst();
-    std::vector<double> y(nt);
     std::vector<double> yinv(nt);
     std::vector<dcmplx> ysp(nst);
 
     spida::FFTRVT transform(grid);
     spida::GaussT shape(grid,std::sqrt(I0),tp);
     shape.setFastPhase(omega0);
-    shape.shapeRV(y);
+    auto y = shape.shapeRV();
 
     transform.T_To_ST(y,ysp);
     transform.ST_To_T(ysp,yinv);
@@ -188,17 +187,16 @@ TEST(FFTRVT_TEST,GAUSST)
     const std::vector<double>& omega = grid.getST();
     // y = f(t)*cos(i\omega0t) - > FFT{y} = (FFT{f(\omega - \omega0)}+FFT{f(\omega+\omega0)})/2
     // For real fields, fft taken over positive frequencies: FFT_real{y} = FFT_real{f(\omega-\omega0)}/2  
-    for(auto j = 0; j < grid.getNst(); j++)
+    for(size_t j = 0; j < grid.getNst(); j++)
         ysp_ex[j] = 0.5*std::sqrt(I0)*tp*sqrt(PI)*exp(-pow(tp,2)*pow(omega[j]-omega0,2)/4.0);
 
     EXPECT_LT(pw::relative_error(ysp,ysp_ex),1e-5);
 
-    std::vector<dcmplx> ycmplx(nt);
-    shape.shapeCV(ycmplx);
+    auto ycmplx = shape.shapeCV();
     std::vector<dcmplx> ysp_exCV(grid.getNst(),0.0);
     // y = f(t)*exp(i\omega0t) - > FFT{y} = FFT{f(\omega - \omega0)}
     // For complex fields, multiplication by exp(i\omega0t) in real space is a simple shift in spectral space
-    for(auto j = 0; j < grid.getNst(); j++)
+    for(size_t j = 0; j < grid.getNst(); j++)
         ysp_exCV[j] = std::sqrt(I0)*tp*sqrt(PI)*exp(-pow(tp,2)*pow(omega[j]-omega0,2)/4.0);
 
     // Complex valued transform -> phase works fine
@@ -206,9 +204,9 @@ TEST(FFTRVT_TEST,GAUSST)
     EXPECT_LT(pw::relative_error(ysp,ysp_ex),1e-6);
 }
 
-// F{cos(at)} = PI*(delta(omega-a) + delta(omega+a))
 TEST(FFTRVT_TEST,COS)
 {
+    // F{cos(at)} = PI*(delta(omega-a) + delta(omega+a))
 	unsigned N = 32;
     using spida::dcmplx;
     using spida::PI;
@@ -219,7 +217,7 @@ TEST(FFTRVT_TEST,COS)
     std::vector<dcmplx> out(nst);
 
     const std::vector<double> t = grid.getT();
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         in[i] = cos(8*t[i]);
 
     spida::FFTRVT tr(grid);
@@ -243,9 +241,9 @@ TEST(FFTRVT_TEST,DERIVATIVE_SIN)
     spida::UniformGridRVT grid(N,tmin,tmax);
 
     const std::vector<double> t = grid.getT();
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         in[i] = sin(t[i]);
-    for(auto i = 0; i < t.size(); i++)
+    for(size_t i = 0; i < t.size(); i++)
         expect[i] = cos(t[i]);
 
     spida::SpidaRVT spi(grid);

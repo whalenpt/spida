@@ -38,15 +38,14 @@ int main()
     spida::GaussT shapeT(gridT,std::sqrt(I0),tp);
     shapeT.setFastPhase(omega0);
 
-    std::vector<double> u(nt);
-    shapeT.shapeRV(u);
+    auto u = shapeT.shapeRV();
     int nst = gridT.getNst();
     std::vector<dcmplx> v(nst);
 
     transform.T_To_ST(u,v);
 
-    dat::ReportData1D<double,double> in_report("T",gridT.getT(),u);
-    dat::ReportComplexData1D<double,double> out_report("ST",gridT.getST(),v);
+    dat::ReportData1D in_report{"T",gridT.getT(),u};
+    dat::ReportComplexData1D out_report{"ST",gridT.getST(),v};
 
     std::ofstream os;
     os << std::scientific << std::setprecision(5);

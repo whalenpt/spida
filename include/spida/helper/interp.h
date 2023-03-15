@@ -44,10 +44,4 @@ class SplineInterp{
       void computeInterpY(const std::vector<double>& xinterp,std::vector<double>& yinterp) const;
 };
 
-
 }
-
-
-
-
-

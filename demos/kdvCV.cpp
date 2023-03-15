@@ -20,7 +20,8 @@
 
 //------------------------------------------------------------------------------
 
-using namespace spida;
+using spida::dcmplx;
+using spida::ii;
 
 /// 
 /// @brief Class for holding a linear operator and nonlinear function
@@ -39,7 +40,7 @@ class KdV
 		/// @param grid UniformGridCVX object for describing a complex-valued uniform numerical grid 
 		/// 
 
-        KdV(const UniformGridCVX& grid) : 
+        explicit KdV(const spida::UniformGridCVX& grid) : 
             L(grid.getNsx()),
             m_grid(grid), 
             m_spida(grid), 
@@ -47,8 +48,8 @@ class KdV
             m_uxphys(grid.getNx()),
             m_uxsp(grid.getNsx())
             {
-                const std::vector<double>& sx = grid.getSX();
-                for(auto i = 0; i < sx.size(); i++)
+                const auto& sx = grid.getSX();
+                for(size_t i = 0; i < sx.size(); i++)
                     L[i] = ii*pow(sx[i],3);
             }
 
@@ -65,11 +66,11 @@ class KdV
             m_spida.X_To_SX(m_uphys,out);
         };
 
-        SpidaCVX& spida() {return m_spida;}
+        spida::SpidaCVX& spida() {return m_spida;}
 
     private:
-        UniformGridCVX m_grid; /**< Uniformly spaced numerical grid for complex-valued functions */
-        SpidaCVX m_spida; /**< FFTs and differentiation functions */
+        spida::UniformGridCVX m_grid; /**< Uniformly spaced numerical grid for complex-valued functions */
+        spida::SpidaCVX m_spida; /**< FFTs and differentiation functions */
         std::vector<dcmplx> m_uphys; 
         std::vector<dcmplx> m_uxphys;
         std::vector<dcmplx> m_uxsp;
@@ -79,7 +80,7 @@ class KdV
 // Helper class for reporting files based on data generated from the Solver used
 //
 
-class PropagatorKdV : public PropagatorCV
+class PropagatorKdV : public spida::PropagatorCV
 {
     public:
 
@@ -105,8 +106,8 @@ class PropagatorKdV : public PropagatorCV
 			 std::vector<double> x0{-120.0,-90.0,-60.0,-30.0,0.0};
 			 const std::vector<double>& x  = m_spi.getX();
 
-			 for(auto i = 0; i < x.size(); i++){
-				for(auto k = 0; k < A0.size(); k++){
+			 for(size_t i = 0; i < x.size(); i++){
+				for(size_t k = 0; k < A0.size(); k++){
 					m_uphys[i] += 0.5*pow(A0[k],2)/pow(cosh(A0[k]*(x[i]-x0[k])/2.0),2);
 				}
 			 }
@@ -121,19 +122,19 @@ class PropagatorKdV : public PropagatorCV
 		}
 
 		/// Destructor
-        ~PropagatorKdV() {}  
+        ~PropagatorKdV() override = default;
 		
         /// @brief Pure virtual function of PropagatorCV that must be implemented.
         /// This function is called before each Solver report (allows for updating of real space fields)
 		/// @param t Current propagation time
 		
-        void updateFields(double t) { 
+        void updateFields(double t) override { 
 			m_spi.SX_To_X(m_usp,m_uphys);
 			m_spi.getGridX().freqshift(m_usp,m_shifted_usp);
 		}
 
 		/// Returns propagating field array
-        std::vector<dcmplx>& propagator() {return m_usp;} 
+        std::vector<dcmplx>& propagator() override {return m_usp;} 
 
     private:
         /// @brief Helper function that feeds PropagatorCV information on what to report
@@ -149,7 +150,7 @@ class PropagatorKdV : public PropagatorCV
             PropagatorCV::addReport(std::make_unique<dat::ReportComplexData1D<double,double>>("SX",m_shifted_kx,m_shifted_usp));
         }
 
-        SpidaCVX& m_spi;
+        spida::SpidaCVX& m_spi;
         std::vector<dcmplx> m_usp;
         std::vector<dcmplx> m_uphys;
 		std::vector<double> m_shifted_kx;
@@ -164,7 +165,7 @@ int main()
     double maxx = 150.0;
     std::string outdir("kdv_files_CV");
 
-    UniformGridCVX grid(nx,minx,maxx);
+    spida::UniformGridCVX grid(nx,minx,maxx);
     KdV model(grid);
 
     std::filesystem::path dirpath("kdv_files_CV");
@@ -174,7 +175,7 @@ int main()
     propagator.setLogProgress(true);
     propagator.setLogFrequency(16);
 
-    ETD34 solver(model.L,model.NL);
+    spida::ETD34 solver(model.L,model.NL);
     solver.setEpsRel(1e-4);
     solver.setLogProgress(true);
     solver.setLogFrequency(16);
@@ -187,8 +188,3 @@ int main()
     return 0;
 
 }
-
-
-
-
-

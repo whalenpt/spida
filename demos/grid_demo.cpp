@@ -31,9 +31,8 @@ int main()
 
 
     std::cout << std::endl << "UniformGridT..." << std::endl;
-    int nt = 1024;
+    unsigned nt = 1024;
     double tp = 5.0e-15;
-//    double omega0 = 2.7091e15;
     double minT = -10*tp;
     double maxT = 10*tp;
     double minST = 1.0e15;
@@ -51,19 +50,11 @@ int main()
     std::cout << "MinST: " << st[0] << std::endl;
     std::cout << "MaxST: " << st.back() << std::endl;
     std::cout << std::endl << "T-grid:" << std::endl;
-    for(auto i = 0; i < nt; i+=nt/10)
+    for(unsigned i = 0; i < nt; i+=nt/10)
         std::cout << t[i] << std::endl;
     std::cout << std::endl << "ST-grid:" << std::endl;
-    for(auto i = 0; i < st.size(); i+=st.size()/10)
+    for(unsigned i = 0; i < st.size(); i+=st.size()/10)
         std::cout << st[i] << std::endl;
 
     return 0;
 }
-
-
-
-
-
-
-
-

@@ -1,10 +1,9 @@
-
-#include "spida/propagator/reporthandler.h"
 #include <fstream>
 #include <iostream>
+#include "spida/propagator/reporthandler.h"
+
 
 namespace spida{
-
 
 void ReportHandler::addReport(std::unique_ptr<pw::ReportData1D> def) 
 {
@@ -23,24 +22,27 @@ void ReportHandler::addReport(std::unique_ptr<pw::TrackData> def)
 
 void ReportHandler::setItem(const std::string& key,double val)
 {
-    for(auto it = m_defs_1D.begin(); it != m_defs_1D.end(); it++)
-        (*it)->setItem(key,val);
-    for(auto it = m_defs_2D.begin(); it != m_defs_2D.end(); it++)
-        (*it)->setItem(key,val);
-    for(auto it = m_tracker_defs.begin(); it != m_tracker_defs.end(); it++)
-        (*it)->setItem(key,val);
+    for(auto const& def : m_defs_1D){
+        def->setItem(key,val);
+    }
+    for(auto const& def : m_defs_2D){
+        def->setItem(key,val);
+    }
+    for(auto const& def : m_tracker_defs){
+        def->setItem(key,val);
+    }
 }
 
 void ReportHandler::report1D(const std::filesystem::path& dir_path,int rep_num) const
 {
     std::ofstream os;
-    for(vec1D::const_iterator it = m_defs_1D.cbegin(); it != m_defs_1D.cend(); it++){
-        (*it)->setDirPath(dir_path);
+    for(auto const& def : m_defs_1D){
+        def->setDirPath(dir_path);
         try{
-            (*it)->report(os,rep_num);
+            def->report(os,rep_num);
             os.close();
-        } catch(...){
-            std::cout << "Failed to report file: " << (*it)->path(rep_num) << std::endl;
+        } catch(...) {
+            std::cout << "Failed to report file: " << def->path(rep_num) << std::endl;
         }
     }
 }
@@ -48,13 +50,13 @@ void ReportHandler::report1D(const std::filesystem::path& dir_path,int rep_num) 
 void ReportHandler::report2D(const std::filesystem::path& dir_path,int rep_num) const
 {
     std::ofstream os;
-    for(vec2D::const_iterator it = m_defs_2D.cbegin(); it != m_defs_2D.cend(); it++){
-        (*it)->setDirPath(dir_path);
+    for(auto const& def : m_defs_2D){
+        def->setDirPath(dir_path);
         try{
-            (*it)->report(os,rep_num);
+            def->report(os,rep_num);
             os.close();
-        } catch(...){
-            std::cout << "Failed to report file: " << (*it)->path(rep_num) << std::endl;
+        } catch(...) {
+            std::cout << "Failed to report file: " << def->path(rep_num) << std::endl;
         }
     }
 }
@@ -62,14 +64,14 @@ void ReportHandler::report2D(const std::filesystem::path& dir_path,int rep_num) 
 void ReportHandler::reportTrack(const std::filesystem::path& dir_path,double t) const
 {
     std::ofstream os;
-    for(vecTrack::const_iterator it = m_tracker_defs.cbegin(); it != m_tracker_defs.cend(); it++){
-        (*it)->setDirPath(dir_path);
-        (*it)->updateTracker(t);
+    for(auto const& def : m_tracker_defs){
+        def->setDirPath(dir_path);
+        def->updateTracker(t);
         try{
-            (*it)->report(os);
+            def->report(os);
             os.close();
         } catch(...){
-            std::cout << "Failed to report file: " << (*it)->path() << std::endl;
+            std::cout << "Failed to report file: " << def->path() << std::endl;
         }
     }
 }
@@ -80,9 +82,4 @@ void ReportHandler::reportData(const std::filesystem::path& dir_path,int repNum)
     report2D(dir_path,repNum);
 }
 
-
-
-
-
 }
-

@@ -7,7 +7,7 @@ TEST(GRID_TEST,BESSELZERO_R)
 {
     int N = 5;
     double accuracy = 1e-4;
-    spida::BesselRootGridR grid = spida::BesselRootGridR(N,1.0);
+    auto grid = spida::BesselRootGridR(N,1.0);
     const std::vector<double>& roots = grid.getBesselRoots();
 	EXPECT_NEAR(roots[0],2.4048,accuracy);
 	EXPECT_NEAR(roots[1],5.5201,accuracy);
@@ -24,6 +24,3 @@ TEST(GRID_TEST,BESSELZERO_R)
 	EXPECT_NEAR(J1[4],16.4706,accuracy);
 
 }
-
-
-

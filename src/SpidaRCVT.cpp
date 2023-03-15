@@ -32,29 +32,12 @@ void SpidaRCVT::mirrorR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
 {
     auto nt = m_gridT->getNt();
     auto nr = m_gridR->getNr();
-    for(auto j = 0; j < nt; j++){
-        for(int i = nr-1; i >= 0; i--)
+    for(unsigned j = 0; j < nt; j++){
+        for(unsigned i = nr-1; i >= 0; i--)
             out[((nr-1)-i)*nt+j] = in[i*nt+j];
-        for(auto i = 0; i < nr; i++)
+        for(unsigned i = 0; i < nr; i++)
             out[(i+nr)*nt+j] = in[i*nt+j];
     }
 }
 
-//  void SpidaRCVT::dT(const std::vector<double>& in,std::vector<double>& out,int n) 
-//  {
-//    if(n < 0){
-//        throw pw::Exception("SpidaRCVT::DT","DT(in,out,n) must have n >= 0 ");
-//    }
-//    m_tr->T_To_ST(in,m_vs);
-//    const std::vector<double>& st = m_gr->getST();
-//    for(auto i = 0; i < st.size(); i++)
-//        m_vs[i] = std::pow(ii*st[i],n)*m_vs[i];
-//    m_tr->ST_To_T(m_vs,out);
-//  }
-
 }
-
-
-
-
-

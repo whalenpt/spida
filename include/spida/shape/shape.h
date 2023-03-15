@@ -1,6 +1,6 @@
+#pragma once
 
-#ifndef SPIDA_SHAPE_H_
-#define SPIDA_SHAPE_H_
+#include "spida/grid/grid.h"
 
 namespace spida{
 
@@ -8,17 +8,9 @@ namespace spida{
 class Shape 
 {
     public:
-        Shape(const Grid& grid) {}
-        virtual ~Shape() {};
+        explicit Shape(const Grid&) {}; 
+        virtual ~Shape() = default;
         virtual double amplitude() const = 0;
 };
 
-
 }
-
-#endif
-
-
-
-
-

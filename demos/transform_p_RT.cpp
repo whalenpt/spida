@@ -50,10 +50,8 @@ int main()
     shapeT.setFastPhase(omega0);
     spida::GaussR shapeR(gridR,1.0,w0);
 
-    std::vector<double> u0t(nt);
-    shapeT.shapeRV(u0t);
-    std::vector<double> u0r(nr);
-    shapeR.shapeRV(u0r);
+    auto u0t = shapeT.shapeRV();
+    auto u0r = shapeR.shapeRV();
     std::vector<double> u(nr*nt);
 
     for(auto i = 0; i < nr; i++)
@@ -72,24 +70,5 @@ int main()
         transform.SRST_To_RT(v,uop);
     }
 
-//    std::vector<dcmplx> w(nr*nst);
-//    std::vector<dcmplx> w2(nr*nst);
-//    std::vector<double> zeta(nr*nt);
-//    std::vector<double> zeta2(nr*nt);
-
-//    transform.RT_To_RST(u,w);
-//    transform.RT_To_SRT(u,zeta);
-//    transform.SRST_To_RST(v,w2);
-//    transform.SRST_To_SRT(v,zeta2);
-
     return 0;
 }
-
-
-
-
-
-
-
-
-

@@ -10,7 +10,6 @@ set(SRC_FILES
     SpidaR.cpp
     ChebInterpX.cpp
 	helper/interp.cpp
-    grid/grid.cpp
     grid/gridR.cpp
     grid/chebX.cpp
     grid/uniformX.cpp

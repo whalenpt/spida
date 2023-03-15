@@ -1,4 +1,3 @@
-// fftRVT.h
 #pragma once
 
 #include <vector>
@@ -47,7 +46,3 @@ class FFTRVT
 };
 
 }
-
-
-
-

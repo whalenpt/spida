@@ -5,14 +5,6 @@
 
 namespace spida{
 
-SolverAS_ETD::SolverAS_ETD(const LinOp& Lop,const NLfunc& NL,double sf,double qv,bool use_refs)
- :  SolverCV_AS(Lop,NL,sf,qv,use_refs)
-{
-    m_mode_cutoff = 0.01;
-    m_contour_radi = 1.0;
-    m_contourM = 32;
-}
-
 ETD34::ETD34(const LinOp& Lop,const NLfunc& NL,bool use_refs)
   : SolverAS_ETD(Lop,NL,0.84,4,use_refs),m_sz(SolverCV::size()),
     L(SolverCV::L()),EL(m_sz), EL2(m_sz), 
@@ -20,8 +12,6 @@ ETD34::ETD34(const LinOp& Lop,const NLfunc& NL,bool use_refs)
     tempK(m_sz), a21(m_sz), a31(m_sz), a32(m_sz),
     a41(m_sz), a43(m_sz), a51(m_sz), a52(m_sz), a54(m_sz), r1(m_sz)
 {
-    c1 = 0.0; c2 = 1.0/2; c3 = 1.0/2; c4 = 1.0; c5 = 1.0;
-    N1_init = false;
     statCenter().setHeader("ETD34 STATS");
     statCenter().addCounter("Nonlinear Function Evaluations");
 }
@@ -29,12 +19,12 @@ ETD34::ETD34(const LinOp& Lop,const NLfunc& NL,bool use_refs)
 void ETD34::worker_coeff(double dt,int tid){
 
     std::vector<dcmplx> r(contourPoints(),0.0);
-    for(auto j = 0; j < contourPoints(); j++){
+    for(unsigned j = 0; j < contourPoints(); j++){
         double expv = 2.0*PI*(j+0.5)/static_cast<double>(contourPoints());
         r[j] = contourRadius()*exp(ii*expv);
     }
     double mult = dt/static_cast<double>(contourPoints());
-    for(int i = tid; i < m_sz; i+=SolverCV::threadManager().getNumThreads()){
+    for(unsigned i = tid; i < m_sz; i+=SolverCV::threadManager().getNumThreads()){
         dcmplx Lval(dt*L[i]);
         EL[i] = exp(Lval);
         EL2[i] = exp(c2*Lval);
@@ -43,7 +33,7 @@ void ETD34::worker_coeff(double dt,int tid){
             dcmplx a31val(0.0,0.0); dcmplx a32val(0.0,0.0);
             dcmplx a41val(0.0,0.0); dcmplx a43val(0.0,0.0);
             dcmplx a51val(0.0,0.0); dcmplx a52val(0.0,0.0); dcmplx a54val(0.0,0.0);
-            for(auto j = 0; j < contourPoints(); j++){
+            for(unsigned j = 0; j < contourPoints(); j++){
                 dcmplx z(Lval + r[j]);
                 a21val  = a21val + (-1.0 + exp(z/2.0))/z;
                 a31val = a31val + (4.0 + z + exp(z/2.0)*(-4.0 + z))/(pow(z,2));
@@ -74,7 +64,7 @@ void ETD34::worker_coeff(double dt,int tid){
 void ETD34::updateCoefficients(double dt) noexcept
 {
     std::vector<std::thread> threads;
-    for(auto i = 1; i < SolverCV::threadManager().getNumThreads(); i++)
+    for(unsigned i = 1; i < SolverCV::threadManager().getNumThreads(); i++)
         threads.push_back(std::thread(&ETD34::worker_coeff,this,dt,i));
     worker_coeff(dt,0);
     for(auto& thread : threads)
@@ -91,31 +81,31 @@ void ETD34::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& ynew
         statCenter().incrementCounter("Nonlinear Function Evaluations",1);
     }
     else if(SolverCV_AS::accept()){
-        for(auto i = 0; i < m_sz; i++) 
+        for(unsigned i = 0; i < m_sz; i++) 
             N1[i] = N5[i]; 
     }
 
-    for(auto i = 0; i < m_sz; i++)
+    for(unsigned i = 0; i < m_sz; i++)
         tempK[i] =  EL2[i]*in[i] + a21[i]*N1[i];
 
     SolverCV::NL()(tempK,N2);
   
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         tempK[i] = EL2[i]*in[i] + a31[i]*N1[i]+a32[i]*N2[i];
 
     SolverCV::NL()(tempK,N3);
   
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         tempK[i] = EL[i]*in[i] + a41[i]*N1[i] + a43[i]*N3[i];
 
     SolverCV::NL()(tempK,N4);
   
-    for(auto i = 0; i < m_sz; i++) 
+    for(unsigned i = 0; i < m_sz; i++) 
         ynew[i] = EL[i]*in[i] + a51[i]*N1[i] + a52[i]*(N2[i]+N3[i]) + a54[i]*N4[i];
   
     SolverCV::NL()(ynew,N5);
 
-    for (auto i = 0; i < m_sz; i++)
+    for (unsigned i = 0; i < m_sz; i++)
         errVec[i] = a54[i]*(N4[i] - N5[i]);
 
     statCenter().incrementCounter("Nonlinear Function Evaluations",4);
@@ -129,9 +119,6 @@ ETD35::ETD35(const LinOp& Lop,const NLfunc& NL,bool use_refs)
     a51(m_sz),a52(m_sz),a54(m_sz),a61(m_sz),a62(m_sz),a63(m_sz),a65(m_sz),
     a71(m_sz),a73(m_sz),a74(m_sz),a75(m_sz),a76(m_sz)
 {
-    c1 = 0.0; c2 = 1.0/4.0; c3 = 1.0/4.0; c4 = 1.0/2.0;  
-    c5 = 3.0/4.0; c6 = 1.0; c7 = 1.0; 
-    N1_init = false;
     statCenter().setHeader("ETD35 STATS");
     statCenter().addCounter("Nonlinear Function Evaluations");
 }
@@ -139,7 +126,7 @@ ETD35::ETD35(const LinOp& Lop,const NLfunc& NL,bool use_refs)
 void ETD35::worker_coeff(double ds,int tid){
 
   std::vector<dcmplx> r(contourPoints(),0.0);
-  for(auto j = 0; j < contourPoints(); j++){
+  for(unsigned j = 0; j < contourPoints(); j++){
     double expv = 2.0*PI*(j+0.5)/static_cast<double>(contourPoints());
     r[j] = contourRadius()*exp(ii*expv);
   }
@@ -159,7 +146,7 @@ void ETD35::worker_coeff(double ds,int tid){
       dcmplx a61val(0.0,0.0); dcmplx a62val(0.0,0.0); dcmplx a63val(0.0,0.0); dcmplx a65val(0.0,0.0);
       dcmplx a71val(0.0,0.0); dcmplx a73val(0.0,0.0); dcmplx a74val(0.0,0.0);
       dcmplx a75val(0.0,0.0); dcmplx a76val(0.0,0.0);
-      for(auto j = 0; j < contourPoints(); j++){
+      for(unsigned j = 0; j < contourPoints(); j++){
         dcmplx z(Lval + r[j]);
         a21val+= (-1.0 + exp((z)/4.0))/(z);
         a31val+= (4.0 + exp((z)/4.0)*(-4.0 + z))/(pow(z,2));
@@ -223,8 +210,7 @@ void ETD35::worker_coeff(double ds,int tid){
 void ETD35::updateCoefficients(double dt) noexcept
 {
   std::vector<std::thread> threads;
-//  std::cout << "Number of ETD35 updateCoefficient threads: "  << SolverCV::threadManager().getNumThreads() << std::endl;
-  for(auto i = 1; i < SolverCV::threadManager().getNumThreads(); i++)
+  for(unsigned i = 1; i < SolverCV::threadManager().getNumThreads(); i++)
       threads.push_back(std::thread(&ETD35::worker_coeff,this,dt,i));
   ETD35::worker_coeff(dt,0);
   for(auto& thread : threads)
@@ -286,75 +272,59 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
     }
     auto nthreads = SolverCV::threadManager().getNumThreads();
     std::vector<unsigned> bounds = SolverCV::threadManager().getBounds(m_sz);
-    std::vector<std::thread*> threads;
+    std::vector<std::thread> threads;
 
-    for(auto i = 0; i < nthreads-1; i++)
-        threads.push_back(new std::thread(&ETD35::worker_stage2,this,std::ref(in),bounds[i],bounds[i+1]));
+    for(unsigned i = 0; i < nthreads-1; i++)
+        threads.push_back(std::thread(&ETD35::worker_stage2,this,std::ref(in),bounds[i],bounds[i+1]));
     worker_stage2(in,bounds[nthreads-1],bounds[nthreads]);
-    for(auto t : threads)
-        t->join();
-    for(auto t : threads)
-        delete t;
+    for(auto& thread : threads)
+        thread.join();
     threads.clear();
 
     SolverCV::NL()(tempK,N2);
 
-    for(auto i = 0; i < nthreads-1; i++)
-        threads.push_back(new std::thread(&ETD35::worker_stage3,this,std::ref(in),bounds[i],bounds[i+1]));
+    for(unsigned i = 0; i < nthreads-1; i++)
+        threads.push_back(std::thread(&ETD35::worker_stage3,this,std::ref(in),bounds[i],bounds[i+1]));
     worker_stage3(in,bounds[nthreads-1],bounds[nthreads]);
-    for(auto t : threads)
-        t->join();
-    for(auto t : threads)
-        delete t;
+    for(auto& thread : threads)
+        thread.join();
     threads.clear();
 
     SolverCV::NL()(tempK,N3);
 
-    for(auto i = 0; i < nthreads-1; i++)
-        threads.push_back(new std::thread(&ETD35::worker_stage4,this,std::ref(in),bounds[i],bounds[i+1]));
+    for(unsigned i = 0; i < nthreads-1; i++)
+        threads.push_back(std::thread(&ETD35::worker_stage4,this,std::ref(in),bounds[i],bounds[i+1]));
     worker_stage4(in,bounds[nthreads-1],bounds[nthreads]);
-    for(auto t : threads)
-        t->join();
-    for(auto t : threads)
-        delete t;
+    for(auto& thread : threads)
+        thread.join();
     threads.clear();
 
     SolverCV::NL()(tempK,N4);
-    for(auto i = 0; i < nthreads-1; i++)
-        threads.push_back(new std::thread(&ETD35::worker_stage5,this,std::ref(in),bounds[i],bounds[i+1]));
+    for(unsigned i = 0; i < nthreads-1; i++)
+        threads.push_back(std::thread(&ETD35::worker_stage5,this,std::ref(in),bounds[i],bounds[i+1]));
     worker_stage5(in,bounds[nthreads-1],bounds[nthreads]);
-    for(auto t : threads)
-        t->join();
-    for(auto t : threads)
-        delete t;
+    for(auto& thread : threads)
+        thread.join();
     threads.clear();
 
     SolverCV::NL()(tempK,N5);
 
-    for(auto i = 0; i < nthreads-1; i++)
-        threads.push_back(new std::thread(&ETD35::worker_stage6,this,std::ref(in),bounds[i],bounds[i+1]));
+    for(unsigned i = 0; i < nthreads-1; i++)
+        threads.push_back(std::thread(&ETD35::worker_stage6,this,std::ref(in),bounds[i],bounds[i+1]));
     worker_stage6(in,bounds[nthreads-1],bounds[nthreads]);
-    for(auto t : threads)
-        t->join();
-    for(auto t : threads)
-        delete t;
+    for(auto& thread : threads)
+        thread.join();
     threads.clear();
 
     SolverCV::NL()(tempK,N6);
 
-    for(auto i = 0; i < nthreads-1; i++)
-        threads.push_back(new std::thread(&ETD35::worker_stage7,this,std::ref(in),std::ref(ynew),std::ref(errVec),bounds[i],bounds[i+1]));
+    for(unsigned i = 0; i < nthreads-1; i++)
+        threads.push_back(std::thread(&ETD35::worker_stage7,this,std::ref(in),std::ref(ynew),std::ref(errVec),bounds[i],bounds[i+1]));
     worker_stage7(in,ynew,errVec,bounds[nthreads-1],bounds[nthreads]);
-    for(auto t : threads)
-        t->join();
-    for(auto t : threads)
-        delete t;
+    for(auto& thread : threads)
+        thread.join();
     threads.clear();
     statCenter().incrementCounter("Nonlinear Function Evaluations",5);
 }
 
-
-
 }
-
-

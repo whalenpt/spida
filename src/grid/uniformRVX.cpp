@@ -1,4 +1,3 @@
-
 #include "spida/grid/uniformRVX.h"
 #include "spida/helper/constants.h"
 
@@ -10,12 +9,8 @@ UniformGridRVX::UniformGridRVX(unsigned nx,double minX,double maxX) :
 {
     double L = maxX - minX;
     double dsx = 2.0*PI/L;
-    for(auto i = 0; i <= nx/2; i++)
+    for(unsigned i = 0; i <= nx/2; i++)
         m_sx[i] = i*dsx;
 }
 
-
 }
-
-
-

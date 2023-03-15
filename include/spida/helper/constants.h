@@ -10,9 +10,7 @@ namespace spida{
 	using dcmplx = std::complex<double>;
     constexpr dcmplx ii (0.0,1.0);
     constexpr auto NEAR_ZERO = 1.0e2*std::numeric_limits<double>::min();
-	using stringMap = std::map<std::string,std::string>;
+	using stringMap = std::map<std::string,std::string, std::less<>>;
 	using stringPair = std::pair<std::string,std::string>;
     enum class Dimension{D1,D2,D3};
 }
-
-

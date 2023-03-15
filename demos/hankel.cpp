@@ -20,11 +20,10 @@
 
 int main()
 {
-    int N = 20;
+    unsigned N = 20;
     double rmax = 2.0;
     spida::BesselRootGridR grid(N,rmax);
     spida::HankelTransformR transform(grid);
-    //spida::printHankel(transform);
 
     std::vector<double> in(N);
     std::vector<double> in2(N);
@@ -39,19 +38,19 @@ int main()
     std::cout << "maxSR : " << grid.getMaxSR() << std::endl;
 
     double a = 5.0;
-    for(auto i = 0; i < N; i++)
+    for(unsigned i = 0; i < N; i++)
         in[i] = exp(-pow(a*r[i],2));
-    for(auto i = 0; i < N; i++){
+    for(unsigned i = 0; i < N; i++){
         double beta = 1.0/(2.0*pow(a,2));
         exact[i] = beta*exp(-pow(kr[i],2)/(4.0*pow(a,2)));
     }
     transform.R_To_SR(in,out);
     transform.SR_To_R(out,in2);
 
-    for(auto i = 0; i < N; i++)
+    for(unsigned i = 0; i < N; i++)
         std::cout << "OUT: " << out[i] << " - " << "EXPECT: " << exact[i] << std::endl;
 
-    for(auto i = 0; i < N; i++)
+    for(unsigned i = 0; i < N; i++)
         std::cout << "IN: " << in[i] << " - " << "IN2: " << in2[i] << std::endl;
 
     N = 256;
@@ -72,13 +71,13 @@ int main()
     const std::vector<double>& r2 = grid2.getR();
     const std::vector<double>& kr2 = grid2.getSR();
 
-    for(auto i = 0; i < N; i++)
+    for(unsigned i = 0; i < N; i++)
         in[i] = r2[i] < 1e-4 ? 1.0-pow(a*r2[i],2) : sin(a*r2[i])/(a*r2[i]);
-    for(auto i = 0; i < N; i++)
+    for(unsigned i = 0; i < N; i++)
         exact[i] = kr2[i] < a ? 1.0/(pow(a,2)*sqrt(1.0-pow(kr2[i]/a,2))) : 0.0;
     transform2.R_To_SR(in,out);
 
-    for(auto i = 0; i < N; i++)
+    for(unsigned i = 0; i < N; i++)
         std::cout << "OUT: " << out[i] << " - " << "EXPECT: " << exact[i] << std::endl;
 
     return 0;

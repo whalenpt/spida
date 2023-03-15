@@ -1,7 +1,5 @@
-
-
-#include <string>
 #include <stdexcept>
+#include <string>
 #include "spida/grid/gridT.h"
 #include "spida/grid/uniformT.h"
 
@@ -16,11 +14,7 @@ UniformGridT::UniformGridT(unsigned nt,double minT,double maxT) :
         throw std::invalid_argument(msg);
     }
     double dt = (maxT - minT)/static_cast<double>(nt);
-    for(auto i = 0; i < nt; i++) m_t[i] = minT + i*dt; 
+    for(unsigned i = 0; i < nt; i++) m_t[i] = minT + i*dt; 
 }
 
 }
-
-
-
-

@@ -1,19 +1,16 @@
-
+#include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <algorithm>
 #include <vector>
 #include <nayukidct/FastDctLee.hpp>
-#include "spida/transform/chebX.h"
 #include "spida/grid/chebX.h" 
+#include "spida/transform/chebX.h"
 
 namespace spida {
 
   ChebTransformX::ChebTransformX(const ChebRootGridX& grid) : 
       m_nx(grid.getNx()),
-      m_uFFT(grid.getNx())
-  {
-  }
+      m_uFFT(grid.getNx()) {}
 
   void ChebTransformX::X_To_SX(const std::vector<double>& in,std::vector<double>& out) 
   {
@@ -31,11 +28,3 @@ namespace spida {
   }
 
 }
-
-
-
-
-
-
-
-

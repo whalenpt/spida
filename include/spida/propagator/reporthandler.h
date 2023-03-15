@@ -1,9 +1,8 @@
-// reporthandler.h
 #pragma once
 
-#include <vector> 
 #include <filesystem>
 #include <memory>
+#include <vector> 
 #include <string>
 #include <pwutils/report/basereport.h>
 // basereport has defintions for ReportData1D, ReportData2D, and TrackData
@@ -15,7 +14,7 @@ class ReportHandler{
     using vec2D = std::vector<std::unique_ptr<pw::ReportData2D>>;
     using vecTrack = std::vector<std::unique_ptr<pw::TrackData>>;
     public:
-        ReportHandler() {}; 
+        ReportHandler() = default;
         void report1D(const std::filesystem::path& dir_path,int repNum) const;
         void report2D(const std::filesystem::path& dir_path,int repNum) const;
         void reportData(const std::filesystem::path& dir_path,int repNum) const;
@@ -34,9 +33,4 @@ class ReportHandler{
         vecTrack m_tracker_defs;
 };
 
-
 }
-
-
-
-

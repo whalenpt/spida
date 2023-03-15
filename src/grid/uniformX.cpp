@@ -1,6 +1,5 @@
-
-#include <string>
 #include <stdexcept>
+#include <string>
 #include "spida/grid/uniformX.h"
 
 namespace spida{
@@ -14,10 +13,7 @@ UniformGridX::UniformGridX(unsigned nx,double minX,double maxX) :
         throw std::invalid_argument(msg);
     }
     double dx = (maxX - minX)/static_cast<double>(nx);
-    for(auto i = 0; i < nx; i++) m_x[i] = minX + i*dx; 
+    for(unsigned i = 0; i < nx; i++) m_x[i] = minX + i*dx; 
 }
 
 }
-
-
-

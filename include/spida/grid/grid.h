@@ -1,19 +1,12 @@
-
-#ifndef SPIDA_GRID_H_
-#define SPIDA_GRID_H_
-
-// Base interface class
+#pragma once
 
 namespace spida{
 
+// Base interface class
 class Grid{
-  public:
-      Grid() {}
-      virtual ~Grid() = 0;
+  protected:
+      Grid() = default;
+      ~Grid() = default;
 };
 
 }
-
-#endif
-
-

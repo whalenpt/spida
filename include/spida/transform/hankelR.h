@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <vector>
@@ -12,7 +11,7 @@ class HankelTransformR
 {
     public:
         explicit HankelTransformR(const BesselRootGridR& grid);
-        ~HankelTransformR() {};
+        ~HankelTransformR() = default;
         HankelTransformR()=delete;
         HankelTransformR(const HankelTransformR& sp)=delete;
         HankelTransformR& operator=(const HankelTransformR& sp)=delete;
@@ -34,9 +33,9 @@ class HankelTransformR
             { return SR_To_R(in.data(),out.data());}
 
         const std::vector<double>& getYmk() const {return m_Ymk;}
-        int getNr() const {return m_nr;}
+        unsigned getNr() const {return m_nr;}
     private:
-        int m_nr;
+        unsigned m_nr;
         double m_alpha;
         std::vector<double> m_Ymk; 
         std::vector<dcmplx> m_YmkC; 
@@ -47,7 +46,7 @@ class HankelTransformRb
 {
     public:
         explicit HankelTransformRb(const BesselRootGridR& grid,unsigned threads=1);
-        ~HankelTransformRb() {};
+        ~HankelTransformRb() = default;
         HankelTransformRb()=delete;
         HankelTransformRb(const HankelTransformRb& sp)=delete;
         HankelTransformRb& operator=(const HankelTransformRb& sp)=delete;
@@ -69,18 +68,13 @@ class HankelTransformRb
             { return SR_To_R(in.data(),out.data());}
 
         const std::vector<double>& getYmk() const {return m_Ymk;}
-        int getNr() const {return m_nr;}
+        unsigned getNr() const {return m_nr;}
     private:
         unsigned m_threads;
-        int m_nr;
+        unsigned m_nr;
         double m_alpha;
         std::vector<double> m_Ymk; 
         void initDHT(const BesselRootGridR& grid);
 };
 
-
-
 }
-
-
-

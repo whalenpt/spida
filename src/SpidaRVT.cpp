@@ -29,7 +29,7 @@ namespace spida{
     }
     m_tr->T_To_ST(in,m_vs);
     const std::vector<double>& st = m_gr->getST();
-    for(auto i = 0; i < st.size(); i++)
+    for(size_t i = 0; i < st.size(); i++)
         m_vs[i] = std::pow(-ii*st[i],n)*m_vs[i];
     m_tr->ST_To_T(m_vs,out);
   }

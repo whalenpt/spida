@@ -44,7 +44,7 @@ void GridR::mirrorGrid(const double* in,double* out,bool sign_reverse) const
         for(int i = m_nr-1; i >=0; i--)
             out[(m_nr-1)-i] = in[i];
     }
-    for(auto i = 0; i < m_nr; i++)
+    for(unsigned i = 0; i < m_nr; i++)
         out[i+m_nr] = in[i];
 }
 
@@ -58,20 +58,8 @@ void GridR::mirrorGrid(const dcmplx* in,dcmplx* out,bool sign_reverse) const
         for(int i = m_nr-1; i >=0; i--)
             out[(m_nr-1)-i] = in[i];
     }
-    for(auto i = 0; i < m_nr; i++)
+    for(unsigned i = 0; i < m_nr; i++)
         out[i+m_nr] = in[i];
 }
 
-
-
 }
-
-
-
-
-
-
-
-
-
-

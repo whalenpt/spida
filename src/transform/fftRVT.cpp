@@ -1,17 +1,20 @@
-
-#include <cmath>
-#include <stdexcept>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
-#include "spida/transform/fftRVT.h"
-#include "spida/grid/uniformRVT.h" 
-#include "spida/helper/constants.h"
+#include <stdexcept>
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
+#include "spida/grid/uniformRVT.h" 
+#include "spida/helper/constants.h"
+#include "spida/transform/fftRVT.h"
 
 namespace spida{
 
 FFTRVT::FFTRVT(const UniformGridRVT& grid) :
+    m_nt(grid.getNt()),
+    m_nst(grid.getNst()),
+    m_minI(grid.getMinI()),
+    m_maxI(grid.getMaxI()),
     m_rFFTr(grid.getNt(),0.0),
     m_temp(grid.getNt(),0.0),
     m_cFFT(grid.getNt(),0.0),
@@ -19,13 +22,8 @@ FFTRVT::FFTRVT(const UniformGridRVT& grid) :
     m_mint(grid.getMinT()),
     m_L(grid.getLT())
 {
-    m_nt = grid.getNt();
     if(!((m_nt%2)==0))
         throw std::invalid_argument("Kiss real fft requires even integer size");
-
-    m_nst = grid.getNst();
-    m_minI = grid.getMinI();
-    m_maxI = grid.getMaxI();
 
     // T-transform centered around -iwt -> use inverse kissfft for forward direction (s.t.
     // fft central frequency is the first half of the grid and aligns with the UniformGridT class)
@@ -35,7 +33,6 @@ FFTRVT::FFTRVT(const UniformGridRVT& grid) :
     m_rcfg_forward = kiss_fftr_alloc(m_nt,0,nullptr,nullptr);   
     m_rcfg_reverse = kiss_fftr_alloc(m_nt,1,nullptr,nullptr);   
 }
-
 
 FFTRVT::~FFTRVT()
 {
@@ -92,21 +89,21 @@ void FFTRVT::ST_To_CVT(const dcmplx* in,dcmplx* out)
             reinterpret_cast<kiss_fft_cpx*>(out));
 }
 
-void FFTRVT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out)
-{ T_To_ST(in.data(),out.data()); }
+void FFTRVT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out) { 
+    T_To_ST(in.data(),out.data()); 
+}
 
-void FFTRVT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out)
-{ ST_To_T(in.data(),out.data()); }
+void FFTRVT::ST_To_T(const std::vector<dcmplx>& in,std::vector<double>& out) { 
+    ST_To_T(in.data(),out.data()); 
+}
 
-void FFTRVT::CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
-{ CVT_To_ST(in.data(),out.data()); }
+void FFTRVT::CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) { 
+    CVT_To_ST(in.data(),out.data()); 
+}
 
-void FFTRVT::ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
-{ ST_To_CVT(in.data(),out.data()); }
-
-
-
-
+void FFTRVT::ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) { 
+    ST_To_CVT(in.data(),out.data()); 
 }
 
 
+}

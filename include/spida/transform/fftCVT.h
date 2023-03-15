@@ -1,4 +1,3 @@
-// fftCVT.h
 #pragma once
 
 #include <vector>
@@ -35,7 +34,3 @@ class FFTCVT
 };
 
 }
-
-
-
-
