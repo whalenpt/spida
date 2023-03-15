@@ -130,22 +130,22 @@ int main()
     os << srt_report2;
 
     // Multithread speedup
-    unsigned int MAX_THREADS = 8;
-    unsigned int NUM_LOOPS = 20;
+    unsigned MAX_THREADS = 8;
+    unsigned NUM_LOOPS = 20;
     std::vector<int> rt_srst_timings(MAX_THREADS);
     std::vector<int> srst_rt_timings(MAX_THREADS);
-    for(auto threads = 1; threads < MAX_THREADS; threads++){
+    for(unsigned threads = 1; threads < MAX_THREADS; threads++){
         spida::HankelFFTRRVT transform_threaded(gridR,gridT,threads);
 
         auto start_time = std::chrono::steady_clock::now();
-        for(auto i = 0; i < NUM_LOOPS; i++)
+        for(unsigned i = 0; i < NUM_LOOPS; i++)
             transform_threaded.RT_To_SRST(u,v);
         auto elapsed_time = std::chrono::steady_clock::now() - start_time;
         auto rt_srst_timing = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time).count();
         rt_srst_timings[threads] = static_cast<int>(rt_srst_timing);
 
         start_time = std::chrono::steady_clock::now();
-        for(auto i = 0; i < NUM_LOOPS; i++)
+        for(unsigned i = 0; i < NUM_LOOPS; i++)
             transform_threaded.SRST_To_RT(v,u);
         elapsed_time = std::chrono::steady_clock::now() - start_time;
 
@@ -153,12 +153,12 @@ int main()
         srst_rt_timings[threads] = static_cast<int>(srst_rt_timing);
     }
 
-    for(auto threads = 1; threads < MAX_THREADS; threads++){
+    for(unsigned threads = 1; threads < MAX_THREADS; threads++){
         std::cout << "HankelFFTRRVT RT_To_SRST duration with " << threads << " thread(s): "\
                   << rt_srst_timings[threads] << "us" << std::endl;
     }
     std::cout << std::endl;
-    for(auto threads = 1; threads < MAX_THREADS; threads++){
+    for(unsigned threads = 1; threads < MAX_THREADS; threads++){
         std::cout << "HankelFFTRRVT SRST_To_RT duration with " << threads << " thread(s): "\
                   << srst_rt_timings[threads] << "us" << std::endl;
     }

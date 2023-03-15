@@ -11,7 +11,7 @@ std::vector<double> UniformGridRVT::constructGridST(unsigned nt,double minT,doub
 {
     std::vector<double> st(nt/2+1);
     double dst = 2.0*PI/(maxT-minT);
-    for(auto i = 0; i <= nt/2; i++)
+    for(unsigned i = 0; i <= nt/2; i++)
         st[i] = i*dst;
     return st;
 }

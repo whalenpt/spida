@@ -40,13 +40,13 @@ void FFTCVX::X_To_SX(const dcmplx* in,dcmplx* out) noexcept
     // Divide by FFT multiplier m_nx
     // Adjust phase since physical grid is not assumed to start at 0
     // Additional adjustment for length of grid (L)
-    for(auto i = 0; i < m_nx; i++)
+    for(unsigned i = 0; i < m_nx; i++)
         out[i] *= (m_L*exp(ii*m_kx[i]*m_minx))/static_cast<double>(m_nx);
 }
 void FFTCVX::SX_To_X(const dcmplx* in,dcmplx* out) noexcept
 {
     // Undo phase adjustment and length adjustment for inverse
-    for(auto i = 0; i < m_nx; i++)
+    for(unsigned i = 0; i < m_nx; i++)
         m_temp[i] = in[i]*exp(-ii*m_kx[i]*m_minx)/m_L;
 
     // Stuck with kiss_fft_cpx definition of complex -> use reinterpret and assume 

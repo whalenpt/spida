@@ -32,8 +32,8 @@ namespace spida{
   {
     if(n == 0)
         return;
-    const std::vector<double>& kx = m_gr->getSX();
-    for(auto i = 0; i < kx.size(); i++)
+    const auto& kx = m_gr->getSX();
+    for(size_t i = 0; i < kx.size(); i++)
         out[i] = std::pow(ii*kx[i],n)*in[i];
   }
 

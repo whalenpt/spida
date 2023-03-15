@@ -1,4 +1,3 @@
-
 #include <cmath>
 #include <memory>
 #include "spida/CVT.h"
@@ -33,7 +32,7 @@ namespace spida{
     if(n == 0)
         return;
     const std::vector<double>& omega = m_gr->getST();
-    for(auto i = 0; i < omega.size(); i++)
+    for(size_t i = 0; i < omega.size(); i++)
         out[i] = std::pow(-ii*omega[i],n)*in[i];
   }
 

@@ -42,14 +42,14 @@ void FFTCVT::T_To_ST(const dcmplx* in,dcmplx* out) noexcept
     // Divide by FFT multiplier m_nx
     // Adjust phase since physical grid is not assumed to start at 0
     // Additional adjustment for length of grid (L)
-    for(auto i = 0; i < m_nt; i++)
+    for(unsigned i = 0; i < m_nt; i++)
         out[i] *= (m_L*exp(-ii*m_omega[i]*m_mint))/static_cast<double>(m_nt);
 }
 
 void FFTCVT::ST_To_T(const dcmplx* in,dcmplx* out) noexcept
 {
     // Undo phase adjustment and length adjustment for inverse
-    for(auto i = 0; i < m_nt; i++)
+    for(unsigned i = 0; i < m_nt; i++)
         m_temp[i] = in[i]*exp(ii*m_omega[i]*m_mint)/m_L;
     // Stuck with kiss_fft_cpx definition of complex -> use reinterpret and assume 
     // kiss interface won't change :(
