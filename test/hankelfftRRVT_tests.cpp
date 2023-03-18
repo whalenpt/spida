@@ -27,7 +27,7 @@ class HankelFFT_RRVTTEST : public ::testing::Test
             I0 = 5.0e16;
             omega0 = 2.7091e15;
 
-            threads = 2;
+            threads = std::min<unsigned>(2, std::thread::hardware_concurrency());
 
             // setup grids and transform
             gridT = std::make_unique<spida::UniformGridRVT>(nt,minT,maxT,minST,maxST);
@@ -138,6 +138,8 @@ TEST_F(HankelFFT_RRVTTEST,INVERSES4)
 
 TEST_F(HankelFFT_RRVTTEST,MULTITHREADED1)
 {
+    if(threads < 2)
+        GTEST_SKIP() << "Not enough threads available";
     using spida::dcmplx;
     std::vector<double> ub(nr*nt);
     transform_threaded->RT_To_SRST(u,v);
@@ -147,6 +149,8 @@ TEST_F(HankelFFT_RRVTTEST,MULTITHREADED1)
 
 TEST_F(HankelFFT_RRVTTEST,MULTITHREADED2)
 {
+    if(threads < 2)
+        GTEST_SKIP() << "Not enough threads available";
     using spida::dcmplx;
     std::vector<double> usr(nr*nt);
     std::vector<double> ub(nr*nt);
@@ -162,6 +166,8 @@ TEST_F(HankelFFT_RRVTTEST,MULTITHREADED2)
 
 TEST_F(HankelFFT_RRVTTEST,MULTITHREADED3)
 {
+    if(threads < 2)
+        GTEST_SKIP() << "Not enough threads available";
     using spida::dcmplx;
     std::vector<dcmplx> w(nr*nst);
     std::vector<dcmplx> vb(nr*nst);
@@ -179,6 +185,8 @@ TEST_F(HankelFFT_RRVTTEST,MULTITHREADED3)
 
 TEST_F(HankelFFT_RRVTTEST,MULTITHREADED4)
 {
+    if(threads < 2)
+        GTEST_SKIP() << "Not enough threads available";
     using spida::dcmplx;
     std::vector<dcmplx> w(nr*nst);
     std::vector<dcmplx> wb(nr*nst);

@@ -3,6 +3,7 @@
 #include <functional>
 #include <numeric>
 #include <random>
+#include <thread>
 #include <gtest/gtest.h>
 #include <pwutils/pwmath.hpp>
 #include <spida/helper/constants.h>
@@ -21,7 +22,7 @@ class HankelFFT_RCVTTEST : public ::testing::Test
             maxT = 6.0;
             nr = 100;
             maxR = 12.0;
-            threads = 2;
+            threads = std::min<unsigned>(2, std::thread::hardware_concurrency());
 
             // setup grids and transform
             gridT = std::make_unique<spida::UniformGridCVT>(nt,minT,maxT);
@@ -165,6 +166,8 @@ TEST_F(HankelFFT_RCVTTEST,GAUSSTGAUSSR)
 // Test RT_To_SRST and SRST_To_RT transforms are inverses (multithread)
 TEST_F(HankelFFT_RCVTTEST,MULTITHREAD1)
 {
+    if(threads < 2)
+        GTEST_SKIP() << "Not enough threads available";
     using spida::dcmplx;
     std::vector<dcmplx> ub(nr*nt);
     // Check forward tranform and reverse transform applied in sequence is identity
@@ -177,6 +180,8 @@ TEST_F(HankelFFT_RCVTTEST,MULTITHREAD1)
 // Check RT_To_RST and RST_To_RT transforms are inverses (multithread)
 TEST_F(HankelFFT_RCVTTEST,MULTITHREAD2)
 {
+    if(threads < 2)
+        GTEST_SKIP() << "Not enough threads available";
     std::vector<spida::dcmplx> usr(nr*nt);
     std::vector<spida::dcmplx> ub(nr*nt);
     // Check forward transform and reverse transform over R dimension
@@ -193,6 +198,8 @@ TEST_F(HankelFFT_RCVTTEST,MULTITHREAD2)
 // Check SRST_To_SRT and SRT_To_SRST transforms are inverses (multithread)
 TEST_F(HankelFFT_RCVTTEST,MULTITHREAD3)
 {
+    if(threads < 2)
+        GTEST_SKIP() << "Not enough threads available";
     std::vector<spida::dcmplx> w(nr*nst);
     std::vector<spida::dcmplx> vb(nr*nst);
     std::vector<spida::dcmplx> usr(nr*nt);
