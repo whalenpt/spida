@@ -326,7 +326,13 @@ void HankelFFTRRVT::setState(State state) {
         std::unique_lock lock{m_mut};
         m_cv.wait(lock,[this]{return m_processed;} );
         lock.unlock();
-    } else{
+    } else if(state == State::Done){
+        m_processed = true;
+        for(auto item : m_ready)
+            item = true;
+        m_cv.notify_all();
+    }
+    else{
         // Activate state for thread processing
         m_processed = false;
         for(auto item : m_ready)
