@@ -61,7 +61,7 @@ class KdV
             m_spida.SX_To_X(in,m_uphys);
             m_spida.dSX(in,m_uxsp);
             m_spida.SX_To_X(m_uxsp,m_uxphys);
-            for(auto i = 0; i < m_grid.getNx(); i++)
+            for(unsigned i = 0; i < m_grid.getNx(); i++)
                 m_uphys[i] = -6.0*m_uphys[i]*m_uxphys[i];
             m_spida.X_To_SX(m_uphys,out);
         };
