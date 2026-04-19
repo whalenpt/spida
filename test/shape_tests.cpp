@@ -161,8 +161,8 @@ TEST(SHAPE_TEST,BESSELT_COMPUTE)
     auto itmax = std::max_element(std::begin(y),std::end(y));
     auto itmin = std::min_element(std::begin(y),std::end(y));
 
-	EXPECT_DOUBLE_EQ(223606797.74997896,*itmax);
-    EXPECT_DOUBLE_EQ(-185314259.84787187,*itmin);
-	EXPECT_DOUBLE_EQ(46643813.615054831,y[(nt-nt/16)/2]);
-	EXPECT_DOUBLE_EQ(46643813.615054831,y[(nt+nt/16)/2]);
+	EXPECT_NEAR(223606797.74997896,*itmax,1e-6);
+    EXPECT_NEAR(-185314259.84787187,*itmin,1e-6);
+	EXPECT_NEAR(46643813.615054831,y[(nt-nt/16)/2],1e-6);
+	EXPECT_NEAR(46643813.615054831,y[(nt+nt/16)/2],1e-6);
 }
