@@ -3,12 +3,14 @@ cmake_minimum_required(VERSION 3.15)
 
 set(GRID_FILES grid_tests.cpp)
 set(SHAPE_FILES shape_tests.cpp)
-set(TRANSFORM_FILES dct_tests.cpp 
+set(TRANSFORM_FILES dct_tests.cpp
 	            fftT_tests.cpp
                 fftX_tests.cpp
                 hankel_tests.cpp
                 hankelfftRRVT_tests.cpp
-                hankelfftRCVT_tests.cpp)
+                hankelfftRCVT_tests.cpp
+                spidaR_tests.cpp
+                chebInterp_tests.cpp)
 
 set(SPIDA_FILES ${GRID_FILES} ${SHAPE_FILES} ${TRANSFORM_FILES})
 

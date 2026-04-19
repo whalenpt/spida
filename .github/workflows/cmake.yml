@@ -2,36 +2,31 @@ name: CMake
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ master ]
+    branches: [ main, develop ]
 
 env:
   BUILD_TYPE: Release
 
 jobs:
-  build: 
+  build:
     runs-on: ${{matrix.os}}
-    strategy: 
+    strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest] 
-    
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSPIDA_TEST::BOOL=1 
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSPIDA_TEST=ON
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
 
-    - name: Windows spida test
+    - name: Test
       working-directory: ${{github.workspace}}/build
-      if: ${{matrix.os == 'windows-latest'}}
-      run: ./test/${{env.BUILD_TYPE}}/spidatest.exe
-      
-    - name: MacOS/Linux spida test
-      working-directory: ${{github.workspace}}/build
-      if: ${{matrix.os != 'windows-latest'}}
-      run: ./test/spidatest
-      
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure

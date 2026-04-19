@@ -7,6 +7,7 @@
 #include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <random>
+#include <thread>
 
 
 // Hankel transform of a gauss
@@ -132,4 +133,67 @@ TEST(HANKEL_TRANSFORM_TEST,ORTHOGONALITY)
         }
     }
     EXPECT_NEAR(zero_sum,0,1e-6);
+}
+
+TEST(HANKEL_TRANSFORM_TEST,INVERSES_COMPLEX)
+{
+    using spida::dcmplx;
+    int N = 25;
+    double rmax = 2.0;
+    spida::BesselRootGridR grid(N,rmax);
+    spida::HankelTransformR tr(grid);
+
+    std::default_random_engine generator;
+    std::normal_distribution distribution{1.0,1.0};
+    std::vector<dcmplx> in(N);
+    std::vector<dcmplx> out(N);
+    std::vector<dcmplx> expect(N);
+    for(int i = 0; i < N; i++)
+        in[i] = dcmplx(distribution(generator),distribution(generator));
+    tr.R_To_SR(in,out);
+    tr.SR_To_R(out,expect);
+    EXPECT_LT(pw::relative_error(in,expect),1e-6);
+}
+
+TEST(HANKEL_TRANSFORMB_TEST,INVERSES)
+{
+    int N = 25;
+    double rmax = 2.0;
+    spida::BesselRootGridR grid(N,rmax);
+    spida::HankelTransformRb tr(grid,1);
+
+    std::default_random_engine generator;
+    std::normal_distribution distribution{1.0,1.0};
+    std::vector<double> in(N);
+    std::vector<double> out(N);
+    std::vector<double> expect(N);
+    for(int i = 0; i < N; i++)
+        in[i] = distribution(generator);
+    tr.R_To_SR(in,out);
+    tr.SR_To_R(out,expect);
+    EXPECT_LT(pw::relative_error(in,expect),1e-6);
+}
+
+TEST(HANKEL_TRANSFORMB_TEST,INVERSES_COMPLEX)
+{
+    using spida::dcmplx;
+    if(std::thread::hardware_concurrency() < 2)
+        GTEST_SKIP() << "Not enough threads available";
+
+    int N = 25;
+    double rmax = 2.0;
+    unsigned threads = std::min<unsigned>(2,std::thread::hardware_concurrency());
+    spida::BesselRootGridR grid(N,rmax);
+    spida::HankelTransformRb tr(grid,threads);
+
+    std::default_random_engine generator;
+    std::normal_distribution distribution{1.0,1.0};
+    std::vector<dcmplx> in(N);
+    std::vector<dcmplx> out(N);
+    std::vector<dcmplx> expect(N);
+    for(int i = 0; i < N; i++)
+        in[i] = dcmplx(distribution(generator),distribution(generator));
+    tr.R_To_SR(in,out);
+    tr.SR_To_R(out,expect);
+    EXPECT_LT(pw::relative_error(in,expect),1e-6);
 }
