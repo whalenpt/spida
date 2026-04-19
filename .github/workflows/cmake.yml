@@ -21,14 +21,6 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Install Boost (Linux)
-      if: runner.os == 'Linux'
-      run: sudo apt-get install -y libboost-math-dev
-
-    - name: Install Boost (macOS)
-      if: runner.os == 'macOS'
-      run: brew install boost
-
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSPIDA_TEST=ON
 

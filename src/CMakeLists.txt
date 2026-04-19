@@ -105,7 +105,7 @@ endif()
 if(Boost_FOUND)
     target_include_directories(spida PUBLIC ${Boost_INCLUDE_DIRS})
 else()
-    set(LOCAL_BOOST_DIR "${CMAKE_SOURCE_DIR}/external/spidaboost_1_76_0")
+    set(LOCAL_BOOST_DIR "${CMAKE_SOURCE_DIR}/external/boost")
     target_include_directories(spida PUBLIC 
         $<BUILD_INTERFACE:${LOCAL_BOOST_DIR}>
     	$<INSTALL_INTERFACE:include>
