@@ -57,7 +57,8 @@ if [ "$COVERAGE" = true ]; then
 
     lcov --capture \
         --directory "$BUILD_DIR" \
-        --output-file "$BUILD_DIR/coverage.info"
+        --output-file "$BUILD_DIR/coverage.info" \
+        --ignore-errors mismatch
 
     lcov --remove \
         "$BUILD_DIR/coverage.info" \

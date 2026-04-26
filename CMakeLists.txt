@@ -53,7 +53,7 @@ if(SPIDA_COVERAGE)
     message(STATUS "Code coverage enabled")
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        add_compile_options(--coverage -O0 -g)
+        add_compile_options(--coverage -O0 -g -fprofile-update=atomic)
         add_link_options(--coverage)
     else()
         message(WARNING "Coverage not supported for this compiler")
