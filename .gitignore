@@ -1,7 +1,5 @@
 .DS_Store
-build-release
-build-debug
-*.json
+build
 *.swp
 external/xtensor
 

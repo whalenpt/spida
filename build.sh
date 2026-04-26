@@ -1,59 +1,70 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
-# Defaults
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$SCRIPT_DIR"
+
 BUILD_TYPE="Release"
 CLEAN=false
 COVERAGE=false
+TESTS=false
 
-# Parse arguments
 for arg in "$@"; do
     case "$arg" in
-        debug)
-            BUILD_TYPE="Debug"
-            ;;
-        release)
-            BUILD_TYPE="Release"
-            ;;
+        debug) BUILD_TYPE="Debug" ;;
+        release) BUILD_TYPE="Release" ;;
         coverage)
-            BUILD_TYPE="Debug"
+            BUILD_TYPE="RelWithDebInfo"
             COVERAGE=true
+            TESTS=true
             ;;
-        clean)
-            CLEAN=true
-            ;;
+        clean) CLEAN=true ;;
         *)
             echo "Unknown argument: $arg"
-            echo "Usage: $0 [debug|release|coverage] [clean]"
             exit 1
             ;;
     esac
 done
 
-# Detect CPU cores
-if command -v nproc >/dev/null 2>&1; then
-    THREADS=$(nproc)
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-    THREADS=$(sysctl -n hw.ncpu)
-else
-    THREADS=4
-fi
+THREADS="${THREADS:-$(nproc)}"
 
-echo "Build type: $BUILD_TYPE"
-echo "Using $THREADS threads"
+BUILD_DIR="${BUILD_DIR:-build/$(echo "$BUILD_TYPE" | tr '[:upper:]' '[:lower:]')}"
 
-BUILD_DIR="build-${BUILD_TYPE,,}"
+echo "Build dir: $BUILD_DIR"
 
-# Optional clean
 if [ "$CLEAN" = true ]; then
-    echo "Cleaning $BUILD_DIR"
     rm -rf "$BUILD_DIR"
 fi
 
-mkdir -p "$BUILD_DIR"
-cd "$BUILD_DIR"
+CMAKE_ARGS=(
+    "-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+    "-DSPIDA_COVERAGE=$([ "$COVERAGE" = true ] && echo ON || echo OFF)"
+    "-DSPIDA_TEST=$([ "$TESTS" = true ] && echo ON || echo OFF)"
+)
 
-cmake -S .. -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DSPIDA_COVERAGE="$( [ "$COVERAGE" = true ] && echo ON || echo OFF )"
-cmake --build . --parallel "$THREADS"
+cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" "${CMAKE_ARGS[@]}"
+cmake --build "$BUILD_DIR" --parallel "$THREADS"
 
+if [ "$TESTS" = true ]; then
+    ctest --test-dir "$BUILD_DIR" --output-on-failure
+fi
+
+# Coverage step (only in coverage mode)
+if [ "$COVERAGE" = true ]; then
+    echo "=============================="
+    echo "Generating coverage"
+    echo "=============================="
+
+    lcov --capture \
+        --directory "$BUILD_DIR" \
+        --output-file "$BUILD_DIR/coverage.info"
+
+    lcov --remove \
+        "$BUILD_DIR/coverage.info" \
+        '/usr/*' \
+        '*/external/*' \
+        --output-file "$BUILD_DIR/coverage.filtered.info"
+
+    echo "Coverage file:"
+    echo "$BUILD_DIR/coverage.filtered.info"
+fi
