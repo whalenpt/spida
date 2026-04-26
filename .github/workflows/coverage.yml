@@ -23,8 +23,7 @@ jobs:
             cmake \
             lcov \
             ninja-build \
-            g++ \
-            gcov
+            g++
 
       - name: Configure (Coverage Preset)
         run: cmake --preset coverage
@@ -39,7 +38,8 @@ jobs:
         run: |
           lcov --capture \
             --directory build/coverage \
-            --output-file coverage.info
+            --output-file coverage.info \
+            --ignore-errors mismatch
 
           lcov --remove coverage.info \
             '/usr/*' \
