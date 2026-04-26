@@ -96,6 +96,11 @@ target_link_libraries(spida PUBLIC
     nayukidct
 )
 
+if(SPIDA_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(spida PRIVATE -O0 -g --coverage)
+    target_link_options(spida PRIVATE --coverage)
+endif()
+
 if(HAVE_OPENBLAS)
     target_link_libraries(spida PUBLIC ${OpenBLAS_LIBRARY})
     message("OpenBLAS include directories: ${OpenBLAS_INCLUDE_DIRS}")

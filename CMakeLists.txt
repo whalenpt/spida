@@ -8,6 +8,7 @@ option(SPIDA_STATIC "Build spida as static (ON) or shared library (OFF)" ON)
 option(SPIDA_TEST "Build spida tests" OFF)
 option(SPIDA_DEMOS "Build spida demos" OFF)
 option(WITH_OPENBLAS "Use OpenBLAS" OFF)
+option(SPIDA_COVERAGE "Enable code coverage instrumentation" OFF)
 
 set(PWUTILS_TEST OFF CACHE BOOL "Build pwutils tests")
 set(PWUTILS_EXAMPLES OFF CACHE BOOL "Build pwutils examples")
