@@ -5,7 +5,7 @@ SPIDA
 .. |build| image:: https://github.com/whalenpt/spida/actions/workflows/cmake.yml/badge.svg
     :target: https://github.com/whalenpt/spida/actions/workflows/cmake.yml
 
-.. |coverage| image:: https://codecov.io/gh/whalenpt/spida/branch/master/graph/badge.svg
+.. |coverage| image:: https://codecov.io/gh/whalenpt/spida/branch/main/graph/badge.svg?token=79G4BWT348
     :target: https://codecov.io/gh/whalenpt/spida
 
 .. |license| image:: https://img.shields.io/badge/License-MIT-yellow.svg
