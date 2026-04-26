@@ -1,5 +1,6 @@
 .DS_Store
-[Bb]uild*
+build-release
+build-debug
 *.json
 *.swp
 external/xtensor
