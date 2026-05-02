@@ -13,7 +13,7 @@ namespace spida{
       m_vs(grid.getNsx()) {}
 
   const UniformGridRVX& SpidaRVX::getGridX() const { return *m_gr; }
-  const FFTRVX& SpidaRVX::getTransformX() const { return *m_tr; }
+  FFTRVX& SpidaRVX::getTransformX() { return *m_tr; }
   const std::vector<double>& SpidaRVX::getX() const {return m_gr->getX();}
   const std::vector<double>& SpidaRVX::getSX() const {return m_gr->getSX();}
   void SpidaRVX::X_To_SX(const std::vector<double>& in,std::vector<dcmplx>& out) noexcept {m_tr->X_To_SX(in,out);} 

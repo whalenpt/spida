@@ -10,7 +10,8 @@ set(TRANSFORM_FILES dct_tests.cpp
                 hankelfftRRVT_tests.cpp
                 hankelfftRCVT_tests.cpp
                 spidaR_tests.cpp
-                chebInterp_tests.cpp)
+                chebInterp_tests.cpp
+                spida_wrappers_tests.cpp)
 
 set(SPIDA_FILES ${GRID_FILES} ${SHAPE_FILES} ${TRANSFORM_FILES})
 

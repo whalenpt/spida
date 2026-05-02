@@ -12,7 +12,7 @@ namespace spida{
       m_vs(grid.getNst()) {}
 
   const UniformGridCVT& SpidaCVT::getGridT() const { return *m_gr; }
-  const FFTCVT& SpidaCVT::getTransformT() const { return *m_tr; }
+  FFTCVT& SpidaCVT::getTransformT() { return *m_tr; }
   const std::vector<double>& SpidaCVT::getT() const {return m_gr->getT();}
   const std::vector<double>& SpidaCVT::getST() const {return m_gr->getST();}
   void SpidaCVT::T_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept {m_tr->T_To_ST(in,out);} 
