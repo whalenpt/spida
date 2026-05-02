@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 
-set(GRID_FILES grid_tests.cpp)
+set(GRID_FILES grid_tests.cpp grid_extended_tests.cpp)
 set(SHAPE_FILES shape_tests.cpp)
 set(TRANSFORM_FILES dct_tests.cpp
 	            fftT_tests.cpp
@@ -16,6 +16,8 @@ set(SPIDA_FILES ${GRID_FILES} ${SHAPE_FILES} ${TRANSFORM_FILES})
 
 set(KISS_FILES kiss_tests.cpp)
 set(NAYUKI_FILES nayuki_tests.cpp)
+set(INTERP_FILES interp_tests.cpp)
+set(SOLVER_FILES solver_tests.cpp)
 	            
 
 message("Run tests on grids")
@@ -94,4 +96,24 @@ add_test(
 add_test(
 	NAME nayukitest
 	COMMAND nayukitest
+)
+
+add_executable(interptest ${INTERP_FILES})
+target_link_libraries(interptest PUBLIC
+    gtest_main
+    SPIDA::spida
+)
+add_test(
+    NAME interptest
+    COMMAND interptest
+)
+
+add_executable(solvertest ${SOLVER_FILES})
+target_link_libraries(solvertest PUBLIC
+    gtest_main
+    SPIDA::spida
+)
+add_test(
+    NAME solvertest
+    COMMAND solvertest
 )
