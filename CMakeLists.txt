@@ -8,7 +8,6 @@ project(SPIDA
 # -----------------------------
 # Options
 # -----------------------------
-option(SPIDA_STATIC "Build spida as static library" ON)
 option(SPIDA_TEST "Build spida tests" OFF)
 option(SPIDA_DEMOS "Build spida demos" OFF)
 option(WITH_OPENBLAS "Use OpenBLAS" OFF)
@@ -38,6 +37,13 @@ endif()
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
+
+# -----------------------------
+# Static build
+# -----------------------------
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(KISSFFT_STATIC ON CACHE BOOL "" FORCE)
+set(PWUTILS_STATIC ON CACHE BOOL "" FORCE)
 
 # -----------------------------
 # Git submodules
@@ -72,7 +78,6 @@ else()
 endif()
 
 add_subdirectory(external/nayukidct)
-
 add_subdirectory(external/kissfft)
 
 # -----------------------------
@@ -128,7 +133,6 @@ endif()
 # Summary
 # -----------------------------
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Static build: ${SPIDA_STATIC}")
 message(STATUS "Tests: ${SPIDA_TEST}")
 message(STATUS "Demos: ${SPIDA_DEMOS}")
 message(STATUS "Coverage: ${SPIDA_COVERAGE}")
