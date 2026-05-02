@@ -1,128 +1,116 @@
-cmake_minimum_required(VERSION 3.16.3)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+cmake_minimum_required(VERSION 3.20)
 
-project(SPIDA VERSION 0.0.2 LANGUAGES CXX)
+project(SPIDA
+    VERSION 0.1.0
+    LANGUAGES CXX
+)
 
-option(SPIDA_STATIC "Build spida as static (ON) or shared library (OFF)" ON)
+# -----------------------------
+# Options
+# -----------------------------
+option(SPIDA_STATIC "Build spida as static library" ON)
 option(SPIDA_TEST "Build spida tests" OFF)
 option(SPIDA_DEMOS "Build spida demos" OFF)
 option(WITH_OPENBLAS "Use OpenBLAS" OFF)
 option(SPIDA_COVERAGE "Enable code coverage instrumentation" OFF)
+option(SPIDA_UPDATE_SUBMODULES "Update git submodules on configure" ON)
 
-set(PWUTILS_TEST OFF CACHE BOOL "Build pwutils tests")
-set(PWUTILS_EXAMPLES OFF CACHE BOOL "Build pwutils examples")
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
+# -----------------------------
+# Policies
+# -----------------------------
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
+# -----------------------------
+# Build type default
+# -----------------------------
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR AND NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+# -----------------------------
+# Git submodules
+# -----------------------------
 find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    option(GIT_SUBMODULE "Check submodules during build" ON)
-    if(GIT_SUBMODULE)
-        message(STATUS "Submodule update")
-        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
-        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}")
-        endif()
+
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git" AND SPIDA_UPDATE_SUBMODULES)
+    message(STATUS "Updating git submodules")
+
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_RESULT
+    )
+
+    if(NOT GIT_RESULT EQUAL 0)
+        message(FATAL_ERROR "git submodule update failed: ${GIT_RESULT}")
     endif()
-endif()
-
-# -----------------------------
-# Build type defaults
-# -----------------------------
-if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    include(GNUInstallDirs)
-
-    if(NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE Release)
-    endif()
-
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
-    else()
-        set(CMAKE_CXX_FLAGS "-Wall")
-        set(CMAKE_CXX_FLAGS_DEBUG "-g")
-        set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-    endif()
-endif()
-
-# -----------------------------
-# Coverage support
-# -----------------------------
-if(SPIDA_COVERAGE)
-    message(STATUS "Code coverage enabled")
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        add_compile_options(--coverage -O0 -g -fprofile-update=atomic)
-        add_link_options(--coverage)
-    else()
-        message(WARNING "Coverage not supported for this compiler")
-    endif()
-endif()
-
-# -----------------------------
-# Library type
-# -----------------------------
-if (NOT SPIDA_STATIC)
-    set(BUILD_SHARED_LIBS ON)
-    set(PWUTILS_STATIC OFF CACHE BOOL "Build pwutils as static (ON) or shared library (OFF)")
-    set(KISSFFT_STATIC OFF CACHE BOOL "Build kissfft as static (ON) or shared library (OFF)")
-    message(STATUS "Building shared spida library")
-else()
-    set(BUILD_SHARED_LIBS OFF)
-    message(STATUS "Building static spida library")
-    set(PWUTILS_STATIC ON CACHE BOOL "Build pwutils as static (ON) or shared library (OFF)")
-    set(KISSFFT_STATIC ON CACHE BOOL "Build kissfft as static (ON) or shared library (OFF)")
 endif()
 
 # -----------------------------
 # Dependencies
 # -----------------------------
-find_package(pwutils QUIET)
+find_package(Boost CONFIG QUIET)
+find_package(pwutils CONFIG QUIET)
+
 if(NOT pwutils_FOUND)
+    message(STATUS "Building pwutils from submodule")
     add_subdirectory(external/pwutils)
-    message(STATUS "Building pwutils library")
 else()
     message(STATUS "Found pwutils package")
 endif()
 
 add_subdirectory(external/nayukidct)
 
-set(KISSFFT_TOOLS OFF CACHE BOOL "Build kissfft command-line tools")
-set(KISSFFT_PKGCONFIG OFF CACHE BOOL "Build pkg-config files")
-set(KISSFFT_TEST OFF CACHE BOOL "Build kissfft tests")
-set(KISSFFT_DIR "external/kissfft")
-set(KISSFFT_DATATYPE "double" CACHE STRING "Principal datatype of kissfft")
-add_subdirectory(${KISSFFT_DIR})
+set(KISSFFT_TOOLS OFF CACHE BOOL "" FORCE)
+set(KISSFFT_PKGCONFIG OFF CACHE BOOL "" FORCE)
+set(KISSFFT_TEST OFF CACHE BOOL "" FORCE)
+set(KISSFFT_DATATYPE "double" CACHE STRING "" FORCE)
+add_subdirectory(external/kissfft)
 
-find_package(Boost QUIET)
-if(Boost_FOUND)
-    message(STATUS "Boost found")
-else()
-    message(STATUS "Boost not found - use local version")
-endif()
-
-set(HAVE_OPENBLAS OFF)
+# -----------------------------
+# OpenBLAS (optional)
+# -----------------------------
 if(WITH_OPENBLAS)
-    find_package(OpenBLAS)
+    find_package(OpenBLAS QUIET)
+
     if(OpenBLAS_FOUND)
         message(STATUS "OpenBLAS found")
-        set(HAVE_OPENBLAS ON)
-        add_definitions(-DHAVE_OPENBLAS)
-    else()
-        message(STATUS "OpenBLAS not found")
+
+        add_library(OpenBLAS::interface INTERFACE IMPORTED)
+        target_compile_definitions(OpenBLAS::interface INTERFACE HAVE_OPENBLAS=1)
+        target_include_directories(OpenBLAS::interface INTERFACE ${OpenBLAS_INCLUDE_DIRS})
+        target_link_libraries(OpenBLAS::interface INTERFACE ${OpenBLAS_LIBRARIES})
     endif()
 endif()
 
+# -----------------------------
+# Coverage (FLAGS ONLY — IMPORTANT FIX)
+# -----------------------------
+if(SPIDA_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    message(STATUS "Code coverage enabled")
+
+    add_compile_options(--coverage -O0 -g -fprofile-update=atomic)
+    add_link_options(--coverage)
+endif()
+
+# -----------------------------
+# Main library
+# -----------------------------
 add_subdirectory(src)
 
 # -----------------------------
 # Tests / demos
 # -----------------------------
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+
     if(SPIDA_TEST)
         enable_testing()
-        set(INSTALL_GTEST OFF CACHE BOOL "Disable gtest install")
+        set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
         add_subdirectory(external/googletest)
         add_subdirectory(test)
     endif()
@@ -130,8 +118,14 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     if(SPIDA_DEMOS)
         add_subdirectory(demos)
     endif()
+
 endif()
 
-message("Build with demos: ${SPIDA_DEMOS}")
-message("Build with tests: ${SPIDA_TEST}")
-message("Coverage enabled: ${SPIDA_COVERAGE}")
+# -----------------------------
+# Summary
+# -----------------------------
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Static build: ${SPIDA_STATIC}")
+message(STATUS "Tests: ${SPIDA_TEST}")
+message(STATUS "Demos: ${SPIDA_DEMOS}")
+message(STATUS "Coverage: ${SPIDA_COVERAGE}")
