@@ -12,7 +12,7 @@ TEST(NAYUKI_TEST,RANDOM)
     // Check that |in| = |ifft(fft(in))|, where ifft is the inverse fft
 	unsigned N = 64;
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<double> in(N);
     std::vector<double> out(N);
     for(unsigned i = 0; i < N; i++)

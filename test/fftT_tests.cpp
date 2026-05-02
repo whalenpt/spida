@@ -22,7 +22,7 @@ TEST(FFTCVT_TEST,INVERSES)
     using spida::dcmplx;
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<dcmplx> in(N);
     std::vector<dcmplx> out(N);
     std::vector<dcmplx> expect(N);
@@ -140,7 +140,7 @@ TEST(FFTRVT_TEST,INVERSES)
     unsigned nst = grid.getNst();
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<double> in(N);
     std::vector<dcmplx> out(nst);
     std::vector<double> expect(N);
