@@ -68,4 +68,14 @@ if [ "$COVERAGE" = true ]; then
 
     echo "Coverage file:"
     echo "$BUILD_DIR/coverage.filtered.info"
+
+    genhtml \
+        "$BUILD_DIR/coverage.filtered.info" \
+        --output-directory "$BUILD_DIR/coverage-report" \
+        --demangle-cpp \
+        --legend
+
+    echo
+    echo "HTML report:"
+    echo "$BUILD_DIR/coverage-report/index.html"
 fi
