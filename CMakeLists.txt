@@ -15,6 +15,13 @@ option(WITH_OPENBLAS "Use OpenBLAS" OFF)
 option(SPIDA_COVERAGE "Enable code coverage instrumentation" OFF)
 option(SPIDA_UPDATE_SUBMODULES "Update git submodules on configure" ON)
 
+set(PWUTILS_TEST OFF CACHE BOOL "Build pwutils tests")
+set(PWUTILS_EXAMPLES OFF CACHE BOOL "Build pwutils examples")
+set(KISSFFT_TOOLS OFF CACHE BOOL "" FORCE)
+set(KISSFFT_PKGCONFIG OFF CACHE BOOL "" FORCE)
+set(KISSFFT_TEST OFF CACHE BOOL "" FORCE)
+set(KISSFFT_DATATYPE "double" CACHE STRING "" FORCE)
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
@@ -66,10 +73,6 @@ endif()
 
 add_subdirectory(external/nayukidct)
 
-set(KISSFFT_TOOLS OFF CACHE BOOL "" FORCE)
-set(KISSFFT_PKGCONFIG OFF CACHE BOOL "" FORCE)
-set(KISSFFT_TEST OFF CACHE BOOL "" FORCE)
-set(KISSFFT_DATATYPE "double" CACHE STRING "" FORCE)
 add_subdirectory(external/kissfft)
 
 # -----------------------------
