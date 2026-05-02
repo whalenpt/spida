@@ -19,6 +19,7 @@ set(KISS_FILES kiss_tests.cpp)
 set(NAYUKI_FILES nayuki_tests.cpp)
 set(INTERP_FILES interp_tests.cpp)
 set(SOLVER_FILES solver_tests.cpp)
+set(PROPAGATOR_FILES propagator_tests.cpp)
 	            
 
 message("Run tests on grids")
@@ -113,8 +114,20 @@ add_executable(solvertest ${SOLVER_FILES})
 target_link_libraries(solvertest PUBLIC
     gtest_main
     SPIDA::spida
+    pw::pwutils
 )
 add_test(
     NAME solvertest
     COMMAND solvertest
+)
+
+add_executable(propagatortest ${PROPAGATOR_FILES})
+target_link_libraries(propagatortest PUBLIC
+    gtest_main
+    SPIDA::spida
+    pw::pwutils
+)
+add_test(
+    NAME propagatortest
+    COMMAND propagatortest
 )
