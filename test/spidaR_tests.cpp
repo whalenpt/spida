@@ -14,7 +14,7 @@ TEST(SPIDA_R_TEST,INVERSES)
     spida::SpidaR spidaR(grid);
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<double> in(N);
     std::vector<double> out(N);
     std::vector<double> expect(N);
@@ -34,7 +34,7 @@ TEST(SPIDA_R_TEST,INVERSES_COMPLEX)
     spida::SpidaR spidaR(grid);
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<dcmplx> in(N);
     std::vector<dcmplx> out(N);
     std::vector<dcmplx> expect(N);

@@ -99,7 +99,7 @@ TEST(HANKEL_TRANSFORM_TEST,INVERSES)
     spida::HankelTransformR tr(grid);
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<double> in(N);
     std::vector<double> out(N);
     std::vector<double> expect(N);
@@ -144,7 +144,7 @@ TEST(HANKEL_TRANSFORM_TEST,INVERSES_COMPLEX)
     spida::HankelTransformR tr(grid);
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<dcmplx> in(N);
     std::vector<dcmplx> out(N);
     std::vector<dcmplx> expect(N);
@@ -163,7 +163,7 @@ TEST(HANKEL_TRANSFORMB_TEST,INVERSES)
     spida::HankelTransformRb tr(grid,1);
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<double> in(N);
     std::vector<double> out(N);
     std::vector<double> expect(N);
@@ -187,7 +187,7 @@ TEST(HANKEL_TRANSFORMB_TEST,INVERSES_COMPLEX)
     spida::HankelTransformRb tr(grid,threads);
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<dcmplx> in(N);
     std::vector<dcmplx> out(N);
     std::vector<dcmplx> expect(N);

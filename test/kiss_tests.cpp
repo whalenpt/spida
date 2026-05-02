@@ -35,7 +35,7 @@ TEST(KISS_TEST,RANDOM)
 	unsigned N = 64;
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<std::complex<double> > in(N);
     std::vector<std::complex<double> > out(N);
     for(unsigned int i = 0; i < N; i++)
@@ -72,7 +72,7 @@ TEST(KISS_TEST,RANDOM_REAL)
 	unsigned N = 64;
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<double> in(N);
     std::vector<std::complex<double> > out(N/2+1);
     for(unsigned i = 0; i < N; i++)

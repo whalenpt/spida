@@ -18,7 +18,7 @@ TEST(FFTCVX_TEST,INVERSES)
     using spida::dcmplx;
 
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<dcmplx> in(N);
     std::vector<dcmplx> out(N);
     std::vector<dcmplx> expect(N);
@@ -165,7 +165,7 @@ TEST(FFTRVX_TEST,INVERSES)
     spida::UniformGridRVX grid{N,-2,2};
     unsigned nsx = grid.getNsx();
     std::default_random_engine generator;
-    std::normal_distribution distribution{1.0,1.0};
+    std::normal_distribution<double> distribution(1.0, 1.0);
     std::vector<double> in(N);
     std::vector<dcmplx> out(nsx);
     std::vector<double> expect(N);
