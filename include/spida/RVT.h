@@ -23,7 +23,7 @@ namespace spida{
       void CVT_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out);
       void ST_To_CVT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out); 
       const UniformGridRVT& getGridT() const;
-      const FFTRVT& getTransformT() const;
+      FFTRVT& getTransformT();
     private:
       std::unique_ptr<UniformGridRVT> m_gr;
       std::unique_ptr<FFTRVT> m_tr;

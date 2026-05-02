@@ -34,7 +34,7 @@ namespace spida{
       void T_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept;
       void ST_To_T(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept; 
       const UniformGridCVT& getGridT() const;
-      const FFTCVT& getTransformT() const;
+      FFTCVT& getTransformT();
     private:
       std::unique_ptr<UniformGridCVT> m_gr;
       std::unique_ptr<FFTCVT> m_tr;

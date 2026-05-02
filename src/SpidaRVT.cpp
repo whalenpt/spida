@@ -14,7 +14,7 @@ namespace spida{
       m_vs(grid.getNst()) {}
 
   const UniformGridRVT& SpidaRVT::getGridT() const { return *m_gr; }
-  const FFTRVT& SpidaRVT::getTransformT() const { return *m_tr; }
+  FFTRVT& SpidaRVT::getTransformT() { return *m_tr; }
   const std::vector<double>& SpidaRVT::getT() const {return m_gr->getT();}
   const std::vector<double>& SpidaRVT::getST() const {return m_gr->getST();}
   void SpidaRVT::T_To_ST(const std::vector<double>& in,std::vector<dcmplx>& out) {m_tr->T_To_ST(in,out);} 

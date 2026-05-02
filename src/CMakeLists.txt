@@ -23,6 +23,7 @@ set(SRC_FILES
 	propagator/reporthandler.cpp
 	shape/shapeT.cpp
 	shape/shapeR.cpp
+	shape/shapeX.cpp
 	rkstiff/solver.cpp
 	rkstiff/ETDAS.cpp
 	rkstiff/ETDCS.cpp
@@ -68,6 +69,7 @@ set(SPIDA_INCLUDES
    "${INCL_DIR}/shape/shape.h"
    "${INCL_DIR}/shape/shapeT.h"
    "${INCL_DIR}/shape/shapeR.h"
+   "${INCL_DIR}/shape/shapeX.h"
    "${INCL_DIR}/rkstiff/solver.h"
    "${INCL_DIR}/rkstiff/ETDAS.h"
    "${INCL_DIR}/rkstiff/ETDCS.h"

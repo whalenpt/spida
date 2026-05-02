@@ -37,7 +37,7 @@ namespace spida{
       void X_To_SX(const std::vector<double>& in,std::vector<dcmplx>& out) noexcept;
       void SX_To_X(const std::vector<dcmplx>& in,std::vector<double>& out) noexcept; 
       const UniformGridRVX& getGridX() const;
-      const FFTRVX& getTransformX() const;
+      FFTRVX& getTransformX();
     private:
       std::unique_ptr<UniformGridRVX> m_gr;
       std::unique_ptr<FFTRVX> m_tr;
