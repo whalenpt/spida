@@ -1,6 +1,8 @@
 
 #include "spida/rkstiff/IFAS.h"
 #include <cmath>
+#include <pwutils/pwstats.h>
+#include <pwutils/pwthreads.h>
 
 namespace spida{
 

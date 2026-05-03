@@ -2,14 +2,14 @@
 # Vendored pwutils sources (compiled directly into spida)
 # -----------------------------
 set(PWUTILS_SRC_FILES
-    ${PROJECT_SOURCE_DIR}/lib/pwutils/pwmath.cpp
-    ${PROJECT_SOURCE_DIR}/lib/pwutils/pwstats.cpp
-    ${PROJECT_SOURCE_DIR}/lib/pwutils/pwstrings.cpp
-    ${PROJECT_SOURCE_DIR}/lib/pwutils/pwthreads.cpp
-    ${PROJECT_SOURCE_DIR}/lib/pwutils/report/basereport.cpp
-    ${PROJECT_SOURCE_DIR}/lib/pwutils/report/dat.cpp
-    ${PROJECT_SOURCE_DIR}/lib/pwutils/report/dataio.cpp
-    ${PROJECT_SOURCE_DIR}/lib/pwutils/report/reporthelper.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/pwmath.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/pwstats.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/pwstrings.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/pwthreads.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/report/basereport.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/report/dat.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/report/dataio.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/report/reporthelper.cpp
 )
 
 # -----------------------------
@@ -65,7 +65,7 @@ add_library(SPIDA::spida ALIAS spida)
 # -----------------------------
 target_include_directories(spida PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
 
@@ -131,11 +131,6 @@ install(TARGETS spida
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION include
-)
-
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/lib/pwutils/
-    DESTINATION include/pwutils
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
 install(EXPORT SpidaTargets

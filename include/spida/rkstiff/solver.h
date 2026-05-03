@@ -20,10 +20,12 @@
 #include <exception>
 #include <filesystem>
 #include <functional>
-#include <pwutils/pwstats.h>
-#include <pwutils/pwmath.hpp>
-#include <pwutils/pwthreads.h>
 #include "spida/helper/constants.h"
+
+namespace pw{
+    class StatCenter;
+    class ThreadManager;
+}
 
 //------------------------------------------------------------------------------
 
@@ -35,7 +37,6 @@ namespace spida{
 constexpr auto MAX_LOOP = 100;
 
 
-using pw::StatCenter;
 class PropagatorCV;
 using NLfunc = std::function<void(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)>; 
 using LinOp = std::vector<dcmplx>;
@@ -52,7 +53,7 @@ class SolverCV
         ///  @param NL Nonlinear function
 
         SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs=false);
-        virtual ~SolverCV() = default;
+        virtual ~SolverCV();
 
         /// @brief Propagates a vector u from t0 to tf using the class LinOp and NLfunc
         /// @param u Field being propagated
@@ -88,19 +89,19 @@ class SolverCV
         void setLogProgress(bool val) { m_log_progress = val; }
 
         /// Sets logging frequency
-        void setLogFrequency(unsigned val) { m_stat.setLogFrequency(val);};
+        void setLogFrequency(unsigned val);
 
         /// Sets current time of propagator
         void setCurrentTime(double t) {m_tcurrent = t;}
 
         /// Sets number of threads that can be utilized by Solver
-        void setNumThreads(unsigned val) {m_thmgt.setNumThreads(val);}
+        void setNumThreads(unsigned val);
 
         /// Accesses the number of threads that can be utilized by the Solver
-        unsigned numThreads() const {return m_thmgt.getNumThreads();}
+        unsigned numThreads() const;
 
         /// Accesses the threadManager
-        pw::ThreadManager& threadManager() {return m_thmgt;}
+        pw::ThreadManager& threadManager();
 
         /// Get the current time
         double currentTime() const {return m_tcurrent;}
@@ -118,7 +119,7 @@ class SolverCV
         void reportStats() const;
 
         /// Accessor of the StatCenter
-        StatCenter& statCenter() {return m_stat;}
+        pw::StatCenter& statCenter();
 
   private:
 
@@ -134,11 +135,11 @@ class SolverCV
       const LinOp* m_L;
       const NLfunc* m_NL;
 
-      StatCenter m_stat;
+      std::unique_ptr<pw::StatCenter> m_stat;
       double m_tcurrent{0.0}; /**< Current time */
       double m_dt_last{0.0}; /**< Previous step size */
       bool m_log_progress{false}; /**< Determines whether to log data from propagation */
-      pw::ThreadManager m_thmgt{1}; /**< Holds number of threads and helper functions */
+      std::unique_ptr<pw::ThreadManager> m_thmgt;
 };
 
 ///  Helper class for computing step updates

@@ -67,7 +67,6 @@ endif()
 find_package(Boost CONFIG QUIET)
 find_package(spdlog CONFIG QUIET)
 
-add_subdirectory(lib)
 add_subdirectory(external/nayukidct)
 
 find_package(kissfft CONFIG QUIET)

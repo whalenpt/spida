@@ -1,15 +1,24 @@
 
 #include <stdexcept>
 #include <filesystem>
+#include <pwutils/pwstats.h>
+#include <pwutils/report/basereport.h>
 #include "spida/propagator/propagator.h"
 
 namespace spida{
 
+BasePropagator::~BasePropagator() = default;
+
+void BasePropagator::addReport(std::unique_ptr<pw::ReportData1D> def) {m_report_handler.addReport(std::move(def));}
+void BasePropagator::addReport(std::unique_ptr<pw::ReportData2D> def) {m_report_handler.addReport(std::move(def));}
+void BasePropagator::addReport(std::unique_ptr<pw::TrackData> def)    {m_report_handler.addReport(std::move(def));}
+
 BasePropagator::BasePropagator(const std::filesystem::path& dir_path) :
-    m_dir_path(dir_path)
+    m_dir_path(dir_path),
+    m_stat(std::make_unique<pw::StatCenter>())
 {
-    m_stat.setHeader("REPORT STATS");
-    m_stat.addTracker("t",0.0);
+    m_stat->setHeader("REPORT STATS");
+    m_stat->addTracker("t",0.0);
 }
 
 void BasePropagator::setStepsPerOutput(unsigned val)
@@ -89,7 +98,7 @@ bool BasePropagator::maxReportReached() const
 bool BasePropagator::stepUpdate(double t)
 {
     m_steps_taken++;
-    m_stat.updateTracker("t",t);
+    m_stat->updateTracker("t",t);
     if(readyForReport())
         updateFields(t);
     if(!(m_steps_taken % m_steps_per_out1D) && m_report_handler.hasData1D())
@@ -108,7 +117,7 @@ bool BasePropagator::stepUpdate(double t)
 
 void BasePropagator::reportStats() const
 {
-    m_stat.report();
+    m_stat->report();
 }
 
 void BasePropagator::report(double t)
@@ -125,34 +134,34 @@ void BasePropagator::report1D(double t)
 {
     if(!m_report_handler.hasData1D())
         return;
-    m_stat.startTimer("Time Reporting 1D");
+    m_stat->startTimer("Time Reporting 1D");
     m_report_handler.setItem("t",t);
     m_report_handler.report1D(m_dir_path,m_report_count1D);
-    m_stat.endTimer("Time Reporting 1D");
+    m_stat->endTimer("Time Reporting 1D");
     m_report_count1D++;
-    m_stat.incrementCounter("Number Reports 1D");
+    m_stat->incrementCounter("Number Reports 1D");
 }
 
 void BasePropagator::report2D(double t) 
 {
     if(!m_report_handler.hasData2D())
         return;
-    m_stat.startTimer("Time Reporting 2D");
+    m_stat->startTimer("Time Reporting 2D");
     m_report_handler.setItem("t",t);
     m_report_handler.report2D(m_dir_path,m_report_count2D);
-    m_stat.endTimer("Time Reporting 2D");
+    m_stat->endTimer("Time Reporting 2D");
     m_report_count2D++;
-    m_stat.incrementCounter("Number Reports 2D");
+    m_stat->incrementCounter("Number Reports 2D");
 }
 
 void BasePropagator::reportTrack(double t) 
 {
     if(!m_report_handler.hasDataTrack())
         return;
-    m_stat.startTimer("Time Reporting Trackers");
+    m_stat->startTimer("Time Reporting Trackers");
     m_report_handler.setItem("t",t);
     m_report_handler.reportTrack(m_dir_path,t);
-    m_stat.endTimer("Time Reporting Trackers");
+    m_stat->endTimer("Time Reporting Trackers");
 }
 
 }

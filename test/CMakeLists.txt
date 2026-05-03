@@ -82,6 +82,7 @@ target_link_libraries(kisstest PUBLIC
     GTest::gtest_main
     kissfft
 )
+target_include_directories(kisstest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME kisstest COMMAND kisstest)
 
 add_executable(nayukitest ${NAYUKI_FILES})
@@ -89,6 +90,7 @@ target_link_libraries(nayukitest PUBLIC
     GTest::gtest_main
     nayukidct
 )
+target_include_directories(nayukitest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME nayukitest COMMAND nayukitest)
 
 # ------------------------------------------------------------------------------
