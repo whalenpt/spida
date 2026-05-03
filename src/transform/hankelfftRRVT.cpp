@@ -261,45 +261,48 @@ void HankelFFTRRVT::worker_thread(unsigned tid)
   bool threads_done = false;
   while(!threads_done)
   {
-      std::unique_lock lock{m_mut};
-      m_cv.wait(lock,[this, tid]{return m_ready[tid-1];} );
-      lock.unlock();
+      State current_state;
+      {
+          std::unique_lock lock{m_mut};
+          m_cv.wait(lock,[this, tid]{return m_ready[tid-1];});
+          current_state = m_state;
+      }
 
-      if(m_state == State::T_To_ST) { // (m_rr->m_ss)
+      if(current_state == State::T_To_ST) { // (m_rr->m_ss)
         worker_T_To_ST(tid);
         worker_wait(tid);
       }
-      else if(m_state == State::ST_To_T){ // (m_ss->m_rr)
+      else if(current_state == State::ST_To_T){ // (m_ss->m_rr)
         worker_ST_To_T(tid);
         worker_wait(tid);
       }
-      else if(m_state == State::CMP_R_To_SR){ // (m_rs->m_ss)
+      else if(current_state == State::CMP_R_To_SR){ // (m_rs->m_ss)
         workerCMP_R_To_SR(tid);
         worker_wait(tid);
       }
-      else if(m_state == State::CMP_SR_To_R){ // (m_ss->m_rs)
+      else if(current_state == State::CMP_SR_To_R){ // (m_ss->m_rs)
         workerCMP_SR_To_R(tid);
         worker_wait(tid);
       }
-      else if(m_state == State::R_To_SR){ // (m_rr->m_sr)
+      else if(current_state == State::R_To_SR){ // (m_rr->m_sr)
         worker_R_To_SR(tid);
         worker_wait(tid);
       }
-      else if(m_state == State::SR_To_R){ // (m_sr->m_rr)
+      else if(current_state == State::SR_To_R){ // (m_sr->m_rr)
         worker_SR_To_R(tid);
         worker_wait(tid);
       }
-      else if(m_state == State::CVT_To_ST){ // (m_rs->m_ss)
+      else if(current_state == State::CVT_To_ST){ // (m_rs->m_ss)
         worker_CVT_To_ST(tid);
         worker_wait(tid);
       }
-      else if(m_state == State::ST_To_CVT){ // (m_ss->m_rs)
+      else if(current_state == State::ST_To_CVT){ // (m_ss->m_rs)
         worker_ST_To_CVT(tid);
         worker_wait(tid);
       }
-      else if(m_state == State::Wait)
+      else if(current_state == State::Wait)
         continue;
-      else if(m_state == State::Done)
+      else if(current_state == State::Done)
         threads_done = true;
   }
 }
@@ -320,24 +323,24 @@ void HankelFFTRRVT::worker_wait(unsigned tid)
 void HankelFFTRRVT::setState(State state) {
     if(m_thread.empty())
         return;
-    m_state = state;
     if(state == State::Wait){
-        // Wait for threads to finish processing
         std::unique_lock lock{m_mut};
-        m_cv.wait(lock,[this]{return m_processed;} );
-        lock.unlock();
+        m_cv.wait(lock,[this]{return m_processed;});
     } else if(state == State::Done){
-        m_processed = true;
-        for(auto item : m_ready)
-            item = true;
+        {
+            std::scoped_lock lock{m_mut};
+            m_state = state;
+            m_processed = true;
+            std::fill(m_ready.begin(), m_ready.end(), true);
+        }
         m_cv.notify_all();
-    }
-    else{
-        // Activate state for thread processing
-        m_processed = false;
-        for(auto item : m_ready)
-            item = true;
-        // Tell threads to wake up and process, they are ready (m_ready)
+    } else {
+        {
+            std::scoped_lock lock{m_mut};
+            m_state = state;
+            m_processed = false;
+            std::fill(m_ready.begin(), m_ready.end(), true);
+        }
         m_cv.notify_all();
     }
 }
