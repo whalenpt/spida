@@ -64,9 +64,13 @@ target_compile_features(spida PUBLIC cxx_std_17)
 # -----------------------------
 target_link_libraries(spida PUBLIC
     pw::pwutils
-    kissfft
+    kissfft::kissfft
     nayukidct
 )
+
+if(TARGET spdlog::spdlog)
+    target_link_libraries(spida PUBLIC spdlog::spdlog)
+endif()
 
 # -----------------------------
 # OpenBLAS optional

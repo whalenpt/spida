@@ -8,6 +8,7 @@ BUILD_TYPE="Release"
 CLEAN=false
 COVERAGE=false
 TESTS=false
+DEMOS=true
 
 for arg in "$@"; do
     case "$arg" in
@@ -40,6 +41,7 @@ CMAKE_ARGS=(
     "-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
     "-DSPIDA_COVERAGE=$([ "$COVERAGE" = true ] && echo ON || echo OFF)"
     "-DSPIDA_TEST=$([ "$TESTS" = true ] && echo ON || echo OFF)"
+    "-DSPIDA_DEMOS=$([ "$DEMOS" = true ] && echo ON || echo OFF)"
 )
 
 cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" "${CMAKE_ARGS[@]}"

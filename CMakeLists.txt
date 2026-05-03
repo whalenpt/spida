@@ -68,6 +68,7 @@ endif()
 # Dependencies
 # -----------------------------
 find_package(Boost CONFIG QUIET)
+find_package(spdlog CONFIG QUIET)
 find_package(pwutils CONFIG QUIET)
 
 if(NOT pwutils_FOUND)
@@ -78,7 +79,14 @@ else()
 endif()
 
 add_subdirectory(external/nayukidct)
-add_subdirectory(external/kissfft)
+
+find_package(kissfft CONFIG QUIET)
+if(kissfft_FOUND)
+    message(STATUS "Found kissfft package")
+else()
+    message(STATUS "Building kissfft from submodule")
+    add_subdirectory(external/kissfft)
+endif()
 
 # -----------------------------
 # OpenBLAS (optional)
@@ -118,8 +126,14 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     if(SPIDA_TEST)
         enable_testing()
-        set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-        add_subdirectory(external/googletest)
+        find_package(GTest CONFIG QUIET)
+        if(GTest_FOUND)
+            message(STATUS "Found GTest package")
+        else()
+            message(STATUS "Building googletest from submodule")
+            set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+            add_subdirectory(external/googletest)
+        endif()
         add_subdirectory(test)
     endif()
 
