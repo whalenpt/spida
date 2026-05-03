@@ -8,10 +8,15 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <pwutils/pwstats.h>
-#include <pwutils/report/basedata.hpp>
 #include "spida/helper/constants.h"
 #include "spida/propagator/reporthandler.h"
+
+namespace pw{
+    class StatCenter;
+    class ReportData1D;
+    class ReportData2D;
+    class TrackData;
+}
 
 namespace spida{
 
@@ -23,7 +28,7 @@ class BasePropagator
 
     public:
         explicit BasePropagator(const std::filesystem::path& dir_path);
-        virtual ~BasePropagator() = default;
+        virtual ~BasePropagator();
         // updateFields will update all reporting vectors prior to file output 
         // i.e. transform a vector from spectral space to physical space, or perform some
         // other operation
@@ -43,9 +48,9 @@ class BasePropagator
         void setMaxReports1D(unsigned val);
         void setMaxReports2D(unsigned val);
 
-        void addReport(std::unique_ptr<pw::ReportData1D> def){m_report_handler.addReport(std::move(def));}
-        void addReport(std::unique_ptr<pw::ReportData2D> def){m_report_handler.addReport(std::move(def));}
-        void addReport(std::unique_ptr<pw::TrackData> def) {m_report_handler.addReport(std::move(def));}
+        void addReport(std::unique_ptr<pw::ReportData1D> def);
+        void addReport(std::unique_ptr<pw::ReportData2D> def);
+        void addReport(std::unique_ptr<pw::TrackData> def);
 
         std::filesystem::path dirPath() const {return m_dir_path;}
         void report1D(double t);
@@ -74,7 +79,7 @@ class BasePropagator
   
         bool m_log_progress{false};
         unsigned m_log_freq{1};
-        pw::StatCenter m_stat;
+        std::unique_ptr<pw::StatCenter> m_stat;
 };
 
 class PropagatorCV : public BasePropagator

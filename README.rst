@@ -140,6 +140,116 @@ Install:
     cmake --install build/release
 
 
+Building with Conan
+-------------------
+
+`Conan <https://conan.io>`_ is the recommended way to manage third-party dependencies
+(Boost, spdlog, kissfft, GoogleTest). If a Conan package is not found, CMake falls back
+to the bundled git submodules automatically.
+
+**Prerequisites**
+
+* Python 3 with pip
+* CMake 3.20+
+* A C++17-capable compiler
+
+**Install Conan v2**
+
+.. code-block:: none
+
+    pip install conan==2.28.1
+
+**Create a default build profile** (one-time, detects your compiler and platform):
+
+.. code-block:: none
+
+    conan profile detect --force
+
+**Install dependencies**
+
+.. code-block:: none
+
+    conan install . --build=missing -s build_type=Release
+
+This downloads and/or builds all required packages into the local Conan cache
+(``~/.conan2/p/``). Subsequent builds reuse the cache and are fast.
+
+**Configure and build**
+
+.. code-block:: none
+
+    cmake -S . -B build/Release \
+        -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
+        -DCMAKE_BUILD_TYPE=Release
+    cmake --build build/Release --parallel
+
+**Run tests**
+
+.. code-block:: none
+
+    conan install . --build=missing -s build_type=Release
+    cmake -S . -B build/Release \
+        -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DSPIDA_TEST=ON
+    cmake --build build/Release --parallel
+    ctest --test-dir build/Release --output-on-failure
+
+
+Building with Docker
+--------------------
+
+The provided ``Dockerfile`` gives a fully self-contained Ubuntu build environment
+with all system tools, Conan, and pre-cached dependencies baked in.
+Your source tree is bind-mounted at runtime so edits in your editor on the host
+are immediately visible inside the container — no rebuild or sync needed.
+
+**Prerequisites**
+
+* `Docker <https://docs.docker.com/get-docker/>`_ installed on the host
+
+**Build the image** (one-time; takes a few minutes while Conan pre-caches packages):
+
+.. code-block:: none
+
+    docker build -t spida-conan .
+
+**Start the container**
+
+.. code-block:: none
+
+    docker run --rm -it -v /path/to/spida:/workspace spida-conan
+
+Replace ``/path/to/spida`` with the absolute path to this repository on your host.
+On Linux/macOS you can use ``$(pwd)`` if you are already in the repo root:
+
+.. code-block:: none
+
+    docker run --rm -it -v $(pwd):/workspace spida-conan
+
+**Build inside the container**
+
+The Conan package cache is already populated in the image, so dependency
+resolution is instant:
+
+.. code-block:: none
+
+    conan install . --build=missing -s build_type=Release
+    cmake -S . -B build/Release \
+        -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
+        -DCMAKE_BUILD_TYPE=Release
+    cmake --build build/Release --parallel
+
+**Useful Docker tips**
+
+* Build artifacts written to ``/workspace/build/`` appear on the host at
+  ``spida/build/`` — useful for inspecting binaries or compile commands.
+* To keep a container alive across multiple sessions, drop ``--rm`` and use
+  ``docker start -ai <name>`` to re-attach.
+* Re-run ``docker build -t spida-conan .`` whenever ``Dockerfile`` or
+  ``conanfile.py`` changes to refresh the cached packages.
+
+
 Demos
 -----
 

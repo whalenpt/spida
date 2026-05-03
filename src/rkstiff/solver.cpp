@@ -6,6 +6,7 @@
 #include <numeric>
 #include <thread>
 #include <pwutils/pwexcept.h>
+#include <pwutils/pwstats.h>
 #include <pwutils/pwthreads.h>
 #include "spida/helper/constants.h"
 #include "spida/propagator/propagator.h"
@@ -14,8 +15,18 @@
 
 namespace spida{
 
+SolverCV::~SolverCV() = default;
+
+void SolverCV::setLogFrequency(unsigned val) { m_stat->setLogFrequency(val); }
+void SolverCV::setNumThreads(unsigned val)   { m_thmgt->setNumThreads(val); }
+unsigned SolverCV::numThreads() const        { return m_thmgt->getNumThreads(); }
+pw::ThreadManager& SolverCV::threadManager() { return *m_thmgt; }
+pw::StatCenter&    SolverCV::statCenter()    { return *m_stat; }
+
 SolverCV::SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs)
-{ 
+    : m_stat(std::make_unique<pw::StatCenter>())
+    , m_thmgt(std::make_unique<pw::ThreadManager>(1))
+{
     if(use_refs){
         m_L = &L;
         m_NL = &NL;
@@ -25,7 +36,7 @@ SolverCV::SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs)
         m_L = m_Lptr.get();
         m_NL = m_NLptr.get();
     }
-    m_stat.setLogFrequency(1);
+    m_stat->setLogFrequency(1);
 }
 
 unsigned SolverCV::size() const
@@ -38,14 +49,14 @@ void SolverCV::computeCo(double dt) noexcept
     if(fabs(dt-m_dt_last) > NEAR_ZERO) {
         m_dt_last = dt;
         if(m_log_progress){
-            m_stat.startClock("Clock Coefficient");
-            m_stat.startTimer("Timer Coefficient");
+            m_stat->startClock("Clock Coefficient");
+            m_stat->startTimer("Timer Coefficient");
         }
         updateCoefficients(dt);
         if(m_log_progress){
-            m_stat.endTimer("Timer Coefficient");
-            m_stat.endClock("Clock Coefficient");
-            m_stat.incrementCounter("Coefficient Evals");
+            m_stat->endTimer("Timer Coefficient");
+            m_stat->endClock("Clock Coefficient");
+            m_stat->incrementCounter("Coefficient Evals");
         }
     }
 }
@@ -53,13 +64,13 @@ void SolverCV::computeCo(double dt) noexcept
 void SolverCV::fileReportStats(const std::filesystem::path& dirpath) const {
     std::filesystem::path full_path = dirpath / std::filesystem::path("solver_stat.dat");
     std::ofstream fout(full_path);
-    m_stat.report(fout);
+    m_stat->report(fout);
     fout.close();
 }
 
 void SolverCV::reportStats() const
 {
-    m_stat.report(std::cout);
+    m_stat->report(std::cout);
 }
 
 SolverCV_AS::SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv,bool use_refs)

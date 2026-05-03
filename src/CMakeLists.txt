@@ -1,4 +1,18 @@
 # -----------------------------
+# Vendored pwutils sources (compiled directly into spida)
+# -----------------------------
+set(PWUTILS_SRC_FILES
+    ${PROJECT_SOURCE_DIR}/src/pwutils/pwmath.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/pwstats.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/pwstrings.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/pwthreads.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/report/basereport.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/report/dat.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/report/dataio.cpp
+    ${PROJECT_SOURCE_DIR}/src/pwutils/report/reporthelper.cpp
+)
+
+# -----------------------------
 # Source files
 # -----------------------------
 set(SRC_FILES
@@ -43,7 +57,7 @@ set(SRC_FILES
 # -----------------------------
 # Library target
 # -----------------------------
-add_library(spida ${SRC_FILES})
+add_library(spida ${SRC_FILES} ${PWUTILS_SRC_FILES})
 add_library(SPIDA::spida ALIAS spida)
 
 # -----------------------------
@@ -51,6 +65,7 @@ add_library(SPIDA::spida ALIAS spida)
 # -----------------------------
 target_include_directories(spida PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
 
@@ -63,10 +78,13 @@ target_compile_features(spida PUBLIC cxx_std_17)
 # Core dependencies
 # -----------------------------
 target_link_libraries(spida PUBLIC
-    pw::pwutils
-    kissfft
+    kissfft::kissfft
     nayukidct
 )
+
+if(TARGET spdlog::spdlog)
+    target_link_libraries(spida PUBLIC spdlog::spdlog)
+endif()
 
 # -----------------------------
 # OpenBLAS optional

@@ -1,9 +1,13 @@
 #include <fstream>
 #include <iostream>
+#include <pwutils/pwstats.h>
+#include <pwutils/report/basereport.h>
 #include "spida/propagator/reporthandler.h"
 
 
 namespace spida{
+
+ReportHandler::~ReportHandler() = default;
 
 void ReportHandler::addReport(std::unique_ptr<pw::ReportData1D> def) 
 {

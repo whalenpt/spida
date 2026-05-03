@@ -1,18 +1,4 @@
 .DS_Store
 build
 *.swp
-external/xtensor
-
-# Ignore FFTW library files
-#include/spida/spidaFFTWX.h
-#include/spida/transform/chebFFTWX.h
-#include/spida/transform/fftwT.h
-#include/spida/transform/fftwX.h
-#include/spida/spidaInterpFFTWX.h
-#src/spidaFFTWX.cpp
-#src/transform/fftwT.cpp
-#src/transform/chebFFTWX.cpp
-#src/spidaInterpFFTWX.cpp
-#test/fftw_tests.cpp
-#test/fdct_tests.cpp
-
+CMakeUserPresets.json

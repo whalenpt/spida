@@ -2,6 +2,8 @@
 #include "spida/rkstiff/ETDAS.h"
 #include <cmath>
 #include <thread>
+#include <pwutils/pwstats.h>
+#include <pwutils/pwthreads.h>
 
 namespace spida{
 

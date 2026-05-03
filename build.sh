@@ -8,6 +8,7 @@ BUILD_TYPE="Release"
 CLEAN=false
 COVERAGE=false
 TESTS=false
+DEMOS=true
 
 for arg in "$@"; do
     case "$arg" in
@@ -40,7 +41,17 @@ CMAKE_ARGS=(
     "-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
     "-DSPIDA_COVERAGE=$([ "$COVERAGE" = true ] && echo ON || echo OFF)"
     "-DSPIDA_TEST=$([ "$TESTS" = true ] && echo ON || echo OFF)"
+    "-DSPIDA_DEMOS=$([ "$DEMOS" = true ] && echo ON || echo OFF)"
 )
+
+if command -v conan &>/dev/null; then
+    echo "Conan found — installing dependencies"
+    conan install "$PROJECT_ROOT" \
+        --build=missing \
+        -s "build_type=$BUILD_TYPE" \
+        -of "$BUILD_DIR/generators"
+    CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=$BUILD_DIR/generators/conan_toolchain.cmake")
+fi
 
 cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" "${CMAKE_ARGS[@]}"
 cmake --build "$BUILD_DIR" --parallel "$THREADS"

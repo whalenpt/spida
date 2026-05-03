@@ -14,8 +14,6 @@ option(WITH_OPENBLAS "Use OpenBLAS" OFF)
 option(SPIDA_COVERAGE "Enable code coverage instrumentation" OFF)
 option(SPIDA_UPDATE_SUBMODULES "Update git submodules on configure" ON)
 
-set(PWUTILS_TEST OFF CACHE BOOL "Build pwutils tests")
-set(PWUTILS_EXAMPLES OFF CACHE BOOL "Build pwutils examples")
 set(KISSFFT_TOOLS OFF CACHE BOOL "" FORCE)
 set(KISSFFT_PKGCONFIG OFF CACHE BOOL "" FORCE)
 set(KISSFFT_TEST OFF CACHE BOOL "" FORCE)
@@ -43,7 +41,6 @@ endif()
 # -----------------------------
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(KISSFFT_STATIC ON CACHE BOOL "" FORCE)
-set(PWUTILS_STATIC ON CACHE BOOL "" FORCE)
 
 # -----------------------------
 # Git submodules
@@ -68,17 +65,17 @@ endif()
 # Dependencies
 # -----------------------------
 find_package(Boost CONFIG QUIET)
-find_package(pwutils CONFIG QUIET)
-
-if(NOT pwutils_FOUND)
-    message(STATUS "Building pwutils from submodule")
-    add_subdirectory(external/pwutils)
-else()
-    message(STATUS "Found pwutils package")
-endif()
+find_package(spdlog CONFIG QUIET)
 
 add_subdirectory(external/nayukidct)
-add_subdirectory(external/kissfft)
+
+find_package(kissfft CONFIG QUIET)
+if(kissfft_FOUND)
+    message(STATUS "Found kissfft package")
+else()
+    message(STATUS "Building kissfft from submodule")
+    add_subdirectory(external/kissfft)
+endif()
 
 # -----------------------------
 # OpenBLAS (optional)
@@ -118,8 +115,14 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     if(SPIDA_TEST)
         enable_testing()
-        set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-        add_subdirectory(external/googletest)
+        find_package(GTest CONFIG QUIET)
+        if(GTest_FOUND)
+            message(STATUS "Found GTest package")
+        else()
+            message(STATUS "Building googletest from submodule")
+            set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+            add_subdirectory(external/googletest)
+        endif()
         add_subdirectory(test)
     endif()
 
