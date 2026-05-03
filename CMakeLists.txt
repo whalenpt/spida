@@ -62,54 +62,6 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git" AND SPIDA_UPDATE_SUBMODULES
 endif()
 
 # -----------------------------
-# Build type defaults
-# -----------------------------
-if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    include(GNUInstallDirs)
-
-    if(NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE Release)
-    endif()
-
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
-    else()
-        set(CMAKE_CXX_FLAGS "-Wall")
-        set(CMAKE_CXX_FLAGS_DEBUG "-g")
-        set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-    endif()
-endif()
-
-# -----------------------------
-# Coverage support
-# -----------------------------
-if(SPIDA_COVERAGE)
-    message(STATUS "Code coverage enabled")
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        add_compile_options(--coverage -O0 -g -fprofile-update=atomic)
-        add_link_options(--coverage)
-    else()
-        message(WARNING "Coverage not supported for this compiler")
-    endif()
-endif()
-
-# -----------------------------
-# Library type
-# -----------------------------
-if (NOT SPIDA_STATIC)
-    set(BUILD_SHARED_LIBS ON)
-    set(PWUTILS_STATIC OFF CACHE BOOL "Build pwutils as static (ON) or shared library (OFF)")
-    set(KISSFFT_STATIC OFF CACHE BOOL "Build kissfft as static (ON) or shared library (OFF)")
-    message(STATUS "Building shared spida library")
-else()
-    set(BUILD_SHARED_LIBS OFF)
-    message(STATUS "Building static spida library")
-    set(PWUTILS_STATIC ON CACHE BOOL "Build pwutils as static (ON) or shared library (OFF)")
-    set(KISSFFT_STATIC ON CACHE BOOL "Build kissfft as static (ON) or shared library (OFF)")
-endif()
-
-# -----------------------------
 # Dependencies
 # -----------------------------
 find_package(Boost CONFIG QUIET)

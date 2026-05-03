@@ -51,6 +51,8 @@ if command -v conan &>/dev/null; then
         -s "build_type=$BUILD_TYPE" \
         -of "$BUILD_DIR/generators"
     CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=$BUILD_DIR/generators/conan_toolchain.cmake")
+else
+    CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=")
 fi
 
 cmake -S "$PROJECT_ROOT" -B "$BUILD_DIR" "${CMAKE_ARGS[@]}"
