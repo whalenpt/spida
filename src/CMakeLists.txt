@@ -1,4 +1,18 @@
 # -----------------------------
+# Vendored pwutils sources (compiled directly into spida)
+# -----------------------------
+set(PWUTILS_SRC_FILES
+    ${PROJECT_SOURCE_DIR}/lib/pwutils/pwmath.cpp
+    ${PROJECT_SOURCE_DIR}/lib/pwutils/pwstats.cpp
+    ${PROJECT_SOURCE_DIR}/lib/pwutils/pwstrings.cpp
+    ${PROJECT_SOURCE_DIR}/lib/pwutils/pwthreads.cpp
+    ${PROJECT_SOURCE_DIR}/lib/pwutils/report/basereport.cpp
+    ${PROJECT_SOURCE_DIR}/lib/pwutils/report/dat.cpp
+    ${PROJECT_SOURCE_DIR}/lib/pwutils/report/dataio.cpp
+    ${PROJECT_SOURCE_DIR}/lib/pwutils/report/reporthelper.cpp
+)
+
+# -----------------------------
 # Source files
 # -----------------------------
 set(SRC_FILES
@@ -43,7 +57,7 @@ set(SRC_FILES
 # -----------------------------
 # Library target
 # -----------------------------
-add_library(spida ${SRC_FILES})
+add_library(spida ${SRC_FILES} ${PWUTILS_SRC_FILES})
 add_library(SPIDA::spida ALIAS spida)
 
 # -----------------------------
@@ -51,6 +65,7 @@ add_library(SPIDA::spida ALIAS spida)
 # -----------------------------
 target_include_directories(spida PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib>
     $<INSTALL_INTERFACE:include>
 )
 
@@ -63,7 +78,6 @@ target_compile_features(spida PUBLIC cxx_std_17)
 # Core dependencies
 # -----------------------------
 target_link_libraries(spida PUBLIC
-    pw::pwutils
     kissfft::kissfft
     nayukidct
 )
@@ -117,6 +131,11 @@ install(TARGETS spida
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION include
+)
+
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/lib/pwutils/
+    DESTINATION include/pwutils
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
 install(EXPORT SpidaTargets

@@ -14,8 +14,6 @@ option(WITH_OPENBLAS "Use OpenBLAS" OFF)
 option(SPIDA_COVERAGE "Enable code coverage instrumentation" OFF)
 option(SPIDA_UPDATE_SUBMODULES "Update git submodules on configure" ON)
 
-set(PWUTILS_TEST OFF CACHE BOOL "Build pwutils tests")
-set(PWUTILS_EXAMPLES OFF CACHE BOOL "Build pwutils examples")
 set(KISSFFT_TOOLS OFF CACHE BOOL "" FORCE)
 set(KISSFFT_PKGCONFIG OFF CACHE BOOL "" FORCE)
 set(KISSFFT_TEST OFF CACHE BOOL "" FORCE)
@@ -43,7 +41,6 @@ endif()
 # -----------------------------
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(KISSFFT_STATIC ON CACHE BOOL "" FORCE)
-set(PWUTILS_STATIC ON CACHE BOOL "" FORCE)
 
 # -----------------------------
 # Git submodules
@@ -69,15 +66,8 @@ endif()
 # -----------------------------
 find_package(Boost CONFIG QUIET)
 find_package(spdlog CONFIG QUIET)
-find_package(pwutils CONFIG QUIET)
 
-if(NOT pwutils_FOUND)
-    message(STATUS "Building pwutils from submodule")
-    add_subdirectory(external/pwutils)
-else()
-    message(STATUS "Found pwutils package")
-endif()
-
+add_subdirectory(lib)
 add_subdirectory(external/nayukidct)
 
 find_package(kissfft CONFIG QUIET)

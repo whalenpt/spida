@@ -63,7 +63,6 @@ add_executable(transformtest ${TRANSFORM_FILES})
 target_link_libraries(transformtest PUBLIC
     GTest::gtest_main
     SPIDA::spida
-    pw::pwutils
 )
 add_test(NAME transformtest COMMAND transformtest)
 
@@ -71,7 +70,6 @@ add_executable(spidatest ${SPIDA_FILES})
 target_link_libraries(spidatest PUBLIC
     GTest::gtest_main
     SPIDA::spida
-    pw::pwutils
 )
 add_test(NAME spidatest COMMAND spidatest)
 
@@ -83,7 +81,6 @@ add_executable(kisstest ${KISS_FILES})
 target_link_libraries(kisstest PUBLIC
     GTest::gtest_main
     kissfft
-    pw::pwutils
 )
 add_test(NAME kisstest COMMAND kisstest)
 
@@ -91,7 +88,6 @@ add_executable(nayukitest ${NAYUKI_FILES})
 target_link_libraries(nayukitest PUBLIC
     GTest::gtest_main
     nayukidct
-    pw::pwutils
 )
 add_test(NAME nayukitest COMMAND nayukitest)
 
@@ -105,7 +101,6 @@ add_executable(solvertest ${SOLVER_FILES})
 target_link_libraries(solvertest PUBLIC
     GTest::gtest_main
     SPIDA::spida
-    pw::pwutils
 )
 add_test(NAME solvertest COMMAND solvertest)
 
@@ -113,6 +108,5 @@ add_executable(propagatortest ${PROPAGATOR_FILES})
 target_link_libraries(propagatortest PUBLIC
     GTest::gtest_main
     SPIDA::spida
-    pw::pwutils
 )
 add_test(NAME propagatortest COMMAND propagatortest)
