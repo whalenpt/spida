@@ -1,5 +1,5 @@
 from conan import ConanFile
-from conan.tools.cmake import CMakeToolchain, CMakeDeps, cmake_layout
+from conan.tools.cmake import CMakeToolchain, CMakeDeps
 
 
 class SpidaConan(ConanFile):
@@ -28,9 +28,6 @@ class SpidaConan(ConanFile):
         "spdlog/*:shared": False,
         "kissfft/*:shared": False,
     }
-
-    def layout(self):
-        cmake_layout(self)
 
     def generate(self):
         tc = CMakeToolchain(self)
