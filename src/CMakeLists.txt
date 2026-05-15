@@ -63,16 +63,18 @@ add_library(SPIDA::spida ALIAS spida)
 # -----------------------------
 # Includes
 # -----------------------------
-target_include_directories(spida PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-    $<INSTALL_INTERFACE:include>
+target_include_directories(spida
+    PUBLIC
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
 )
 
 # -----------------------------
 # C++ standard
 # -----------------------------
-target_compile_features(spida PUBLIC cxx_std_17)
+target_compile_features(spida PUBLIC cxx_std_23)
 
 # -----------------------------
 # Core dependencies
@@ -80,17 +82,18 @@ target_compile_features(spida PUBLIC cxx_std_17)
 target_link_libraries(spida PUBLIC
     kissfft::kissfft
     nayukidct
+    Threads::Threads
 )
 
 if(TARGET spdlog::spdlog)
-    target_link_libraries(spida PUBLIC spdlog::spdlog)
+    target_link_libraries(spida PRIVATE spdlog::spdlog)
 endif()
 
 # -----------------------------
 # OpenBLAS optional
 # -----------------------------
 if(TARGET OpenBLAS::interface)
-    target_link_libraries(spida PUBLIC OpenBLAS::interface)
+    target_link_libraries(spida PRIVATE OpenBLAS::interface)
 endif()
 
 # -----------------------------

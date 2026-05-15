@@ -1,7 +1,6 @@
 @PACKAGE_INIT@
 include(CMakeFindDependencyMacro)
 
-find_dependency(pwutils)
 find_dependency(kissfft)
 find_dependency(nayukidct)
 

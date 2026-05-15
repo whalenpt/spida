@@ -64,6 +64,7 @@ endif()
 # -----------------------------
 # Dependencies
 # -----------------------------
+find_package(Threads REQUIRED)
 find_package(Boost CONFIG QUIET)
 find_package(spdlog CONFIG QUIET)
 
