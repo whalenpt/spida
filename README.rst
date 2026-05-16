@@ -207,20 +207,20 @@ are immediately visible inside the container — no rebuild or sync needed.
 
 .. code-block:: none
 
-    docker build -t spida-conan .
+    docker build -t spida .
 
 **Start the container**
 
 .. code-block:: none
 
-    docker run --rm -it -v /path/to/spida:/workspace spida-conan
+    docker run --rm -it -v /path/to/spida:/workspace spida
 
 Replace ``/path/to/spida`` with the absolute path to this repository on your host.
 On Linux/macOS you can use ``$(pwd)`` if you are already in the repo root:
 
 .. code-block:: none
 
-    docker run --rm -it -v $(pwd):/workspace spida-conan
+    docker run --rm -it -v $(pwd):/workspace spida
 
 **Build inside the container**
 
@@ -239,7 +239,7 @@ resolution is instant:
   ``spida/build/`` — useful for inspecting binaries or compile commands.
 * To keep a container alive across multiple sessions, drop ``--rm`` and use
   ``docker start -ai <name>`` to re-attach.
-* Re-run ``docker build -t spida-conan .`` whenever ``Dockerfile`` or
+* Re-run ``docker build -t spida .`` whenever ``Dockerfile`` or
   ``conanfile.py`` changes to refresh the cached packages.
 
 
