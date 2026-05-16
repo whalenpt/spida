@@ -169,7 +169,7 @@ to the bundled git submodules automatically.
 
 .. code-block:: none
 
-    conan install . --build=missing -s build_type=Release
+    conan install . -of build/Release --build=missing -s build_type=Release
 
 This downloads and/or builds all required packages into the local Conan cache
 (``~/.conan2/p/``). Subsequent builds reuse the cache and are fast.
@@ -178,21 +178,16 @@ This downloads and/or builds all required packages into the local Conan cache
 
 .. code-block:: none
 
-    cmake -S . -B build/Release \
-        -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
-        -DCMAKE_BUILD_TYPE=Release
-    cmake --build build/Release --parallel
+    cmake --preset conan-release
+    cmake --build --preset conan-release --parallel
 
 **Run tests**
 
 .. code-block:: none
 
-    conan install . --build=missing -s build_type=Release
-    cmake -S . -B build/Release \
-        -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DSPIDA_TEST=ON
-    cmake --build build/Release --parallel
+    conan install . -of build/Release --build=missing -s build_type=Release
+    cmake --preset conan-release -DSPIDA_TEST=ON
+    cmake --build --preset conan-release --parallel
     ctest --test-dir build/Release --output-on-failure
 
 
@@ -234,11 +229,9 @@ resolution is instant:
 
 .. code-block:: none
 
-    conan install . --build=missing -s build_type=Release
-    cmake -S . -B build/Release \
-        -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
-        -DCMAKE_BUILD_TYPE=Release
-    cmake --build build/Release --parallel
+    conan install . -of build/Release --build=missing -s build_type=Release
+    cmake --preset conan-release
+    cmake --build --preset conan-release --parallel
 
 **Useful Docker tips**
 

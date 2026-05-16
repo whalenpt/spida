@@ -1,4 +1,23 @@
 
+set(DEMO_TARGETS
+    interp
+    grid
+    hankel
+    transformT
+    transformR
+    transformRT
+    transform_p_RT
+    kdvCV
+    kdvRV
+    kdvPropagator
+    ks
+    ks_if34
+    ks_if45dp
+    burgers
+    nlsR
+    nlsRT
+)
+
 add_executable(interp interp_demo.cpp)
 add_executable(grid grid_demo.cpp)
 add_executable(hankel hankel.cpp)
@@ -16,23 +35,10 @@ add_executable(burgers burgers.cpp)
 add_executable(nlsR NLSR.cpp)
 add_executable(nlsRT NLSRT.cpp)
 
-target_link_libraries(interp PUBLIC SPIDA::spida)
-
-target_link_libraries(grid PUBLIC SPIDA::spida)
-target_link_libraries(hankel PUBLIC SPIDA::spida)
-target_link_libraries(transform_p_RT PUBLIC SPIDA::spida)
-target_link_libraries(transformRT PUBLIC SPIDA::spida)
-target_link_libraries(transformT PUBLIC SPIDA::spida)
-target_link_libraries(transformR PUBLIC SPIDA::spida)
-target_link_libraries(kdvPropagator PUBLIC SPIDA::spida)
-target_link_libraries(kdvCV PUBLIC SPIDA::spida)
-target_link_libraries(kdvRV PUBLIC SPIDA::spida)
-target_link_libraries(ks PUBLIC SPIDA::spida)
-target_link_libraries(ks_if34 PUBLIC SPIDA::spida)
-target_link_libraries(ks_if45dp PUBLIC SPIDA::spida)
-target_link_libraries(burgers PUBLIC SPIDA::spida)
-target_link_libraries(nlsR PUBLIC SPIDA::spida)
-target_link_libraries(nlsRT PUBLIC SPIDA::spida)
+foreach(target IN LISTS DEMO_TARGETS)
+    target_link_libraries(${target} PUBLIC SPIDA::spida)
+    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src)
+endforeach()
 
 
 
