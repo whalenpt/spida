@@ -49,6 +49,8 @@ function(add_spida_test target)
         SPIDA::spida
     )
 
+    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src)
+
     add_test(NAME ${target} COMMAND ${target})
 endfunction()
 
@@ -59,19 +61,9 @@ endfunction()
 add_spida_test(gridtest ${GRID_FILES})
 add_spida_test(shapetest ${SHAPE_FILES})
 
-add_executable(transformtest ${TRANSFORM_FILES})
-target_link_libraries(transformtest PUBLIC
-    GTest::gtest_main
-    SPIDA::spida
-)
-add_test(NAME transformtest COMMAND transformtest)
+add_spida_test(transformtest ${TRANSFORM_FILES})
 
-add_executable(spidatest ${SPIDA_FILES})
-target_link_libraries(spidatest PUBLIC
-    GTest::gtest_main
-    SPIDA::spida
-)
-add_test(NAME spidatest COMMAND spidatest)
+add_spida_test(spidatest ${SPIDA_FILES})
 
 # ------------------------------------------------------------------------------
 # External libraries
@@ -80,7 +72,7 @@ add_test(NAME spidatest COMMAND spidatest)
 add_executable(kisstest ${KISS_FILES})
 target_link_libraries(kisstest PUBLIC
     GTest::gtest_main
-    kissfft
+    kissfft::kissfft
 )
 target_include_directories(kisstest PRIVATE ${PROJECT_SOURCE_DIR}/src)
 add_test(NAME kisstest COMMAND kisstest)
@@ -99,16 +91,5 @@ add_test(NAME nayukitest COMMAND nayukitest)
 
 add_spida_test(interptest ${INTERP_FILES})
 
-add_executable(solvertest ${SOLVER_FILES})
-target_link_libraries(solvertest PUBLIC
-    GTest::gtest_main
-    SPIDA::spida
-)
-add_test(NAME solvertest COMMAND solvertest)
-
-add_executable(propagatortest ${PROPAGATOR_FILES})
-target_link_libraries(propagatortest PUBLIC
-    GTest::gtest_main
-    SPIDA::spida
-)
-add_test(NAME propagatortest COMMAND propagatortest)
+add_spida_test(solvertest ${SOLVER_FILES})
+add_spida_test(propagatortest ${PROPAGATOR_FILES})

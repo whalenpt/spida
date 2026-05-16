@@ -1,21 +1,15 @@
 # -----------------------------
-# Vendored pwutils sources (compiled directly into spida)
-# -----------------------------
-set(PWUTILS_SRC_FILES
-    ${PROJECT_SOURCE_DIR}/src/pwutils/pwmath.cpp
-    ${PROJECT_SOURCE_DIR}/src/pwutils/pwstats.cpp
-    ${PROJECT_SOURCE_DIR}/src/pwutils/pwstrings.cpp
-    ${PROJECT_SOURCE_DIR}/src/pwutils/pwthreads.cpp
-    ${PROJECT_SOURCE_DIR}/src/pwutils/report/basereport.cpp
-    ${PROJECT_SOURCE_DIR}/src/pwutils/report/dat.cpp
-    ${PROJECT_SOURCE_DIR}/src/pwutils/report/dataio.cpp
-    ${PROJECT_SOURCE_DIR}/src/pwutils/report/reporthelper.cpp
-)
-
-# -----------------------------
 # Source files
 # -----------------------------
 set(SRC_FILES
+    pwutils/pwmath.cpp
+    pwutils/pwstats.cpp
+    pwutils/pwstrings.cpp
+    pwutils/pwthreads.cpp
+    pwutils/report/basereport.cpp
+    pwutils/report/dat.cpp
+    pwutils/report/dataio.cpp
+    pwutils/report/reporthelper.cpp
     SpidaCVT.cpp
     SpidaRVT.cpp
     SpidaRCVT.cpp
@@ -57,7 +51,7 @@ set(SRC_FILES
 # -----------------------------
 # Library target
 # -----------------------------
-add_library(spida ${SRC_FILES} ${PWUTILS_SRC_FILES})
+add_library(spida ${SRC_FILES})
 add_library(SPIDA::spida ALIAS spida)
 
 # -----------------------------
