@@ -188,7 +188,7 @@ This downloads and/or builds all required packages into the local Conan cache
     conan install . -of build/Release --build=missing -s build_type=Release
     cmake --preset conan-release -DSPIDA_TEST=ON
     cmake --build --preset conan-release --parallel
-    ctest --test-dir build/Release --output-on-failure
+    ctest --preset conan-release --output-on-failure
 
 
 Building with Docker
