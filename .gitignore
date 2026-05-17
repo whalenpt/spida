@@ -2,3 +2,5 @@
 build
 *.swp
 CMakeUserPresets.json
+coverage.filtered.info
+coverage.info
