@@ -6,46 +6,53 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   coverage:
     runs-on: ubuntu-latest
-
+    container:
+      image: ghcr.io/whalenpt/spida:v1.3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
-      - name: Install dependencies
+      - name: Configure (Coverage)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            cmake \
-            lcov \
-            ninja-build \
-            g++
+          conan install . -of build/RelWithDebInfo -s build_type=RelWithDebInfo
+          cmake --preset conan-relwithdebinfo -DSPIDA_TEST=ON -DSPIDA_COVERAGE=ON
 
-      - name: Configure (Coverage Preset)
-        run: cmake --preset coverage
-
-      - name: Build (Coverage Preset)
-        run: cmake --build --preset coverage --parallel
+      - name: Build
+        run: cmake --build --preset conan-relwithdebinfo --parallel
 
       - name: Run tests
-        run: ctest --preset coverage --output-on-failure
+        run: ctest --preset conan-relwithdebinfo --output-on-failure
 
       - name: Generate coverage report
         run: |
+          set -euo pipefail
           lcov --capture \
-            --directory build/coverage \
-            --output-file coverage.info \
-            --ignore-errors mismatch
-
+               --directory build/RelWithDebInfo \
+               --output-file coverage.info \
+               --ignore-errors mismatch,inconsistent,inconsistent,gcov
           lcov --remove coverage.info \
-            '/usr/*' \
-            '*/external/*' \
-            '*/test/*' \
-            --output-file coverage.filtered.info
+               '/usr/*' \
+               '*/external/*' \
+               '/opt/conan/*' \
+               '*/test/*' \
+               '*/build/*' \
+               --output-file coverage.filtered.info \
+               --ignore-errors unused,inconsistent
+          lcov --list coverage.filtered.info
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage.filtered.info
+          retention-days: 14
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
@@ -53,3 +60,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.filtered.info
           fail_ci_if_error: true
+          verbose: true

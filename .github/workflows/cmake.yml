@@ -8,31 +8,109 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+concurrency:
+  group: cmake-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
+  # -------------------------
+  # Linux (containerized — deps prebaked)
+  # -------------------------
+  build-linux:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/whalenpt/spida:v1.3
+      options: --user root
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install dependencies (Linux only)
-        if: runner.os == 'Linux'
+      - name: Configure (Release)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build g++
-
-      - name: Configure (Release Preset)
-        run: cmake --preset release
+          conan install . -of build/Release -s build_type=Release
+          cmake --preset conan-release -DSPIDA_TEST=ON
 
       - name: Build
-        run: cmake --build --preset release --parallel
+        run: cmake --build --preset conan-release --parallel
 
       - name: Test
-        run: ctest --preset release --output-on-failure
+        run: ctest --preset conan-release --output-on-failure
+
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-linux
+          path: build/Release/Testing/
+          retention-days: 7
+
+  # -------------------------
+  # Windows (native — submodules, no Conan)
+  # -------------------------
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Ninja
+        run: choco install ninja -y
+
+      - name: Configure (Release)
+        run: cmake -S . -B build/Release -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPIDA_TEST=ON
+
+      - name: Build
+        run: cmake --build build/Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build/Release --output-on-failure
+
+  # -------------------------
+  # macOS (native)
+  # -------------------------
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew install ninja
+          pip3 install --break-system-packages --upgrade 'conan>=2,<3'
+
+      - name: Conan profile
+        run: conan profile detect --force
+
+      - name: Cache Conan
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: conan-macos-${{ hashFiles('conanfile.*', 'conan.lock') }}
+          restore-keys: |
+            conan-macos-
+
+      - name: Configure (Release)
+        run: |
+          conan install . -of build/Release --build=missing -s build_type=Release
+          cmake --preset conan-release -DSPIDA_TEST=ON
+
+      - name: Build
+        run: cmake --build --preset conan-release --parallel
+
+      - name: Test
+        run: ctest --preset conan-release --output-on-failure
+
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-macos
+          path: build/Release/Testing/
+          retention-days: 7
