@@ -1,0 +1,149 @@
+name: Weekly Test Agent
+
+on:
+  schedule:
+    - cron: '0 2 * * 6'   # 02:00 UTC every Saturday (Friday night US)
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: 'PR target branch'
+        default: 'develop'
+        required: false
+
+# One concurrent agent run at a time; never cancel a running run
+concurrency:
+  group: weekly-test-agent
+  cancel-in-progress: false
+
+jobs:
+  write-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/whalenpt/spida:v1.4
+      options: --user root
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # ------------------------------------------------------------------
+      # Coverage build — same steps as coverage.yml so results are
+      # directly comparable and the lcov report is reused, not duplicated.
+      # ------------------------------------------------------------------
+      - name: Configure (Coverage)
+        run: |
+          conan install . -of build/RelWithDebInfo -s build_type=RelWithDebInfo
+          cmake --preset conan-relwithdebinfo -DSPIDA_TEST=ON -DSPIDA_COVERAGE=ON
+
+      - name: Build
+        run: cmake --build --preset conan-relwithdebinfo --parallel
+
+      - name: Run tests
+        run: ctest --preset conan-relwithdebinfo --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          set -euo pipefail
+          lcov --capture \
+               --directory build/RelWithDebInfo \
+               --output-file coverage.info \
+               --ignore-errors mismatch,inconsistent,inconsistent,gcov
+          lcov --remove coverage.info \
+               '/usr/*' \
+               '*/external/*' \
+               '/opt/conan/*' \
+               '*/test/*' \
+               '*/build/*' \
+               --output-file coverage.filtered.info \
+               --ignore-errors unused,inconsistent
+          lcov --list coverage.filtered.info
+
+      # ------------------------------------------------------------------
+      # Branch setup
+      # ------------------------------------------------------------------
+      - name: Create agent branch
+        id: branch
+        run: |
+          BASE="${{ github.event.inputs.base_branch || 'develop' }}"
+          BRANCH="claude/weekly-tests-$(date +%Y-%m-%d)"
+          git config --global user.email "claude-bot@users.noreply.github.com"
+          git config --global user.name "Claude Test Agent"
+          git remote set-url origin \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          # Allow same-day re-runs by deleting a stale branch
+          git push origin --delete "$BRANCH" 2>/dev/null || true
+          git checkout -b "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "base=$BASE"     >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------------------
+      # Claude Code — reads the coverage report, writes/improves tests
+      # ------------------------------------------------------------------
+      - name: Run Claude test-writer agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude --dangerously-skip-permissions -p "$(cat .claude/agents/spida-test-writer.md | \
+            awk '/^---/{f=!f; next} !f')"
+
+      # ------------------------------------------------------------------
+      # Commit any changes Claude produced
+      # ------------------------------------------------------------------
+      - name: Commit and push
+        id: commit
+        run: |
+          git add test/
+          if git diff --staged --quiet; then
+            echo "Claude produced no test changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "test: weekly coverage improvements via Claude agent"
+            git push origin HEAD
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ------------------------------------------------------------------
+      # Install gh CLI (not pre-installed in the build image)
+      # ------------------------------------------------------------------
+      - name: Install gh CLI
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends gh
+
+      # ------------------------------------------------------------------
+      # Open pull request — CI (cmake.yml) will validate the new tests
+      # ------------------------------------------------------------------
+      - name: Open pull request
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          printf '%s\n' \
+            "## Summary" \
+            "" \
+            "Automated tests generated by the weekly Claude Code test-writer agent." \
+            "" \
+            "Coverage gaps were identified from the \`conan-relwithdebinfo\` lcov report" \
+            "(same build configuration as coverage.yml)." \
+            "" \
+            "## Review checklist" \
+            "" \
+            "- [ ] CI build passes (cmake.yml)" \
+            "- [ ] New tests are meaningful — not trivial assertions" \
+            "- [ ] \`test/CMakeLists.txt\` is correct if new files were added" \
+            "" \
+            "---" \
+            "*Opened automatically by the weekly-test-agent workflow.*" \
+            > /tmp/pr-body.md
+          gh pr create \
+            --title "test: weekly coverage improvements ($DATE)" \
+            --body-file /tmp/pr-body.md \
+            --base "${{ steps.branch.outputs.base }}" \
+            --head "${{ steps.branch.outputs.branch }}"
