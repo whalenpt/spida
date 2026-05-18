@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Bootstrap: get ca-certificates before switching to HTTPS snapshot
 # -----------------------------
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------
@@ -29,16 +29,40 @@ EOF
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential=12.12ubuntu2 \
+        clang-tools \
         cmake=4.2.3-2ubuntu2 \
+        curl \
+        gcc-15 \
+        g++-15 \
+        gdb \
         git \
-        g++ \
         lcov \
+        less \
         ninja-build \
         python3=3.14.3-0ubuntu2 \
-        python3-pip && \
+        python3-pip \
+        rsync \
+        tree \
+        unzip \
+        vim \
+        zip && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100 \
+        --slave /usr/bin/g++ g++ /usr/bin/g++-15 \
+        --slave /usr/bin/gcov gcov /usr/bin/gcov-15 && \
     rm -rf /var/lib/apt/lists/*
 
+# Sanity-check the toolchain version
+RUN gcc --version | grep -q ' 15\.' && g++ --version | grep -q ' 15\.'
+
 RUN python3 -m pip install --break-system-packages conan==2.28.1
+
+# -----------------------------
+# Node.js + Claude Code CLI
+# -----------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    npm install -g @anthropic-ai/claude-code && \
+    rm -rf /var/lib/apt/lists/*
 
 # -----------------------------
 # Conan home at a neutral, user-independent path
@@ -75,6 +99,5 @@ RUN conan install . --build=missing -s build_type=Release && \
 USER root
 RUN git config --system --add safe.directory '*'
 USER ubuntu
-
 WORKDIR /workspace
 CMD ["/bin/bash"]
