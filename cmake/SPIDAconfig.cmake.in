@@ -5,6 +5,7 @@ find_dependency(kissfft)
 find_dependency(NayukiDCT)
 find_dependency(Threads)
 find_dependency(spdlog QUIET)
+find_dependency(nlohmann_json QUIET)
 
 include("${CMAKE_CURRENT_LIST_DIR}/SpidaTargets.cmake")
 

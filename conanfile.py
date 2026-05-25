@@ -10,6 +10,7 @@ class SpidaConan(ConanFile):
         "spdlog/1.17.0",
         "kissfft/131.1.0",
         "boost/1.90.0",
+        "nlohmann_json/3.11.3",
     ]
 
     test_requires = [

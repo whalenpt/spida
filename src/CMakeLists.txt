@@ -86,6 +86,29 @@ if(TARGET spdlog::spdlog)
 endif()
 
 # -----------------------------
+# nlohmann_json
+# -----------------------------
+find_package(nlohmann_json CONFIG QUIET)
+if(nlohmann_json_FOUND)
+    target_link_libraries(spida PUBLIC nlohmann_json::nlohmann_json)
+else()
+    message(STATUS "nlohmann_json not found via Conan; fetching single header")
+    set(_json_header "${CMAKE_CURRENT_BINARY_DIR}/nlohmann/json.hpp")
+    if(NOT EXISTS "${_json_header}")
+        file(DOWNLOAD
+            "https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp"
+            "${_json_header}"
+            SHOW_PROGRESS
+        )
+    endif()
+    target_include_directories(spida PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        $<INSTALL_INTERFACE:include>
+    )
+    install(FILES "${_json_header}" DESTINATION include/nlohmann)
+endif()
+
+# -----------------------------
 # OpenBLAS optional
 # -----------------------------
 if(TARGET OpenBLAS::interface)

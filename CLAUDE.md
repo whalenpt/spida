@@ -10,7 +10,7 @@ Spectral Integration and Differentiation Algorithms (C++23 library).
 ```
 src/          Production headers and sources (transforms, grids, solvers, shapes)
 test/         GoogleTest suites — one file per feature area
-external/     Bundled third-party code (kissfft, nayukidct, pwutils, json11) — git submodules
+external/     Bundled third-party code (kissfft, nayukidct, pwutils) — git submodules
 demos/        Demo programs
 ```
 

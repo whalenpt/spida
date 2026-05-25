@@ -36,7 +36,7 @@ Libraries built with:
 - [Nayuki-Lee DCT](https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms)
 - [pwutils](https://github.com/whalenpt/pwutils)
 - [Boost](https://www.boost.org) (system Boost preferred, fallback included)
-- [json11](https://github.com/dropbox/json11)
+- [nlohmann/json](https://github.com/nlohmann/json)
 
 Testing done with:
 
