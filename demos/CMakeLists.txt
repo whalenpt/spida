@@ -37,7 +37,6 @@ add_executable(nlsRT NLSRT.cpp)
 
 foreach(target IN LISTS DEMO_TARGETS)
     target_link_libraries(${target} PUBLIC SPIDA::spida)
-    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src)
 endforeach()
 
 

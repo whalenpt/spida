@@ -60,9 +60,8 @@ add_library(SPIDA::spida ALIAS spida)
 target_include_directories(spida
     PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-    PRIVATE
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+        $<INSTALL_INTERFACE:include>
 )
 
 # -----------------------------
@@ -75,8 +74,11 @@ target_compile_features(spida PUBLIC cxx_std_23)
 # -----------------------------
 target_link_libraries(spida PUBLIC
     kissfft::kissfft
-    nayukidct
     Threads::Threads
+)
+
+target_link_libraries(spida PRIVATE
+    nayukidct
 )
 
 if(TARGET spdlog::spdlog)
@@ -130,6 +132,10 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION include
 )
 
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/pwutils
+    DESTINATION include
+)
+
 install(EXPORT SpidaTargets
     FILE SpidaTargets.cmake
     NAMESPACE SPIDA::
@@ -137,19 +143,19 @@ install(EXPORT SpidaTargets
 )
 
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/SpidaConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/spidaConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
-configure_file(
+configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/SPIDAconfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/SpidaConfig.cmake
-    @ONLY
+    ${CMAKE_CURRENT_BINARY_DIR}/spidaConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/spida
 )
 
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/SpidaConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/SpidaConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/spidaConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/spidaConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/spida
 )
