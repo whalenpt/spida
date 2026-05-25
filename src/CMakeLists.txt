@@ -6,10 +6,8 @@ set(SRC_FILES
     pwutils/pwstats.cpp
     pwutils/pwstrings.cpp
     pwutils/pwthreads.cpp
-    pwutils/report/basereport.cpp
-    pwutils/report/dat.cpp
-    pwutils/report/dataio.cpp
-    pwutils/report/reporthelper.cpp
+    pwutils/basereport.cpp
+    pwutils/reporthelper.cpp
     SpidaCVT.cpp
     SpidaRVT.cpp
     SpidaRCVT.cpp

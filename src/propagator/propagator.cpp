@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <filesystem>
 #include <pwutils/pwstats.h>
-#include <pwutils/report/basereport.h>
+#include <pwutils/basereport.h>
 #include "spida/propagator/propagator.h"
 
 namespace spida{

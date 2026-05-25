@@ -6,7 +6,7 @@
 #include "spida/propagator/propagator.h"
 #include "spida/propagator/reporthandler.h"
 #include "spida/helper/constants.h"
-#include <pwutils/report/dat.hpp>
+#include <pwutils/report.hpp>
 
 using dcmplx = spida::dcmplx;
 namespace fs = std::filesystem;
@@ -39,12 +39,12 @@ protected:
     fs::path m_dir;
 
     // Helper: make a 1D dat report backed by local data
-    std::unique_ptr<dat::ReportData1D<double,double>> make1DReport(
+    std::unique_ptr<pw::Report1D<double,double>> make1DReport(
         const std::string& name,
         const std::vector<double>& x,
         const std::vector<double>& y)
     {
-        return std::make_unique<dat::ReportData1D<double,double>>(name, x, y);
+        return std::make_unique<pw::Report1D<double,double>>(name, x, y);
     }
 };
 
@@ -65,7 +65,7 @@ TEST(REPORT_HANDLER_TEST, ADD_1D_REPORT_SETS_HAS_DATA)
     spida::ReportHandler rh;
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0};
-    rh.addReport(std::make_unique<dat::ReportData1D<double,double>>("test", x, y));
+    rh.addReport(std::make_unique<pw::Report1D<double,double>>("test", x, y));
     EXPECT_TRUE(rh.hasData1D());
     EXPECT_FALSE(rh.hasData2D());
     EXPECT_FALSE(rh.hasDataTrack());
@@ -75,7 +75,7 @@ TEST(REPORT_HANDLER_TEST, ADD_TRACK_REPORT_SETS_HAS_DATA)
 {
     spida::ReportHandler rh;
     std::vector<double> data{1.0, 2.0, 3.0};
-    rh.addReport(std::make_unique<dat::TrackData<double>>("track", pw::TrackType::Max, data));
+    rh.addReport(std::make_unique<pw::Track<double>>("track", pw::TrackType::Max, data));
     EXPECT_FALSE(rh.hasData1D());
     EXPECT_TRUE(rh.hasDataTrack());
 }
@@ -242,7 +242,7 @@ TEST_F(PropagatorTest, STEP_UPDATE_SET_STEPS_PER_OUTPUT_SETS_ALL)
     std::vector<double> data{1.0, 2.0};
     TestPropagatorCV prop(m_dir);
     prop.addReport(make1DReport("u", x, y));
-    prop.addReport(std::make_unique<dat::TrackData<double>>("track", pw::TrackType::Max, data));
+    prop.addReport(std::make_unique<pw::Track<double>>("track", pw::TrackType::Max, data));
     prop.setStepsPerOutput(2);
 
     prop.stepUpdate(0.0);  // step 1 — no output
@@ -259,8 +259,8 @@ TEST_F(PropagatorTest, REPORT_1D_CREATES_FILE)
     prop.addReport(make1DReport("field", x, y));
     prop.report1D(0.0);
 
-    // dat::ReportData1D writes to <dir>/<name>_<repNum>.dat
-    fs::path expected = m_dir / "field_0.dat";
+    // pw::Report1D writes to <dir>/<name>_<repNum>.json
+    fs::path expected = m_dir / "field_0.json";
     EXPECT_TRUE(fs::exists(expected));
 }
 
@@ -268,10 +268,10 @@ TEST_F(PropagatorTest, REPORT_TRACK_CREATES_FILE)
 {
     std::vector<double> data{1.0, 2.0, 3.0};
     TestPropagatorCV prop(m_dir);
-    prop.addReport(std::make_unique<dat::TrackData<double>>("maxtrack", pw::TrackType::Max, data));
+    prop.addReport(std::make_unique<pw::Track<double>>("maxtrack", pw::TrackType::Max, data));
     prop.reportTrack(0.0);
 
-    fs::path expected = m_dir / "maxtrack.dat";
+    fs::path expected = m_dir / "maxtrack.json";
     EXPECT_TRUE(fs::exists(expected));
 }
 

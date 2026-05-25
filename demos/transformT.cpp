@@ -13,8 +13,8 @@
 #include <spida/grid/uniformRVT.h>
 #include <spida/shape/shapeT.h>
 #include <spida/transform/fftRVT.h>
-#include <pwutils/report/dat.hpp>
-#include <pwutils/report/reporthelper.h>
+#include <pwutils/report.hpp>
+#include <pwutils/reporthelper.h>
 #include <iostream>
 
 //------------------------------------------------------------------------------
@@ -44,8 +44,8 @@ int main()
 
     transform.T_To_ST(u,v);
 
-    dat::ReportData1D in_report{"T",gridT.getT(),u};
-    dat::ReportComplexData1D out_report{"ST",gridT.getST(),v};
+    pw::Report1D in_report{"T",gridT.getT(),u};
+    pw::ReportComplex1D out_report{"ST",gridT.getST(),v};
 
     std::ofstream os;
     os << std::scientific << std::setprecision(5);

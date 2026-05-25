@@ -13,8 +13,8 @@
 #include <spida/grid/besselR.h>
 #include <spida/shape/shapeR.h>
 #include <spida/transform/hankelR.h>
-#include <pwutils/report/dat.hpp>
-#include <pwutils/report/reporthelper.h>
+#include <pwutils/report.hpp>
+#include <pwutils/reporthelper.h>
 #include <iostream>
 #include <fstream>
 
@@ -39,9 +39,9 @@ int main()
     // Transform to spectral space
     transform.R_To_SR(u,v);
 
-    dat::ReportData1D<double,double> in_report("R",gridR.getR(),u);
+    pw::Report1D<double,double> in_report("R",gridR.getR(),u);
     in_report.setItem("xlabel","r");
-    dat::ReportData1D<double,double> out_report("SR",gridR.getSR(),v);
+    pw::Report1D<double,double> out_report("SR",gridR.getSR(),v);
     out_report.setItem("xlabel","kr");
 
     std::ofstream os;
@@ -61,7 +61,7 @@ int main()
     std::vector<dcmplx> vcmplx(nr);
 
     transform.R_To_SR(ucmplx,vcmplx);
-    dat::ReportComplexData1D<double,double> cmplx_report("SRcmplx",gridR.getSR(),vcmplx);
+    pw::ReportComplex1D<double,double> cmplx_report("SRcmplx",gridR.getSR(),vcmplx);
     cmplx_report.setItem("xlabel","kr");
     std::cout << cmplx_report.path() << std::endl;
     os << cmplx_report;

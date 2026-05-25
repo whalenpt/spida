@@ -4,7 +4,6 @@
 #include <spida/helper/constants.h>
 #include <spida/grid/besselR.h>
 #include <spida/transform/hankelR.h>
-#include <pwutils/report/dataio.hpp>
 #include <pwutils/pwmath.hpp>
 #include <random>
 #include <thread>

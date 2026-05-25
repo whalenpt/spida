@@ -1,7 +1,7 @@
 
 #include <vector>
 #include <cmath>
-#include "pwutils/report/reporthelper.h"
+#include "pwutils/reporthelper.h"
 
 namespace pw{
 

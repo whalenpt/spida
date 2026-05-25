@@ -15,8 +15,8 @@
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
 #include <spida/transform/hankelfftRRVT.h>
-#include <pwutils/report/dat.hpp>
-#include <pwutils/report/reporthelper.h>
+#include <pwutils/report.hpp>
+#include <pwutils/reporthelper.h>
 #include <cmath>
 #include <iostream>
 #include <fstream>

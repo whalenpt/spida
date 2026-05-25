@@ -15,8 +15,8 @@
 #include <spida/shape/shapeT.h>
 #include <spida/shape/shapeR.h>
 #include <spida/transform/hankelfftRRVT.h>
-#include <pwutils/report/dat.hpp>
-#include <pwutils/report/reporthelper.h>
+#include <pwutils/report.hpp>
+#include <pwutils/reporthelper.h>
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -56,7 +56,7 @@ int main()
             u[i*nt + j] = u0r[i]*u0t[j];
 
     // Report inputs
-    dat::ReportData2D in_report{"RT",gridR.getR(),gridT.getT(),u};
+    pw::Report2D in_report{"RT",gridR.getR(),gridT.getT(),u};
     in_report.setItem("xlabel","r");
     in_report.setItem("ylabel","t");
 
@@ -65,8 +65,8 @@ int main()
     std::cout << in_report.path() << std::endl;
     os << in_report;
 
-    dat::ReportData1D r_rpd{"R",gridR.getR(),u0r};
-    dat::ReportData1D t_rpd{"T",gridT.getT(),u0t};
+    pw::Report1D r_rpd{"R",gridR.getR(),u0r};
+    pw::Report1D t_rpd{"T",gridT.getT(),u0t};
     os << r_rpd;
     os << t_rpd;
 
@@ -80,7 +80,7 @@ int main()
     transform.RT_To_SRST(u,v);
     transform.SRST_To_RT(v,uop);
 
-    dat::ReportComplexData2D<double,double,double> out_report("SRST",gridR.getSR(),gridT.getST(),v);
+    pw::ReportComplex2D<double,double,double> out_report("SRST",gridR.getSR(),gridT.getST(),v);
     out_report.setItem("xlabel","kr");
     out_report.setItem("ylabel","omega");
 
@@ -88,7 +88,7 @@ int main()
     std::cout << out_report.path() << std::endl;
     os << out_report;
 
-    dat::ReportData2D rinop{"RTb",gridR.getR(),gridT.getT(),uop};
+    pw::Report2D rinop{"RTb",gridR.getR(),gridT.getT(),uop};
     rinop.setItem("xlabel","r");
     rinop.setItem("ylabel","t");
 
@@ -106,25 +106,25 @@ int main()
     transform.SRST_To_RST(v,w2);
     transform.SRST_To_SRT(v,zeta2);
 
-    dat::ReportComplexData2D rst_report{"RST",gridR.getR(),gridT.getST(),w};
+    pw::ReportComplex2D rst_report{"RST",gridR.getR(),gridT.getST(),w};
     rst_report.setItem("xlabel","r");
     rst_report.setItem("ylabel","omega");
     std::cout << rst_report.path() << std::endl;
     os << rst_report;
 
-    dat::ReportData2D srt_report{"SRT",gridR.getSR(),gridT.getT(),zeta};
+    pw::Report2D srt_report{"SRT",gridR.getSR(),gridT.getT(),zeta};
 
     srt_report.setItem("xlabel","kr");
     srt_report.setItem("ylabel","t");
     std::cout << srt_report.path() << std::endl;
     os << srt_report;
 
-    dat::ReportComplexData2D rst_report2{"RSTb",gridR.getR(),gridT.getST(),w2};
+    pw::ReportComplex2D rst_report2{"RSTb",gridR.getR(),gridT.getST(),w2};
     rst_report2.setItem("xlabel","r");
     rst_report2.setItem("ylabel","omega");
     os << rst_report2;
 
-    dat::ReportData2D srt_report2{"SRTb",gridR.getSR(),gridT.getT(),zeta2};
+    pw::Report2D srt_report2{"SRTb",gridR.getSR(),gridT.getT(),zeta2};
     srt_report2.setItem("xlabel","kr");
     srt_report2.setItem("ylabel","t");
     os << srt_report2;
