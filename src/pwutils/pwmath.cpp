@@ -19,6 +19,11 @@ unsigned int intceil(unsigned int x,unsigned int y)
     return q;
 }
 
+std::size_t intceil(std::size_t x, std::size_t y)
+{
+    return x/y + static_cast<std::size_t>(x % y != 0);
+}
+
 int factorial(int n) 
 {
   return (n == 1 || n ==0 ) ? 1 : factorial(n-1)*n;

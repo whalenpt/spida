@@ -110,4 +110,5 @@ namespace pw{
     bool isDoubles(const std::string& s) noexcept;
     int intceil(int x,int y);
     unsigned int intceil(unsigned int x,unsigned int y);
+    std::size_t intceil(std::size_t x, std::size_t y);
 }

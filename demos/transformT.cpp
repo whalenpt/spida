@@ -14,7 +14,6 @@
 #include <spida/shape/shapeT.h>
 #include <spida/transform/fftRVT.h>
 #include <pwutils/report.hpp>
-#include <pwutils/reporthelper.h>
 #include <iostream>
 
 //------------------------------------------------------------------------------

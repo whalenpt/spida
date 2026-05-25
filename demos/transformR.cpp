@@ -14,7 +14,6 @@
 #include <spida/shape/shapeR.h>
 #include <spida/transform/hankelR.h>
 #include <pwutils/report.hpp>
-#include <pwutils/reporthelper.h>
 #include <iostream>
 #include <fstream>
 

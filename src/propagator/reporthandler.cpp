@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <pwutils/pwstats.h>
-#include <pwutils/basereport.h>
+#include <pwutils/report.hpp>
 #include "spida/propagator/reporthandler.h"
 
 
