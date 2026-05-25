@@ -1,0 +1,9 @@
+// .claude/settings.json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Edit",
+      "hooks": [{"type": "command", "command": "if echo \"$CLAUDE_FILE_PATHS\" | grep -q CMakeLists.txt; then cmake --build build 2>&1 | tail -20; fi"}]
+    }]
+  }
+}
