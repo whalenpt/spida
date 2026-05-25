@@ -61,7 +61,7 @@ namespace spida{
   void SpidaChebX::dSX(std::vector<double>& a)
   {
       int N = m_gr->getNsx();
-      double sf = 2.0/m_gr->getL();
+      double sf = 2.0/m_gr->getLX();
       m_dsp[N-1] = 0.0;
       m_dsp[N-2] =  2.0*(N-1)*sf*a[N-1]; 
       for(int k = N-2; k > 0; k--)

@@ -1,65 +1,55 @@
 
 #include "spida/grid/gridR.h"
 #include <vector>
-#include <iostream>
 
 namespace spida{
 
-std::vector<double> GridR::mirrorGrid(const std::vector<double>& in,bool sign_reverse) const
+namespace {
+template<typename T>
+void mirrorImpl(unsigned nr, const T* in, T* out, bool signReverse) {
+    for(unsigned i = 0; i < nr; i++)
+        out[i] = signReverse ? -in[nr-1-i] : in[nr-1-i];
+    for(unsigned i = 0; i < nr; i++)
+        out[i+nr] = in[i];
+}
+}
+
+std::vector<double> GridR::mirrorGrid(const std::vector<double>& in,bool signReverse) const
 {
     std::vector<double> out(2*in.size());
-    mirrorGrid(in,out,sign_reverse);
+    this->mirrorGrid(in,out,signReverse);
     return out;
 }
 
-std::vector<dcmplx> GridR::mirrorGrid(const std::vector<dcmplx>& in,bool sign_reverse) const
+std::vector<dcmplx> GridR::mirrorGrid(const std::vector<dcmplx>& in,bool signReverse) const
 {
     std::vector<dcmplx> out(2*in.size());
-    mirrorGrid(in,out,sign_reverse);
+    this->mirrorGrid(in,out,signReverse);
     return out;
 }
 
-void GridR::mirrorGrid(const std::vector<double>& in,std::vector<double>& out,bool sign_reverse) const
+void GridR::mirrorGrid(const std::vector<double>& in,std::vector<double>& out,bool signReverse) const
 {
     if(out.size() != 2*in.size())
         out.resize(2*in.size());
-    mirrorGrid(in.data(),out.data(),sign_reverse);
+    this->mirrorGrid(in.data(),out.data(),signReverse);
 }
 
-
-void GridR::mirrorGrid(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,bool sign_reverse) const
+void GridR::mirrorGrid(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,bool signReverse) const
 {
     if(out.size() != 2*in.size())
         out.resize(2*in.size());
-    mirrorGrid(in.data(),out.data(),sign_reverse);
+    this->mirrorGrid(in.data(),out.data(),signReverse);
 }
 
-
-void GridR::mirrorGrid(const double* in,double* out,bool sign_reverse) const
+void GridR::mirrorGrid(const double* in,double* out,bool signReverse) const
 {
-    if(sign_reverse){
-        for(int i = m_nr-1; i >=0; i--)
-            out[(m_nr-1)-i] = -in[i];
-    } else{
-        for(int i = m_nr-1; i >=0; i--)
-            out[(m_nr-1)-i] = in[i];
-    }
-    for(unsigned i = 0; i < m_nr; i++)
-        out[i+m_nr] = in[i];
+    mirrorImpl(this->m_nr,in,out,signReverse);
 }
 
-
-void GridR::mirrorGrid(const dcmplx* in,dcmplx* out,bool sign_reverse) const
+void GridR::mirrorGrid(const dcmplx* in,dcmplx* out,bool signReverse) const
 {
-    if(sign_reverse){
-        for(int i = m_nr-1; i >=0; i--)
-            out[(m_nr-1)-i] = -in[i];
-    } else{
-        for(int i = m_nr-1; i >=0; i--)
-            out[(m_nr-1)-i] = in[i];
-    }
-    for(unsigned i = 0; i < m_nr; i++)
-        out[i+m_nr] = in[i];
+    mirrorImpl(this->m_nr,in,out,signReverse);
 }
 
 }

@@ -20,9 +20,9 @@ class UniformGridRVT : public UniformGridT
         unsigned getMinI() const {return m_minI;}
         unsigned getMaxI() const {return m_maxI;}
         double getDST() const {return getLST()/(getNst()-1);}
-        double maxPossibleFreq() const;
-        unsigned freqToIndx(double omeg) const;
-        double indxToFreq(unsigned indx) const;
+        [[nodiscard]] double maxPossibleFreq() const;
+        [[nodiscard]] unsigned freqToIndx(double omeg) const;
+        [[nodiscard]] double indxToFreq(unsigned indx) const;
     private:
         std::vector<double> m_st;
         unsigned m_nst;

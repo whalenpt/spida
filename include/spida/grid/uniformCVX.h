@@ -11,7 +11,7 @@ class UniformGridCVX : public UniformGridX
     public:
         UniformGridCVX(unsigned nx,double min,double max);
         ~UniformGridCVX() final = default; 
-        const std::vector<double>& getSX() const {return m_sx;}
+        const std::vector<double>& getSX() const override final {return m_sx;}
         double getMinSX() const final {return -(getNx()*spida::PI)/getLX();} 
         double getMaxSX() const final {return getNx()*spida::PI/getLX();}
         std::vector<double> freqshift(const std::vector<double>& in) const;
