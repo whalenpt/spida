@@ -170,8 +170,8 @@ TEST_F(PropagatorTest, STEP_UPDATE_NO_REPORTS_ALWAYS_TRUE)
 TEST_F(PropagatorTest, STEP_UPDATE_NO_REPORTS_SKIPS_UPDATE_FIELDS)
 {
     TestPropagatorCV prop(m_dir);
-    prop.stepUpdate(0.0);
-    prop.stepUpdate(1.0);
+    (void)prop.stepUpdate(0.0);
+    (void)prop.stepUpdate(1.0);
     EXPECT_EQ(prop.updateCount(), 0);
 }
 
@@ -183,9 +183,9 @@ TEST_F(PropagatorTest, STEP_UPDATE_TRIGGERS_UPDATE_FIELDS_WITH_1D_REPORT)
     prop.addReport(make1DReport("u", x, y));
 
     // steps_per_out1D defaults to 1, so every step triggers updateFields
-    prop.stepUpdate(0.0);
+    (void)prop.stepUpdate(0.0);
     EXPECT_EQ(prop.updateCount(), 1);
-    prop.stepUpdate(1.0);
+    (void)prop.stepUpdate(1.0);
     EXPECT_EQ(prop.updateCount(), 2);
 }
 
@@ -197,12 +197,12 @@ TEST_F(PropagatorTest, STEP_UPDATE_RESPECTS_STEPS_PER_OUTPUT_1D)
     prop.addReport(make1DReport("u", x, y));
     prop.setStepsPerOutput1D(3);
 
-    prop.stepUpdate(0.0);  // step 1 — no report
-    prop.stepUpdate(1.0);  // step 2 — no report
+    (void)prop.stepUpdate(0.0);  // step 1 — no report
+    (void)prop.stepUpdate(1.0);  // step 2 — no report
     EXPECT_EQ(prop.updateCount(), 0);
-    prop.stepUpdate(2.0);  // step 3 — report fires
+    (void)prop.stepUpdate(2.0);  // step 3 — report fires
     EXPECT_EQ(prop.updateCount(), 1);
-    prop.stepUpdate(3.0);  // step 4 — no report
+    (void)prop.stepUpdate(3.0);  // step 4 — no report
     EXPECT_EQ(prop.updateCount(), 1);
 }
 
@@ -245,9 +245,9 @@ TEST_F(PropagatorTest, STEP_UPDATE_SET_STEPS_PER_OUTPUT_SETS_ALL)
     prop.addReport(std::make_unique<pw::Track<double>>("track", pw::TrackType::Max, data));
     prop.setStepsPerOutput(2);
 
-    prop.stepUpdate(0.0);  // step 1 — no output
+    (void)prop.stepUpdate(0.0);  // step 1 — no output
     EXPECT_EQ(prop.updateCount(), 0);
-    prop.stepUpdate(1.0);  // step 2 — both 1D and track fire
+    (void)prop.stepUpdate(1.0);  // step 2 — both 1D and track fire
     EXPECT_EQ(prop.updateCount(), 1);
 }
 

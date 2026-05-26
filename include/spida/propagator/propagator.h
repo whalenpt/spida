@@ -1,12 +1,8 @@
-/*
- * Helper class for numerical rkstiff methods. Can be used by rkstiff client code
- * to replace manual file reporting of data.
- */
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 #include <memory>
-#include <string>
 #include <vector>
 #include "spida/helper/constants.h"
 #include "spida/propagator/reporthandler.h"
@@ -20,65 +16,65 @@ namespace pw{
 
 namespace spida{
 
-
 class BasePropagator
 {
-    static const int DEFAULT_MAX_REPORTS_1D = 500;
-    static const int DEFAULT_MAX_REPORTS_2D = 200;
+    static inline constexpr std::size_t DEFAULT_MAX_REPORTS_1D = 500;
+    static inline constexpr std::size_t DEFAULT_MAX_REPORTS_2D = 200;
 
     public:
         explicit BasePropagator(const std::filesystem::path& dir_path);
         virtual ~BasePropagator();
-        // updateFields will update all reporting vectors prior to file output 
-        // i.e. transform a vector from spectral space to physical space, or perform some
-        // other operation
         virtual void updateFields(double t) = 0;
 
-        ReportHandler& reportHandler() {return m_report_handler;}
-        void setDirPath(const std::filesystem::path& dir_path) {m_dir_path = dir_path;}
-        void setLogProgress(bool val) {m_log_progress = val;}
-        void setLogFrequency(unsigned val) {m_log_freq = val;}
-        bool logProgress() const {return m_log_progress;}
+        [[nodiscard]] ReportHandler& reportHandler() {return this->m_report_handler;}
+        void setDirPath(const std::filesystem::path& dir_path) {this->m_dir_path = dir_path;}
+        void setLogProgress(bool val) {this->m_log_progress = val;}
+        void setLogFrequency(std::size_t val);
+        [[nodiscard]] bool logProgress() const {return this->m_log_progress;}
 
-        void setStepsPerOutput(unsigned val);
-        void setStepsPerOutput1D(unsigned val); 
-        void setStepsPerOutput2D(unsigned val);
-        void setStepsPerOutputTrack(unsigned val);
-        void setMaxReports(unsigned val);
-        void setMaxReports1D(unsigned val);
-        void setMaxReports2D(unsigned val);
+        void setStepsPerOutput(std::size_t val);
+        void setStepsPerOutput1D(std::size_t val);
+        void setStepsPerOutput2D(std::size_t val);
+        void setStepsPerOutputTrack(std::size_t val);
+        void setMaxReports(std::size_t val);
+        void setMaxReports1D(std::size_t val);
+        void setMaxReports2D(std::size_t val);
 
         void addReport(std::unique_ptr<pw::ReportData1D> def);
         void addReport(std::unique_ptr<pw::ReportData2D> def);
         void addReport(std::unique_ptr<pw::TrackData> def);
 
-        std::filesystem::path dirPath() const {return m_dir_path;}
+        [[nodiscard]] const std::filesystem::path& dirPath() const {return this->m_dir_path;}
         void report1D(double t);
         void report2D(double t);
         void reportTrack(double t);
         void report(double t);
         void reportStats() const;
-        bool stepUpdate(double t);
+        [[nodiscard]] bool stepUpdate(double t);
 
     private:
         ReportHandler m_report_handler;
-        bool readyForReport() const;
-        bool maxReportReached() const;
-  
+
+        [[nodiscard]] bool ready1D(std::size_t step) const;
+        [[nodiscard]] bool ready2D(std::size_t step) const;
+        [[nodiscard]] bool readyTrack(std::size_t step) const;
+        [[nodiscard]] bool readyForReport(std::size_t step) const;
+        [[nodiscard]] bool maxReportReached() const;
+
         std::filesystem::path m_dir_path;
-        unsigned m_steps_taken{0};
-        unsigned m_report_count1D{0};
-        unsigned m_steps_per_out1D{1};
-        unsigned m_max_reports1D{DEFAULT_MAX_REPORTS_1D};
-  
-        unsigned m_report_count2D{0};
-        unsigned m_steps_per_out2D{1};
-        unsigned m_max_reports2D{DEFAULT_MAX_REPORTS_2D};
-  
-        unsigned m_steps_per_track{1};
-  
+        std::size_t m_steps_taken{0};
+        std::size_t m_report_count1D{0};
+        std::size_t m_steps_per_out1D{1};
+        std::size_t m_max_reports1D{DEFAULT_MAX_REPORTS_1D};
+
+        std::size_t m_report_count2D{0};
+        std::size_t m_steps_per_out2D{1};
+        std::size_t m_max_reports2D{DEFAULT_MAX_REPORTS_2D};
+
+        std::size_t m_steps_per_track{1};
+
         bool m_log_progress{false};
-        unsigned m_log_freq{1};
+        std::size_t m_log_freq{1};
         std::unique_ptr<pw::StatCenter> m_stat;
 };
 
@@ -86,7 +82,7 @@ class PropagatorCV : public BasePropagator
 {
     public:
         using BasePropagator::BasePropagator;
-        virtual std::vector<dcmplx>& propagator() = 0;
+        [[nodiscard]] virtual std::vector<dcmplx>& propagator() = 0;
 };
 
 }

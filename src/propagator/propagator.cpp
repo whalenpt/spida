@@ -1,4 +1,5 @@
 
+#include <format>
 #include <stdexcept>
 #include <filesystem>
 #include <pwutils/pwstats.h>
@@ -7,161 +8,172 @@
 
 namespace spida{
 
+namespace {
+void validatePositive(std::size_t val, const char* name)
+{
+    if(val < 1)
+        throw std::invalid_argument(std::format(
+            "BasePropagator::{} requires a value greater than zero.", name));
+}
+}
+
 BasePropagator::~BasePropagator() = default;
 
-void BasePropagator::addReport(std::unique_ptr<pw::ReportData1D> def) {m_report_handler.addReport(std::move(def));}
-void BasePropagator::addReport(std::unique_ptr<pw::ReportData2D> def) {m_report_handler.addReport(std::move(def));}
-void BasePropagator::addReport(std::unique_ptr<pw::TrackData> def)    {m_report_handler.addReport(std::move(def));}
+void BasePropagator::addReport(std::unique_ptr<pw::ReportData1D> def) {this->m_report_handler.addReport(std::move(def));}
+void BasePropagator::addReport(std::unique_ptr<pw::ReportData2D> def) {this->m_report_handler.addReport(std::move(def));}
+void BasePropagator::addReport(std::unique_ptr<pw::TrackData> def)    {this->m_report_handler.addReport(std::move(def));}
 
 BasePropagator::BasePropagator(const std::filesystem::path& dir_path) :
     m_dir_path(dir_path),
     m_stat(std::make_unique<pw::StatCenter>())
 {
-    m_stat->setHeader("REPORT STATS");
-    m_stat->addTracker("t",0.0);
+    this->m_stat->setHeader("REPORT STATS");
+    this->m_stat->addTracker("t", 0.0);
+    this->m_stat->addTimer("Time Reporting 1D");
+    this->m_stat->addTimer("Time Reporting 2D");
+    this->m_stat->addTimer("Time Reporting Trackers");
+    this->m_stat->addCounter("Number Reports 1D");
+    this->m_stat->addCounter("Number Reports 2D");
+    this->m_stat->addCounter("Number Reports Track");
 }
 
-void BasePropagator::setStepsPerOutput(unsigned val)
+void BasePropagator::setStepsPerOutput(std::size_t val)
 {
-    setStepsPerOutput1D(val);
-    setStepsPerOutput2D(val);
-    setStepsPerOutputTrack(val);
+    this->setStepsPerOutput1D(val);
+    this->setStepsPerOutput2D(val);
+    this->setStepsPerOutputTrack(val);
 }
 
-void BasePropagator::setStepsPerOutput1D(unsigned val)
+void BasePropagator::setStepsPerOutput1D(std::size_t val)
 {
-    if(val < 1)
-        throw std::invalid_argument("BasePropagator::setStepsPerOutput1D requires a value "
-                "greater than zero.");
-    m_steps_per_out1D = val;
+    validatePositive(val, "setStepsPerOutput1D");
+    this->m_steps_per_out1D = val;
 }
 
-void BasePropagator::setStepsPerOutput2D(unsigned val)
+void BasePropagator::setStepsPerOutput2D(std::size_t val)
 {
-    if(val < 1)
-        throw std::invalid_argument("BasePropagator::setStepsPerOutput2D requires a value "
-                "greater than zero.");
-    m_steps_per_out2D = val;
+    validatePositive(val, "setStepsPerOutput2D");
+    this->m_steps_per_out2D = val;
 }
 
-void BasePropagator::setStepsPerOutputTrack(unsigned val)
+void BasePropagator::setStepsPerOutputTrack(std::size_t val)
 {
-    if(val < 1)
-        throw std::invalid_argument("BasePropagator::setStepsPerOutputTrack requires a value "
-                "greater than zero.");
-    m_steps_per_track = val;
+    validatePositive(val, "setStepsPerOutputTrack");
+    this->m_steps_per_track = val;
 }
 
-void BasePropagator::setMaxReports(unsigned val)
+void BasePropagator::setMaxReports(std::size_t val)
 {
-    setMaxReports1D(val);
-    setMaxReports2D(val);
+    this->setMaxReports1D(val);
+    this->setMaxReports2D(val);
 }
 
-void BasePropagator::setMaxReports1D(unsigned val)
+void BasePropagator::setMaxReports1D(std::size_t val)
 {
-    if(val < 1)
-        throw std::invalid_argument("BasePropagator::setMaxReports1D requires a value "
-                "greater than zero.");
-    m_max_reports1D = val;
+    validatePositive(val, "setMaxReports1D");
+    this->m_max_reports1D = val;
 }
 
-void BasePropagator::setMaxReports2D(unsigned val)
+void BasePropagator::setMaxReports2D(std::size_t val)
 {
-    if(val < 1)
-        throw std::invalid_argument("BasePropagator::setMaxReports2D requires a value "
-                "greater than zero.");
-    m_max_reports2D = val;
+    validatePositive(val, "setMaxReports2D");
+    this->m_max_reports2D = val;
 }
 
-
-bool BasePropagator::readyForReport() const
+void BasePropagator::setLogFrequency(std::size_t val)
 {
-    if(!(m_steps_taken % m_steps_per_out1D) && m_report_handler.hasData1D()) 
-        return true;
-    if(!(m_steps_taken % m_steps_per_out2D) && m_report_handler.hasData2D())
-        return true;
-    if(!(m_steps_taken % m_steps_per_track) && m_report_handler.hasDataTrack())
-        return true;
-    return false;
+    validatePositive(val, "setLogFrequency");
+    this->m_log_freq = val;
+}
+
+bool BasePropagator::ready1D(std::size_t step) const
+{
+    return !(step % this->m_steps_per_out1D) && this->m_report_handler.hasData1D();
+}
+
+bool BasePropagator::ready2D(std::size_t step) const
+{
+    return !(step % this->m_steps_per_out2D) && this->m_report_handler.hasData2D();
+}
+
+bool BasePropagator::readyTrack(std::size_t step) const
+{
+    return !(step % this->m_steps_per_track) && this->m_report_handler.hasDataTrack();
+}
+
+bool BasePropagator::readyForReport(std::size_t step) const
+{
+    return this->ready1D(step) || this->ready2D(step) || this->readyTrack(step);
 }
 
 bool BasePropagator::maxReportReached() const
 {
-    if(m_report_count1D >= m_max_reports1D)
-        return true;
-    if(m_report_count2D >= m_max_reports2D)
-        return true;
-    return false;
+    return this->m_report_count1D >= this->m_max_reports1D
+        || this->m_report_count2D >= this->m_max_reports2D;
 }
 
 bool BasePropagator::stepUpdate(double t)
 {
-    m_steps_taken++;
-    m_stat->updateTracker("t",t);
-    if(readyForReport())
-        updateFields(t);
-    if(!(m_steps_taken % m_steps_per_out1D) && m_report_handler.hasData1D())
-        report1D(t);
-    if(!(m_steps_taken % m_steps_per_out2D) && m_report_handler.hasData2D()) 
-        report2D(t);
-    if(!(m_steps_taken % m_steps_per_track) && m_report_handler.hasDataTrack())
-        reportTrack(t);
-
-    if(m_log_progress && !(m_steps_taken % m_log_freq))
-        reportStats();
-    if(maxReportReached())
-        return false;
-    return true;
+    const auto step = this->m_steps_taken + 1;
+    this->m_stat->updateTracker("t", t);
+    if(this->readyForReport(step))
+        this->updateFields(t);
+    if(this->ready1D(step))    this->report1D(t);
+    if(this->ready2D(step))    this->report2D(t);
+    if(this->readyTrack(step)) this->reportTrack(t);
+    if(this->m_log_progress && !(step % this->m_log_freq))
+        this->reportStats();
+    this->m_steps_taken = step;
+    return !this->maxReportReached();
 }
 
 void BasePropagator::reportStats() const
 {
-    m_stat->report();
+    this->m_stat->report();
 }
 
 void BasePropagator::report(double t)
 {
-    if(m_report_handler.hasData1D())
-        report1D(t);
-    if(m_report_handler.hasData2D())
-        report2D(t);
-    if(m_report_handler.hasDataTrack())
-        reportTrack(t);
+    if(this->m_report_handler.hasData1D())    this->report1D(t);
+    if(this->m_report_handler.hasData2D())    this->report2D(t);
+    if(this->m_report_handler.hasDataTrack()) this->reportTrack(t);
 }
 
-void BasePropagator::report1D(double t) 
+void BasePropagator::report1D(double t)
 {
-    if(!m_report_handler.hasData1D())
+    if(!this->m_report_handler.hasData1D())
         return;
-    m_stat->startTimer("Time Reporting 1D");
-    m_report_handler.setItem("t",t);
-    m_report_handler.report1D(m_dir_path,m_report_count1D);
-    m_stat->endTimer("Time Reporting 1D");
-    m_report_count1D++;
-    m_stat->incrementCounter("Number Reports 1D");
+    this->m_stat->startTimer("Time Reporting 1D");
+    this->m_report_handler.setItem("t", t);
+    this->m_report_handler.report1D(this->m_dir_path,
+            static_cast<unsigned>(this->m_report_count1D));
+    this->m_stat->endTimer("Time Reporting 1D");
+    this->m_report_count1D++;
+    this->m_stat->incrementCounter("Number Reports 1D");
 }
 
-void BasePropagator::report2D(double t) 
+void BasePropagator::report2D(double t)
 {
-    if(!m_report_handler.hasData2D())
+    if(!this->m_report_handler.hasData2D())
         return;
-    m_stat->startTimer("Time Reporting 2D");
-    m_report_handler.setItem("t",t);
-    m_report_handler.report2D(m_dir_path,m_report_count2D);
-    m_stat->endTimer("Time Reporting 2D");
-    m_report_count2D++;
-    m_stat->incrementCounter("Number Reports 2D");
+    this->m_stat->startTimer("Time Reporting 2D");
+    this->m_report_handler.setItem("t", t);
+    this->m_report_handler.report2D(this->m_dir_path,
+            static_cast<unsigned>(this->m_report_count2D));
+    this->m_stat->endTimer("Time Reporting 2D");
+    this->m_report_count2D++;
+    this->m_stat->incrementCounter("Number Reports 2D");
 }
 
-void BasePropagator::reportTrack(double t) 
+void BasePropagator::reportTrack(double t)
 {
-    if(!m_report_handler.hasDataTrack())
+    if(!this->m_report_handler.hasDataTrack())
         return;
-    m_stat->startTimer("Time Reporting Trackers");
-    m_report_handler.setItem("t",t);
-    m_report_handler.reportTrack(m_dir_path,t);
-    m_stat->endTimer("Time Reporting Trackers");
+    this->m_stat->startTimer("Time Reporting Trackers");
+    this->m_report_handler.setItem("t", t);
+    this->m_report_handler.reportTrack(this->m_dir_path, t);
+    this->m_stat->endTimer("Time Reporting Trackers");
+    this->m_stat->incrementCounter("Number Reports Track");
 }
 
 }
