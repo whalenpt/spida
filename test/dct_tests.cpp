@@ -13,7 +13,7 @@
 
 TEST(DCT_TEST,INVERSES)
 {
-	int N = 64;
+	unsigned N = 64;
 
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(1.0, 1.0);

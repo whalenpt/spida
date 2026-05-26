@@ -9,7 +9,7 @@
 namespace spida{
 
   ChebInterpX::ChebInterpX(int ninterp,double minx,double maxx) :
-      m_chebx(std::make_unique<SpidaChebX>(ChebRootGridX{ninterp,minx,maxx})),
+      m_chebx(std::make_unique<SpidaChebX>(ChebRootGridX{static_cast<unsigned>(ninterp),minx,maxx})),
       m_ycheb(ninterp),
       m_dycheb(ninterp) { }
 
