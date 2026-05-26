@@ -236,14 +236,14 @@ TEST(UNIFORM_GRID_RVT_TEST, ERROR_INDX_OUT_OF_RANGE)
 {
     unsigned N = 64;
     spida::UniformGridRVT grid(N, -1.0, 1.0);
-    EXPECT_THROW(grid.indxToFreq(N / 2 + 1), std::domain_error);
+    EXPECT_THROW((void)grid.indxToFreq(N / 2 + 1), std::domain_error);
 }
 
 TEST(UNIFORM_GRID_RVT_TEST, ERROR_FREQ_NEGATIVE)
 {
     unsigned N = 64;
     spida::UniformGridRVT grid(N, -1.0, 1.0);
-    EXPECT_THROW(grid.freqToIndx(-1.0), std::domain_error);
+    EXPECT_THROW((void)grid.freqToIndx(-1.0), std::domain_error);
 }
 
 TEST(UNIFORM_GRID_RVT_TEST, ERROR_INVALID_FREQ_RANGE)

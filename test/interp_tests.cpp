@@ -92,7 +92,7 @@ TEST(LINEAR_INTERP_TEST, ERROR_EMPTY_XINTERP)
     std::vector<double> y = {0.0, 1.0, 2.0};
     spida::LinearInterp interp(x, y);
     std::vector<double> xi;
-    EXPECT_THROW(interp.eval(xi), pw::Exception);
+    EXPECT_THROW((void)interp.eval(xi), pw::Exception);
 }
 
 TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_BELOW_RANGE)
