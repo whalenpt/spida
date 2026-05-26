@@ -6,10 +6,6 @@ set(SRC_FILES
     pwutils/pwstats.cpp
     pwutils/pwstrings.cpp
     pwutils/pwthreads.cpp
-    pwutils/report/basereport.cpp
-    pwutils/report/dat.cpp
-    pwutils/report/dataio.cpp
-    pwutils/report/reporthelper.cpp
     SpidaCVT.cpp
     SpidaRVT.cpp
     SpidaRCVT.cpp
@@ -60,9 +56,8 @@ add_library(SPIDA::spida ALIAS spida)
 target_include_directories(spida
     PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-    PRIVATE
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+        $<INSTALL_INTERFACE:include>
 )
 
 # -----------------------------
@@ -75,12 +70,38 @@ target_compile_features(spida PUBLIC cxx_std_23)
 # -----------------------------
 target_link_libraries(spida PUBLIC
     kissfft::kissfft
-    nayukidct
     Threads::Threads
+)
+
+target_link_libraries(spida PRIVATE
+    nayukidct
 )
 
 if(TARGET spdlog::spdlog)
     target_link_libraries(spida PRIVATE spdlog::spdlog)
+endif()
+
+# -----------------------------
+# nlohmann_json
+# -----------------------------
+find_package(nlohmann_json CONFIG QUIET)
+if(nlohmann_json_FOUND)
+    target_link_libraries(spida PUBLIC nlohmann_json::nlohmann_json)
+else()
+    message(STATUS "nlohmann_json not found via Conan; fetching single header")
+    set(_json_header "${CMAKE_CURRENT_BINARY_DIR}/nlohmann/json.hpp")
+    if(NOT EXISTS "${_json_header}")
+        file(DOWNLOAD
+            "https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp"
+            "${_json_header}"
+            SHOW_PROGRESS
+        )
+    endif()
+    target_include_directories(spida PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        $<INSTALL_INTERFACE:include>
+    )
+    install(FILES "${_json_header}" DESTINATION include/nlohmann)
 endif()
 
 # -----------------------------
@@ -130,6 +151,10 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION include
 )
 
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/pwutils
+    DESTINATION include
+)
+
 install(EXPORT SpidaTargets
     FILE SpidaTargets.cmake
     NAMESPACE SPIDA::
@@ -137,19 +162,19 @@ install(EXPORT SpidaTargets
 )
 
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/SpidaConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/spidaConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
-configure_file(
+configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/SPIDAconfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/SpidaConfig.cmake
-    @ONLY
+    ${CMAKE_CURRENT_BINARY_DIR}/spidaConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/spida
 )
 
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/SpidaConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/SpidaConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/spidaConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/spidaConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/spida
 )

@@ -92,7 +92,7 @@ TEST(LINEAR_INTERP_TEST, ERROR_EMPTY_XINTERP)
     std::vector<double> y = {0.0, 1.0, 2.0};
     spida::LinearInterp interp(x, y);
     std::vector<double> xi;
-    EXPECT_THROW(interp.eval(xi), pw::Exception);
+    EXPECT_THROW((void)interp.eval(xi), pw::Exception);
 }
 
 TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_BELOW_RANGE)
@@ -100,7 +100,7 @@ TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_BELOW_RANGE)
     std::vector<double> x = {0.0, 1.0, 2.0};
     std::vector<double> y = {0.0, 1.0, 2.0};
     spida::LinearInterp interp(x, y);
-    EXPECT_THROW(interp.eval(-0.1), pw::Exception);
+    EXPECT_THROW((void)interp.eval(-0.1), pw::Exception);
 }
 
 TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_ABOVE_RANGE)
@@ -108,7 +108,7 @@ TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_ABOVE_RANGE)
     std::vector<double> x = {0.0, 1.0, 2.0};
     std::vector<double> y = {0.0, 1.0, 2.0};
     spida::LinearInterp interp(x, y);
-    EXPECT_THROW(interp.eval(2.1), pw::Exception);
+    EXPECT_THROW((void)interp.eval(2.1), pw::Exception);
 }
 
 TEST(LINEAR_INTERP_TEST, ERROR_DATA_TOO_SMALL)
@@ -201,6 +201,6 @@ TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_OUT_OF_RANGE)
     std::vector<double> x = {0.0, 1.0, 2.0, 3.0};
     std::vector<double> y = {0.0, 1.0, 2.0, 3.0};
     spida::SplineInterp interp(x, y);
-    EXPECT_THROW(interp.eval(-0.5), pw::Exception);
-    EXPECT_THROW(interp.eval(3.5), pw::Exception);
+    EXPECT_THROW((void)interp.eval(-0.5), pw::Exception);
+    EXPECT_THROW((void)interp.eval(3.5), pw::Exception);
 }

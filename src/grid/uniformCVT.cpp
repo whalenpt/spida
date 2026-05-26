@@ -1,3 +1,4 @@
+#include <cassert>
 #include <stdexcept>
 #include <string>
 #include "spida/grid/uniformCVT.h"
@@ -22,6 +23,7 @@ UniformGridCVT::UniformGridCVT(unsigned nt,double minT,double maxT) :
 std::vector<double> UniformGridCVT::freqshift(const std::vector<double>& in) const
 {
     auto sz = static_cast<unsigned>(in.size());
+    assert(sz >= 2);
     std::vector<double> out(sz);
     for(unsigned i = sz/2+1; i < sz; i++)
         out[i-(sz/2+1)] = in[i];
@@ -33,6 +35,7 @@ std::vector<double> UniformGridCVT::freqshift(const std::vector<double>& in) con
 std::vector<dcmplx> UniformGridCVT::freqshift(const std::vector<dcmplx>& in) const
 {
     auto sz = static_cast<unsigned>(in.size());
+    assert(sz >= 2);
     std::vector<dcmplx> out(sz);
     for(unsigned i = sz/2+1; i < sz; i++)
         out[i-(sz/2+1)] = in[i];
@@ -44,6 +47,7 @@ std::vector<dcmplx> UniformGridCVT::freqshift(const std::vector<dcmplx>& in) con
 void UniformGridCVT::freqshift(const std::vector<double>& in,std::vector<double>& out) const
 {
     auto sz = static_cast<unsigned>(in.size());
+    assert(sz >= 2);
     for(unsigned i = sz/2+1; i < sz; i++)
         out[i-(sz/2+1)] = in[i];
     for(unsigned i = 0; i <= sz/2; i++)
@@ -53,6 +57,7 @@ void UniformGridCVT::freqshift(const std::vector<double>& in,std::vector<double>
 void UniformGridCVT::freqshift(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) const
 {
     auto sz = static_cast<unsigned>(in.size());
+    assert(sz >= 2);
     for(unsigned i = sz/2+1; i < sz; i++)
         out[i-(sz/2+1)] = in[i];
     for(unsigned i = 0; i <= sz/2; i++)

@@ -15,7 +15,7 @@
 #include <spida/helper/constants.h>
 #include <spida/propagator/propagator.h>
 #include <spida/rkstiff/ETDAS.h>
-#include <pwutils/report/dat.hpp>
+#include <pwutils/report.hpp>
 #include <fstream>
 
 //------------------------------------------------------------------------------
@@ -130,11 +130,11 @@ class PropagatorKS : public spida::PropagatorCV
 
             // add report for real space KS field
             const auto& x  = m_spi.getGridX().getX();
-            PropagatorCV::addReport(std::make_unique<dat::ReportData1D<double,double>>("X",x,m_uphys));
+            PropagatorCV::addReport(std::make_unique<pw::Report1D<double,double>>("X",x,m_uphys));
 
             // add report for spectral space KS field (the propagator)
             const auto& sx  = m_spi.getGridX().getSX();
-            PropagatorCV::addReport(std::make_unique<dat::ReportComplexData1D<double,double>>("SX",sx,m_usp));
+            PropagatorCV::addReport(std::make_unique<pw::ReportComplex1D<double,double>>("SX",sx,m_usp));
         }
 
         spida::SpidaRVX& m_spi;

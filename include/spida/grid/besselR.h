@@ -8,7 +8,7 @@ namespace spida{
 class BesselRootGridR : public GridR
 {
     public:
-        explicit BesselRootGridR(int nr,double maxr); 
+        explicit BesselRootGridR(unsigned nr,double maxr);
         BesselRootGridR() = delete;
         ~BesselRootGridR() override = default;
         const std::vector<double>& getR() const final {return m_r;}

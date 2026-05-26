@@ -75,7 +75,7 @@ namespace pw{
 
     template<typename T>
     auto argmax(const std::vector<T>& v) {
-        auto itmax = std::max_element<T>(std::begin(v),std::end(v));
+        auto itmax = std::max_element(std::begin(v),std::end(v));
         return std::distance(std::begin(v),itmax);
     }
 
@@ -86,7 +86,7 @@ namespace pw{
 
     template<typename T>
     auto argmin(const std::vector<T>& v) {
-        auto itmin = std::min_element<T>(std::begin(v),std::end(v));
+        auto itmin = std::min_element(std::begin(v),std::end(v));
         return std::distance(std::begin(v),itmin);
     }
 
@@ -110,4 +110,5 @@ namespace pw{
     bool isDoubles(const std::string& s) noexcept;
     int intceil(int x,int y);
     unsigned int intceil(unsigned int x,unsigned int y);
+    std::size_t intceil(std::size_t x, std::size_t y);
 }

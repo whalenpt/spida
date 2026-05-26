@@ -6,14 +6,11 @@
 
 namespace pw{
     using dcmplx = std::complex<double>;
-    const dcmplx ii (0.0,1.0);
+    inline constexpr dcmplx ii{0.0, 1.0};
     using metadataMap = std::map<std::string,std::string, std::less<>>;
     using metadataPair = std::pair<std::string,std::string>;
-    enum class FileSignature{DAT,JSON,UNKNOWN};
-    enum class DataSignature{XY,XCVY,XYZ,XYCVZ,UNKNOWN};
-    enum class OperatorSignature{NONE,LOGX,LOGY,LOGXLOGY,LOGZ};
 
-    constexpr auto XLABEL = "x";
-    constexpr auto YLABEL = "y";
-    constexpr auto ZLABEL = "z";
+    inline constexpr auto XLABEL = "x";
+    inline constexpr auto YLABEL = "y";
+    inline constexpr auto ZLABEL = "z";
 }

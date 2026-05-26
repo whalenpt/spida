@@ -18,7 +18,7 @@
 #include <spida/helper/constants.h>
 #include <spida/rkstiff/ETDAS.h>
 #include <spida/propagator/propagator.h>
-#include <pwutils/report/dat.hpp>
+#include <pwutils/report.hpp>
 
 //------------------------------------------------------------------------------
 
@@ -117,7 +117,7 @@ class Propagator : public spida::PropagatorCV
         // initReport is a helper function that feeds PropagatorCV information on what to report out to files
         void initReport() {
             // add report for complex physical space NLS field
-            auto report = std::make_unique<dat::ReportComplexData2D<\
+            auto report = std::make_unique<pw::ReportComplex2D<\
                      double,double,double>>("RT",m_mirror_r,m_spi.getT(),m_mirror_uphys);
             report->setItem("xlabel","r");
             report->setItem("ylabel","t");
@@ -127,7 +127,7 @@ class Propagator : public spida::PropagatorCV
             PropagatorCV::addReport(std::move(report));
 
             // add report for power of physical space NLS field 
-            auto reportpow = std::make_unique<dat::ReportComplexData2D<\
+            auto reportpow = std::make_unique<pw::ReportComplex2D<\
                              double,double,double>>("SQ_RT",m_mirror_r,m_spi.getT(),m_mirror_uphys);
             reportpow->setPower(true);
             reportpow->setItem("xlabel","r");
@@ -138,7 +138,7 @@ class Propagator : public spida::PropagatorCV
             PropagatorCV::addReport(std::move(reportpow));
 
             // add report for spectral space NLS field (the propagator)
-            auto reportsp = std::make_unique<dat::ReportComplexData2D<\
+            auto reportsp = std::make_unique<pw::ReportComplex2D<\
                         double,double,double>>("SR",m_spi.getSR(),m_spi.getST(),m_usp);
             reportsp->setItem("xlabel","kr");
             reportsp->setItem("ylabel","omega");

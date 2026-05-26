@@ -47,20 +47,18 @@ void setChebRootSX(std::vector<double>& sx)
     for(unsigned j = 0; j < nsx; j++) sx[j] = (j+0.5)*dc;
 }
 
-ChebExtremaGridX::ChebExtremaGridX(int nx,double min,double max) : ChebGridX(nx,min,max),
+ChebExtremaGridX::ChebExtremaGridX(unsigned nx,double min,double max) : ChebGridX(nx,min,max),
     m_x(nx), m_sx(nx)
 {
-    setChebExtremaX(min,max,m_x);
-    setChebExtremaSX(m_sx);
+    setChebExtremaX(min,max,this->m_x);
+    setChebExtremaSX(this->m_sx);
 }
 
-
-ChebRootGridX::ChebRootGridX(int nx,double min,double max) : ChebGridX(nx,min,max),
+ChebRootGridX::ChebRootGridX(unsigned nx,double min,double max) : ChebGridX(nx,min,max),
     m_x(nx), m_sx(nx)
 {
-    // Grid only includes interior points (not min or max)
-    setChebRootX(min,max,m_x);
-    setChebRootSX(m_sx);
+    setChebRootX(min,max,this->m_x);
+    setChebRootSX(this->m_sx);
 }
 
 }

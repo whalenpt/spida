@@ -18,17 +18,17 @@ class GridR : public Grid
       unsigned getNsr() const {return m_nr;}
       double getMaxR() const {return m_rmax;}
 
-      std::vector<double> mirrorGrid(const std::vector<double>& in,\
-              bool sign_reverse=false) const;
-      std::vector<dcmplx> mirrorGrid(const std::vector<dcmplx>& in,\
-              bool sign_reverse=false) const;
+      [[nodiscard]] std::vector<double> mirrorGrid(const std::vector<double>& in,
+              bool signReverse=false) const;
+      [[nodiscard]] std::vector<dcmplx> mirrorGrid(const std::vector<dcmplx>& in,
+              bool signReverse=false) const;
 
-      void mirrorGrid(const std::vector<double>& in,std::vector<double>& out,\
-              bool sign_reverse=false) const;
-      void mirrorGrid(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,\
-              bool sign_reverse=false) const;
-      void mirrorGrid(const double* in,double* out,bool sign_reverse=false) const;
-      void mirrorGrid(const dcmplx* in,dcmplx* out,bool sign_reverse=false) const;
+      void mirrorGrid(const std::vector<double>& in,std::vector<double>& out,
+              bool signReverse=false) const;
+      void mirrorGrid(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,
+              bool signReverse=false) const;
+      void mirrorGrid(const double* in,double* out,bool signReverse=false) const;
+      void mirrorGrid(const dcmplx* in,dcmplx* out,bool signReverse=false) const;
 
 
   private:

@@ -49,8 +49,6 @@ function(add_spida_test target)
         SPIDA::spida
     )
 
-    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src)
-
     add_test(NAME ${target} COMMAND ${target})
 endfunction()
 
@@ -62,8 +60,10 @@ add_spida_test(gridtest ${GRID_FILES})
 add_spida_test(shapetest ${SHAPE_FILES})
 
 add_spida_test(transformtest ${TRANSFORM_FILES})
+target_link_libraries(transformtest PRIVATE nayukidct)
 
 add_spida_test(spidatest ${SPIDA_FILES})
+target_link_libraries(spidatest PRIVATE nayukidct)
 
 # ------------------------------------------------------------------------------
 # External libraries
@@ -93,3 +93,4 @@ add_spida_test(interptest ${INTERP_FILES})
 
 add_spida_test(solvertest ${SOLVER_FILES})
 add_spida_test(propagatortest ${PROPAGATOR_FILES})
+add_spida_test(pwutilstest pwutils_tests.cpp)
