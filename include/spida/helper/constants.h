@@ -4,9 +4,11 @@
 #include <complex>
 #include <limits>
 #include <map>
+#include <numbers>
+#include <string>
 
 namespace spida{
-    constexpr auto PI = 3.141592653589793238462643383279502884197;
+    inline constexpr double PI = std::numbers::pi;
 	using dcmplx = std::complex<double>;
     constexpr dcmplx ii (0.0,1.0);
     constexpr auto NEAR_ZERO = 1.0e2*std::numeric_limits<double>::min();
