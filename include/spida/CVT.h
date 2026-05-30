@@ -17,6 +17,7 @@
 #include "spida/helper/constants.h"
 #include "spida/transform/fftCVT.h"
 
+#include <memory>
 #include <vector>
 
 namespace spida {

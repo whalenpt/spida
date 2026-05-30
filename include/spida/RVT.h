@@ -6,6 +6,7 @@
 #include "spida/helper/constants.h"
 #include "spida/transform/fftRVT.h"
 
+#include <memory>
 #include <vector>
 
 namespace spida {
