@@ -1,6 +1,6 @@
 /**------------------------------------------------------------------------------
- *   
- *    Author: Patrick Whalen   
+ *
+ *    Author: Patrick Whalen
  *    Email: whalenpt@gmail.com
  *    Status: Complete
  *    Date: 08/27/21
@@ -10,334 +10,384 @@
 
 #pragma once
 
-// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
+// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC.
 
-#include <iostream>
-#include <string>
-#include <ctime>
+#include "spida/helper/constants.h"
+
 #include <cmath>
-#include <memory>
+#include <ctime>
 #include <exception>
 #include <filesystem>
 #include <functional>
-#include "spida/helper/constants.h"
+#include <iostream>
+#include <memory>
+#include <string>
 
-namespace pw{
-    class StatCenter;
-    class ThreadManager;
-}
+namespace pw {
+class StatCenter;
+class ThreadManager;
+} // namespace pw
 
 //------------------------------------------------------------------------------
 
-
 // define everything in the spida namespace
-namespace spida{
-
-/// Maximum number of step size attempts to reach required error threshold
-constexpr auto MAX_LOOP = 100;
-
+namespace spida {
 
 class PropagatorCV;
-using NLfunc = std::function<void(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)>; 
+using NLfunc = std::function<void(const std::vector<dcmplx>& in, std::vector<dcmplx>& out)>;
 using LinOp = std::vector<dcmplx>;
-
 
 ///  Virtual base class for rkstiff solvers for propagating complex-valued fields
 
-class SolverCV
-{
-    public:
+class SolverCV {
+public:
+    ///  @brief Initializes SolverCV base class
+    ///  @param L Linear operator
+    ///  @param NL Nonlinear function
 
-        ///  @brief Initializes SolverCV base class
-        ///  @param L Linear operator
-        ///  @param NL Nonlinear function
+    SolverCV(const LinOp& L, const NLfunc& NL, bool use_refs = false);
+    virtual ~SolverCV();
+    SolverCV(const SolverCV&) = delete;
+    SolverCV& operator=(const SolverCV&) = delete;
+    SolverCV(SolverCV&&) = delete;
+    SolverCV& operator=(SolverCV&&) = delete;
 
-        SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs=false);
-        virtual ~SolverCV();
+    /// @brief Propagates a vector u from t0 to tf using the class LinOp and NLfunc
+    /// @param u Field being propagated
+    /// @param t0 Initial time
+    /// @param tf Final time
+    /// @param h_init Initial time step-size
+    [[nodiscard]] virtual bool
+    evolve(std::vector<dcmplx>& u, double t0, double tf, double h_init) noexcept = 0;
 
-        /// @brief Propagates a vector u from t0 to tf using the class LinOp and NLfunc
-        /// @param u Field being propagated
-        /// @param t0 Initial time
-        /// @param tf Final time
-        /// @param h_init Initial time step-size
-        virtual bool evolve(std::vector<dcmplx>& u,double t0,double tf,double h_init) noexcept = 0;
+    /// @brief Propagates a PropagatorCV object from t0 to tf using the class LinOp and NLfunc
+    /// @param propagator Class holding the field being propagated plus functions and other arrays
+    /// @param t0 Initial time
+    /// @param tf Final time
+    /// @param h_init Initial time step-size
 
-        /// @brief Propagates a PropagatorCV object from t0 to tf using the class LinOp and NLfunc
-        /// @param propagator Class holding the field being propagated plus functions and other arrays
-        /// @param t0 Initial time
-        /// @param tf Final time
-        /// @param h_init Initial time step-size
+    [[nodiscard]] virtual bool
+    evolve(PropagatorCV& propagator, double t0, double tf, double h) noexcept = 0;
 
-        virtual bool evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept = 0;
+    ///
+    /// @brief Updates coefficients used in the numerical solver
+    /// @param dt Current step size of the numerical solver
+    ///
 
-        ///
-        /// @brief Updates coefficients used in the numerical solver
-        /// @param dt Current step size of the numerical solver
-        ///
+    void computeCo(double dt) noexcept;
 
-        void computeCo(double dt) noexcept;
+    /// Accessor for linear operator
+    const LinOp& L() const
+    {
+        return *m_L;
+    }
 
-        /// Accessor for linear operator
-        const LinOp& L() const {return *m_L;}
-        /// Accessor for nonlinear function
-        const NLfunc& NL() const {return *m_NL;}
+    /// Accessor for nonlinear function
+    const NLfunc& NL() const
+    {
+        return *m_NL;
+    }
 
-        /// Size of the array of the field being propagated
-        unsigned size() const;
+    /// Size of the array of the field being propagated
+    unsigned size() const;
 
-        /// Sets logging out to console
-        void setLogProgress(bool val) { m_log_progress = val; }
+    /// Sets logging out to console
+    void setLogProgress(bool val)
+    {
+        m_log_progress = val;
+    }
 
-        /// Sets logging frequency
-        void setLogFrequency(unsigned val);
+    /// Sets logging frequency
+    void setLogFrequency(unsigned val);
 
-        /// Sets current time of propagator
-        void setCurrentTime(double t) {m_tcurrent = t;}
+    /// Sets current time of propagator
+    void setCurrentTime(double t)
+    {
+        m_tcurrent = t;
+    }
 
-        /// Sets number of threads that can be utilized by Solver
-        void setNumThreads(unsigned val);
+    /// Sets number of threads that can be utilized by Solver
+    void setNumThreads(unsigned val);
 
-        /// Accesses the number of threads that can be utilized by the Solver
-        unsigned numThreads() const;
+    /// Accesses the number of threads that can be utilized by the Solver
+    unsigned numThreads() const;
 
-        /// Accesses the threadManager
-        pw::ThreadManager& threadManager();
+    /// Accesses the threadManager
+    pw::ThreadManager& threadManager();
 
-        /// Get the current time
-        double currentTime() const {return m_tcurrent;}
+    /// Get the current time
+    double currentTime() const
+    {
+        return m_tcurrent;
+    }
 
-        /// Get the last step size
-        double dtLast() const {return m_dt_last;}
+    /// Get the last step size
+    double dtLast() const
+    {
+        return m_dt_last;
+    }
 
-        /// Accesses whether logging is enabled
-        bool logProgress() const {return m_log_progress;}
+    /// Accesses whether logging is enabled
+    bool logProgress() const
+    {
+        return m_log_progress;
+    }
 
-        /// File report statistics
-        void fileReportStats(const std::filesystem::path& dirpath) const;
+    /// File report statistics
+    void fileReportStats(const std::filesystem::path& dirpath) const;
 
-        /// Non-file report statistics
-        void reportStats() const;
+    /// Non-file report statistics
+    void reportStats() const;
 
-        /// Accessor of the StatCenter
-        pw::StatCenter& statCenter();
+    /// Accessor of the StatCenter
+    pw::StatCenter& statCenter();
 
-  private:
+private:
+    ///
+    /// @brief Updates coefficients used in the numerical solver
+    /// @param dt Current step size of the numerical solver
+    ///
 
-      ///
-      /// @brief Updates coefficients used in the numerical solver
-      /// @param dt Current step size of the numerical solver
-      ///
+    virtual void updateCoefficients([[maybe_unused]] double dt) noexcept {};
 
-      virtual void updateCoefficients([[maybe_unused]] double dt) noexcept {};
+    std::unique_ptr<LinOp> m_Lptr;   /**< Linear operator */
+    std::unique_ptr<NLfunc> m_NLptr; /**< Nonlinear function */
+    const LinOp* m_L;
+    const NLfunc* m_NL;
 
-      std::unique_ptr<LinOp> m_Lptr; /**< Linear operator */
-      std::unique_ptr<NLfunc> m_NLptr; /**< Nonlinear function */
-      const LinOp* m_L;
-      const NLfunc* m_NL;
-
-      std::unique_ptr<pw::StatCenter> m_stat;
-      double m_tcurrent{0.0}; /**< Current time */
-      double m_dt_last{0.0}; /**< Previous step size */
-      bool m_log_progress{false}; /**< Determines whether to log data from propagation */
-      std::unique_ptr<pw::ThreadManager> m_thmgt;
+    std::unique_ptr<pw::StatCenter> m_stat;
+    double m_tcurrent{0.0};     /**< Current time */
+    double m_dt_last{0.0};      /**< Previous step size */
+    bool m_log_progress{false}; /**< Determines whether to log data from propagation */
+    std::unique_ptr<pw::ThreadManager> m_thmgt;
 };
 
 ///  Helper class for computing step updates
-class Control{
-    public:
-        static constexpr double MAX_S = 4.0;
-        static constexpr double MIN_S = 0.25;
-        static const unsigned MAX_LOOP = 100;
-        static constexpr double MIN_H = 1.0e-15;
+class Control {
+public:
+    static constexpr double MAX_S = 4.0;
+    static constexpr double MIN_S = 0.25;
+    static const unsigned MAX_LOOP = 100;
+    static constexpr double MIN_H = 1.0e-15;
 
-        /// 
-        ///  @brief Constructor for Control class
-        ///  @param safetyF Safety factor for predicting best next step size
-        ///  @param qv Order coefficient 
-        ///  @param epsR Relative error tolerance
-        ///  @param inF Increment factor
-        ///  @param decF Decrement factor
-        ///  @param dim Dimension of system
-        ///
+    ///
+    ///  @brief Constructor for Control class
+    ///  @param safetyF Safety factor for predicting best next step size
+    ///  @param qv Order coefficient
+    ///  @param epsR Relative error tolerance
+    ///  @param inF Increment factor
+    ///  @param decF Decrement factor
+    ///  @param dim Dimension of system
+    ///
 
-        enum class ErrorNorm{NORM1,NORM2,NORMINF,NORMSYS,NORMW2};
-        Control(double safetyF,double qv,double epsR,double inF,double decF) :
-                    m_safeFact(safetyF),
-                    m_q(qv),
-                    m_epsRel(epsR),
-                    m_incrFact(inF),
-                    m_decrFact(decF) {}
+    enum class ErrorNorm { NORM1, NORM2, NORMINF, NORMSYS, NORMW2 };
 
-        ~Control() = default;
-        void setIncrementThreshold(double val); 
-        void setDecrementThreshold(double val);
-        void setEpsRel(double val);
-        void setNorm(ErrorNorm norm) {m_normType = norm;}
-        double computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) const noexcept;
-        double computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) const noexcept;
-        bool checkLoopCount(unsigned num_loops) const noexcept;
-        bool checkStepSize(double step_size) const noexcept;
+    Control(double safetyF, double qv, double epsR, double inF, double decF)
+        : m_safeFact(safetyF), m_q(qv), m_epsRel(epsR), m_incrFact(inF), m_decrFact(decF)
+    {
+    }
 
-    private:
-        double m_safeFact;
-        double m_q;
-        double m_epsRel;
-        double m_incrFact;
-        double m_decrFact;
-        ErrorNorm m_normType{ErrorNorm::NORM2};
+    ~Control() = default;
+    void setIncrementThreshold(double val);
+    void setDecrementThreshold(double val);
+    void setEpsRel(double val);
+
+    void setNorm(ErrorNorm norm)
+    {
+        m_normType = norm;
+    }
+
+    double computeS(const std::vector<dcmplx>& errVec,
+                    const std::vector<dcmplx>& ynew) const noexcept;
+    double computeRawS(const std::vector<dcmplx>& errVec,
+                       const std::vector<dcmplx>& ynew) const noexcept;
+    bool checkLoopCount(unsigned num_loops) const noexcept;
+    bool checkStepSize(double step_size) const noexcept;
+
+private:
+    double m_safeFact;
+    double m_q;
+    double m_epsRel;
+    double m_incrFact;
+    double m_decrFact;
+    ErrorNorm m_normType{ErrorNorm::NORM2};
 };
-
 
 ///  Virtual base class for adaptive-step rkstiff solvers propagating complex-valued fields
 
-class SolverCV_AS : public SolverCV
-{
+class SolverCV_AS : public SolverCV {
+public:
+    /// Initializes an adaptive-step solver class
+    SolverCV_AS(const LinOp& L, const NLfunc& NL, double sf, double qv, bool use_refs = false);
 
-    public:
+    /// Specify descructor in subclasses
+    ~SolverCV_AS() override = default;
 
-        /// Initializes an adaptive-step solver class
-        SolverCV_AS(const LinOp& L,const NLfunc& NL,double sf,double qv,bool use_refs=false);
+    /// @brief Take one numerical step of the vector u with recommended step size h,
+    /// but only if h satisfies the error control.
+    /// @param u Field to step forward
+    /// @param h Step size to take
+    /// @param h_next Suggested next step size
+    /// @return Boolean determining whether the attempted step was successful
 
-        /// Specify descructor in subclasses
-        ~SolverCV_AS() override = default; 
+    bool step(std::vector<dcmplx>& u, double& h, double& h_next) noexcept;
 
-        /// @brief Take one numerical step of the vector u with recommended step size h,
-        /// but only if h satisfies the error control.
-        /// @param u Field to step forward
-        /// @param h Step size to take
-        /// @param h_next Suggested next step size
-        /// @return Boolean determining whether the attempted step was successful
+    /// @brief Propagates a field u from t0 to tf
+    /// @param u Field being propagated
+    /// @param t0 Initial time
+    /// @param tf Final time
+    /// @param h_init Initial time step-size
+    /// @return Boolean that says whether the propagation was successful
 
-        bool step(std::vector<dcmplx>& u,double& h,double& h_next) noexcept;
+    bool evolve(std::vector<dcmplx>& u, double t0, double tf, double h) noexcept override;
 
-        /// @brief Propagates a field u from t0 to tf
-        /// @param u Field being propagated 
-        /// @param t0 Initial time
-        /// @param tf Final time
-        /// @param h_init Initial time step-size
-        /// @return Boolean that says whether the propagation was successful
+    /// @brief Propagates a PropagatorCV object from t0 to tf
+    /// @param propagator Class holding the field being propagated plus functions and other arrays
+    /// @param t0 Initial time
+    /// @param tf Final time
+    /// @param h_init Initial time step-size
+    /// @return Boolean that says whether the propagation was successful
 
-        bool evolve(std::vector<dcmplx>& u,double t0,double tf,double h) noexcept override;
+    bool evolve(PropagatorCV& propagator, double t0, double tf, double h) noexcept override;
 
-        /// @brief Propagates a PropagatorCV object from t0 to tf
-        /// @param propagator Class holding the field being propagated plus functions and other arrays
-        /// @param t0 Initial time
-        /// @param tf Final time
-        /// @param h_init Initial time step-size
-        /// @return Boolean that says whether the propagation was successful
+    /// @brief Setter for increment threshold which dictates how often to increase the solver step
+    /// size
+    /// @param val Increment threshold is at least 1 with a higher value indicating
+    ///            less frequent step size increases and vice versa (default is around 1.25)
 
-        bool evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept override;
+    void setIncrementThreshold(double val);
 
-        /// @brief Setter for increment threshold which dictates how often to increase the solver step size
-        /// @param val Increment threshold is at least 1 with a higher value indicating
-        ///            less frequent step size increases and vice versa (default is around 1.25)
-        
-        void setIncrementThreshold(double val); 
+    /// @brief Setter for decrement threshold which dictates how often to decrease the solver step
+    /// size
+    /// @param val Decrement threshold is below 1, the step size is reduced by at least this value,
+    ///            even if the suggested step size reduction is higher (similar to the safety
+    ///            factor)
 
-        /// @brief Setter for decrement threshold which dictates how often to decrease the solver step size
-        /// @param val Decrement threshold is below 1, the step size is reduced by at least this value,
-        ///            even if the suggested step size reduction is higher (similar to the safety factor)        
+    void setDecrementThreshold(double val);
 
-        void setDecrementThreshold(double val);
+    /// @brief Setter for relative error tolerance
+    /// @param val Relative error tolerance
 
-        /// @brief Setter for relative error tolerance
-        /// @param val Relative error tolerance
-        
-        void setEpsRel(double val);
+    void setEpsRel(double val);
 
+    /// Setter for error norm, default is the 2-norm
+    /// @param Control::ErrorNorm enum value for norm
+    void setNorm(Control::ErrorNorm norm)
+    {
+        m_control->setNorm(norm);
+    }
 
-        /// Setter for error norm, default is the 2-norm
-        /// @param Control::ErrorNorm enum value for norm 
-        void setNorm(Control::ErrorNorm norm) const {m_control->setNorm(norm);}
+    void setAccept(bool val)
+    {
+        m_accept = val;
+    }
 
-        void setAccept(bool val) {m_accept = val;}
-        bool accept() const {return m_accept;}
+    bool accept() const
+    {
+        return m_accept;
+    }
 
-        /// Accessor for the computed updated field
-        std::vector<dcmplx>& getY() {return m_yv;}
-        /// Accessor for the computed stage error
-        std::vector<dcmplx>& getErr() {return m_errv;}
+    /// Accessor for the computed updated field
+    std::vector<dcmplx>& getY()
+    {
+        return m_yv;
+    }
 
-    private:
-        void updateCoefficients([[maybe_unused]] double dt) noexcept override {
-            // Intentionally unimplemented...
-        };
-        virtual void updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& y,std::vector<dcmplx>& err) noexcept = 0;
-        std::unique_ptr<Control> m_control;
-        std::vector<dcmplx> m_yv;
-        std::vector<dcmplx> m_errv;
-        bool m_accept{false};
-        void logStartComputeTime();
-        void logEndComputeTime();
-        void logStartStepTime();
-        void logEndStepTime();
-        void logStepRejected(double s); 
-        void logStepSizeIncreased(double s); 
+    /// Accessor for the computed stage error
+    std::vector<dcmplx>& getErr()
+    {
+        return m_errv;
+    }
+
+private:
+    void updateCoefficients([[maybe_unused]] double dt) noexcept override {
+        // Intentionally unimplemented...
+    };
+    virtual void updateStages(const std::vector<dcmplx>& in,
+                              std::vector<dcmplx>& y,
+                              std::vector<dcmplx>& err) noexcept = 0;
+    std::unique_ptr<Control> m_control;
+    std::vector<dcmplx> m_yv;
+    std::vector<dcmplx> m_errv;
+    bool m_accept{false};
+    void logStartComputeTime();
+    void logEndComputeTime();
+    void logStartStepTime();
+    void logEndStepTime();
+    void logStepRejected(double s);
+    void logStepSizeIncreased(double s);
 };
 
+class SolverCV_CS : public SolverCV {
+public:
+    using SolverCV::SolverCV;
+    ~SolverCV_CS() override = default;
+    // takes one numerical step with a step of size h
+    void step(std::vector<dcmplx>& u, double h) noexcept;
+    // steps the vector u from time t0 to time tf with step size h
+    bool evolve(std::vector<dcmplx>& u, double t0, double tf, double h) noexcept override;
+    // evolve with a propagator
+    bool evolve(PropagatorCV& propagator, double t0, double tf, double h) noexcept override;
 
-class SolverCV_CS : public SolverCV 
-{
-  public:
-      using SolverCV::SolverCV;
-      ~SolverCV_CS() override = default;
-      // takes one numerical step with a step of size h
-      void step(std::vector<dcmplx>& u,double h) noexcept;
-      // steps the vector u from time t0 to time tf with step size h
-      bool evolve(std::vector<dcmplx>& u,double t0,double tf,double h) noexcept override;
-      // evolve with a propagator
-      bool evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept override;
+    void setCountTime(bool val)
+    {
+        m_count_time = val;
+    }
 
-      void setCountTime(bool val) {m_count_time = val;}
-  private:
-      virtual void updateStages(std::vector<dcmplx>& in) noexcept = 0;
-      bool m_count_time{false};
+private:
+    virtual void updateStages(std::vector<dcmplx>& in) noexcept = 0;
+    bool m_count_time{false};
 };
 
-
-class SolverException : public std::exception
-{
-    public:
-        SolverException() = default;
-        ~SolverException() override = default;
+class SolverException : public std::exception {
+public:
+    SolverException() = default;
+    ~SolverException() override = default;
 };
 
-class StepSizeException : public SolverException
-{
-    public:
-        explicit StepSizeException(double val,double minval) 
-        {
-           m_step_val = std::to_string(val);
-           m_minstep_val = std::to_string(minval);
-           m_msg = "SOLVER FAILED! The solver step size of " + 
-                m_step_val + " is below the specified minimum of " + m_minstep_val + ".";
-        }
-        ~StepSizeException() override = default;
-        const char* what() const noexcept override {
-            return m_msg.c_str();
-        }
-    private:
-   	    std::string m_msg;
-        std::string m_step_val;
-        std::string m_minstep_val;
+class StepSizeException : public SolverException {
+public:
+    explicit StepSizeException(double val, double minval)
+    {
+        m_step_val = std::to_string(val);
+        m_minstep_val = std::to_string(minval);
+        m_msg = "SOLVER FAILED! The solver step size of " + m_step_val +
+                " is below the specified minimum of " + m_minstep_val + ".";
+    }
+
+    ~StepSizeException() override = default;
+
+    const char* what() const noexcept override
+    {
+        return m_msg.c_str();
+    }
+
+private:
+    std::string m_msg;
+    std::string m_step_val;
+    std::string m_minstep_val;
 };
 
+class LoopException : public SolverException {
+public:
+    explicit LoopException(int val)
+    {
+        m_maxloops = std::to_string(val);
+        m_msg = "SOLVER FAILED! The adaptive step solver has reduced its"
+                " step size " +
+                m_maxloops + " times without achieving an error below epsRel.";
+    }
 
-class LoopException : public SolverException
-{
-    public:
-        explicit LoopException(int val) {
-					m_maxloops = std::to_string(val);
-					m_msg = "SOLVER FAILED! The adaptive step solver has reduced its"\
-                " step size " + m_maxloops + " times without achieving an error below epsRel.";
-				}
-        ~LoopException() override = default;
-        const char* what() const noexcept override{
-            return m_msg.c_str();
-        }
-    private:
-        std::string m_maxloops;
-        std::string m_msg;
+    ~LoopException() override = default;
+
+    const char* what() const noexcept override
+    {
+        return m_msg.c_str();
+    }
+
+private:
+    std::string m_maxloops;
+    std::string m_msg;
 };
 
-}
+} // namespace spida

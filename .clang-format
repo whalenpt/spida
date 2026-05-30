@@ -1,0 +1,58 @@
+---
+# Stroustrup-flavored, C++ Core Guidelines leaning. C++23.
+Language:        Cpp
+BasedOnStyle:    LLVM
+Standard:        Latest
+
+ColumnLimit:     100
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never
+ContinuationIndentWidth: 4
+
+# Stroustrup: brace on same line for functions? No — Stroustrup puts
+# function/class braces on a new line, control-flow braces attached.
+BreakBeforeBraces: Stroustrup
+
+# int* p, not int *p  (type-attached, per Core Guidelines NL.18)
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+AccessModifierOffset: -4
+NamespaceIndentation: None
+FixNamespaceComments: true
+CompactNamespaces: false
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignTrailingComments: true
+BinPackArguments: false
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# Group + sort includes; keep own-header first.
+SortIncludes:    CaseInsensitive
+IncludeBlocks:   Regroup
+IncludeCategories:
+  - Regex:       '^<[^/]+>'          # C/C++ std headers: <vector>
+    Priority:    2
+  - Regex:       '^<.*\.h(pp)?>'     # third-party w/ <...>
+    Priority:    3
+  - Regex:       '^".*"'             # project headers
+    Priority:    1
+
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+Cpp11BracedListStyle: true
+PackConstructorInitializers: NextLine
+EmptyLineBeforeAccessModifier: LogicalBlock
+SeparateDefinitionBlocks: Always
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1

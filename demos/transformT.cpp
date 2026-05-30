@@ -15,6 +15,7 @@
 #include <spida/transform/fftRVT.h>
 #include <pwutils/report.hpp>
 #include <iostream>
+#include <iomanip>
 
 //------------------------------------------------------------------------------
 
@@ -23,7 +24,7 @@ int main()
 {
 
     using spida::dcmplx;
-    int nt = 1024;
+    unsigned nt = 1024;
     double I0 = 5.0e16;
     double tp = 5.0e-15;
     double omega0 = 2.7091e15;
@@ -38,7 +39,7 @@ int main()
     shapeT.setFastPhase(omega0);
 
     auto u = shapeT.shapeRV();
-    int nst = gridT.getNst();
+    unsigned nst = gridT.getNst();
     std::vector<dcmplx> v(nst);
 
     transform.T_To_ST(u,v);
@@ -47,11 +48,9 @@ int main()
     pw::ReportComplex1D out_report{"ST",gridT.getST(),v};
 
     std::ofstream os;
-    os << std::scientific << std::setprecision(5);
     std::cout << in_report.path() << std::endl;
     os << in_report;
 
-    os << std::scientific << std::setprecision(8);
     std::cout << out_report.path() << std::endl;
     os << out_report;
 

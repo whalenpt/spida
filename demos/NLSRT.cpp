@@ -11,6 +11,7 @@
 // HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
 
 #include <algorithm>
+#include <iostream>
 #include <complex> // std::norm -> std::norm(dcmplx(3,4)) = 25
 #include <spida/RCVT.h>
 #include <spida/grid/besselR.h>
@@ -74,10 +75,8 @@ class Propagator : public spida::PropagatorCV
             m_usp(md.spida().spectralSize(),0.0),
             m_uphys(md.spida().physicalSize(),0.0),
             m_mirror_r(2*md.spida().getGridR().getNr()),
-            m_mirror_kr(2*md.spida().getGridR().getNsr()),
             m_shifted_omega(md.spida().getGridT().getNst()),
-            m_mirror_uphys(2*m_uphys.size()),
-            m_mirror_shift_usp(2*m_usp.size())
+            m_mirror_uphys(2*m_uphys.size())
          {
              // initialize propagator m_usp
              double A0 = 4.0; // amplitude
@@ -95,7 +94,6 @@ class Propagator : public spida::PropagatorCV
              m_mirror_r = m_spi.getGridR().mirrorGrid(m_spi.getR(),true);
 
              // mirrored spectral components for better graphs
-             m_mirror_kr = m_spi.getGridR().mirrorGrid(m_spi.getSR(),true);
 
              // mirrored physical space field via R coordinate
              m_spi.mirrorR(m_uphys,m_mirror_uphys);
@@ -151,11 +149,9 @@ class Propagator : public spida::PropagatorCV
         std::vector<dcmplx> m_usp;
         std::vector<dcmplx> m_uphys;
         std::vector<double> m_mirror_r;
-        std::vector<double> m_mirror_kr;
         std::vector<double> m_shifted_omega;
 
         std::vector<dcmplx> m_mirror_uphys;
-        std::vector<dcmplx> m_mirror_shift_usp;
 };
 
 int main()
@@ -185,7 +181,7 @@ int main()
     solver.setNumThreads(num_threads);
     double z0 = 0.0;
     double zf = 0.3;
-    solver.evolve(propagator,z0,zf,zf/100.0);
+    if(!solver.evolve(propagator,z0,zf,zf/100.0)) { std::cerr << "Solver failed\n"; return 1; }
     propagator.report(zf);
     return 0;
 }

@@ -1,0 +1,51 @@
+---
+# Core Guidelines + modernize, pragmatic noise reduction. C++23.
+Checks: >
+  -*,
+  bugprone-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  misc-*,
+  cert-*,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-avoid-do-while,
+  -misc-non-private-member-variables-in-classes,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -readability-identifier-length,
+  -modernize-use-nodiscard,
+  -bugprone-easily-swappable-parameters
+
+WarningsAsErrors: ''
+
+# Lint your headers; skip vendored code under external/ and build trees.
+HeaderFilterRegex: '.*'
+ExcludeHeaderFilterRegex: '(external/|build/|_deps/)'
+
+FormatStyle: file
+
+CheckOptions:
+  # Naming — match Core Guidelines / common modern C++ house style.
+  readability-identifier-naming.ClassCase:            CamelCase
+  readability-identifier-naming.StructCase:           CamelCase
+  readability-identifier-naming.EnumCase:             CamelCase
+  readability-identifier-naming.FunctionCase:         camelBack
+  readability-identifier-naming.VariableCase:         lower_case
+  readability-identifier-naming.ParameterCase:        lower_case
+  readability-identifier-naming.MemberCase:           lower_case
+  readability-identifier-naming.PrivateMemberSuffix:  '_'
+  readability-identifier-naming.NamespaceCase:        lower_case
+  readability-identifier-naming.ConstexprVariableCase: lower_case
+  readability-identifier-naming.GlobalConstantCase:   UPPER_CASE
+  readability-identifier-naming.EnumConstantCase:     CamelCase
+  # Keep modernize aligned with your .clang-format.
+  modernize-use-default-member-init.UseAssignment:    true
+  performance-move-const-arg.CheckTriviallyCopyableMove: true

@@ -1,16 +1,17 @@
 
-#include <gtest/gtest.h>
-#include <spida/rkstiff/ETDAS.h>
-#include <spida/rkstiff/ETDCS.h>
-#include <spida/rkstiff/IFAS.h>
-#include <spida/propagator/propagator.h>
-#include <spida/helper/constants.h>
-#include <pwutils/pwexcept.h>
 #include <cmath>
 #include <complex>
 #include <filesystem>
-#include <vector>
 #include <functional>
+#include <vector>
+
+#include <gtest/gtest.h>
+#include <pwutils/pwexcept.h>
+#include <spida/helper/constants.h>
+#include <spida/propagator/propagator.h>
+#include <spida/rkstiff/ETDAS.h>
+#include <spida/rkstiff/ETDCS.h>
+#include <spida/rkstiff/IFAS.h>
 
 using spida::dcmplx;
 using spida::LinOp;
@@ -24,13 +25,12 @@ using spida::NLfunc;
 static void makeBernoulliSystem(LinOp& L, NLfunc& NL)
 {
     L = {dcmplx(-1.0)};
-    NL = [](const std::vector<dcmplx>& in, std::vector<dcmplx>& out) {
-        out[0] = in[0] * in[0];
-    };
+    NL = [](const std::vector<dcmplx>& in, std::vector<dcmplx>& out) { out[0] = in[0] * in[0]; };
 }
 
 // Exact solution for Bernoulli: a=-1, b=1, u0=0.5
-static double bernoulliExact(double t) {
+static double bernoulliExact(double t)
+{
     return 1.0 / (std::exp(t) + 1.0);
 }
 
@@ -38,9 +38,7 @@ static double bernoulliExact(double t) {
 static void makeLinearSystem(dcmplx lambda, LinOp& L, NLfunc& NL)
 {
     L = {lambda};
-    NL = [](const std::vector<dcmplx>& in, std::vector<dcmplx>& out) {
-        out[0] = dcmplx(0.0);
-    };
+    NL = [](const std::vector<dcmplx>& in, std::vector<dcmplx>& out) { out[0] = dcmplx(0.0); };
 }
 
 // Two-component Bernoulli system (decoupled): each mode follows Bernoulli
@@ -58,16 +56,17 @@ static void makeBernoulli2D(LinOp& L, NLfunc& NL)
 //                                        = 1/(1.5*e^{2t} + 0.5) [check below]
 // a=-2,b=1,u0=0.5: v(t)=(v0+b/a)*exp(-a*t)-b/a = (2-0.5)*e^{2t}+0.5 = 1.5*e^{2t}+0.5
 // u(t) = 1/(1.5*e^{2t}+0.5)
-static double bernoulli2ndExact(double t) {
+static double bernoulli2ndExact(double t)
+{
     return 1.0 / (1.5 * std::exp(2.0 * t) + 0.5);
 }
-
 
 // --- ETD34 adaptive-step solver tests ---
 
 TEST(ETD34_TEST, BERNOULLI_ODE)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
 
     spida::ETD34 solver(L, NL);
@@ -84,7 +83,8 @@ TEST(ETD34_TEST, BERNOULLI_ODE)
 
 TEST(ETD34_TEST, BERNOULLI_2D_DECOUPLED)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulli2D(L, NL);
 
     spida::ETD34 solver(L, NL);
@@ -101,7 +101,8 @@ TEST(ETD34_TEST, BERNOULLI_2D_DECOUPLED)
 
 TEST(ETD34_TEST, CURRENT_TIME_UPDATED)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     solver.setEpsRel(1e-7);
@@ -116,7 +117,8 @@ TEST(ETD34_TEST, CURRENT_TIME_UPDATED)
 
 TEST(ETD35_TEST, BERNOULLI_ODE)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
 
     spida::ETD35 solver(L, NL);
@@ -131,7 +133,8 @@ TEST(ETD35_TEST, BERNOULLI_ODE)
 
 TEST(ETD35_TEST, BETTER_ACCURACY_THAN_ETD34)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     double tf = 1.0;
 
@@ -157,7 +160,8 @@ TEST(ETD35_TEST, BETTER_ACCURACY_THAN_ETD34)
 
 TEST(ETD4_TEST, PURE_LINEAR_DECAY)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(-1.0, L, NL);
 
     spida::ETD4 solver(L, NL);
@@ -172,7 +176,8 @@ TEST(ETD4_TEST, PURE_LINEAR_DECAY)
 
 TEST(ETD4_TEST, SINGLE_STEP)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(-1.0, L, NL);
     spida::ETD4 solver(L, NL);
 
@@ -184,7 +189,8 @@ TEST(ETD4_TEST, SINGLE_STEP)
 TEST(ETD4_TEST, PURE_LINEAR_OSCILLATION)
 {
     // u' = i*omega*u -> |u(t)| = 1 for all t
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(spida::ii * spida::PI, L, NL);
     spida::ETD4 solver(L, NL);
 
@@ -197,7 +203,8 @@ TEST(ETD4_TEST, PURE_LINEAR_OSCILLATION)
 
 TEST(ETD4_TEST, BERNOULLI_ODE)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD4 solver(L, NL);
 
@@ -212,7 +219,8 @@ TEST(ETD4_TEST, BERNOULLI_ODE)
 
 TEST(IF34_TEST, BERNOULLI_ODE)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
 
     spida::IF34 solver(L, NL);
@@ -248,7 +256,8 @@ TEST(IF34_TEST, OSCILLATORY_NONLINEAR)
 
 TEST(IF45DP_TEST, BERNOULLI_ODE)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
 
     spida::IF45DP solver(L, NL);
@@ -263,7 +272,8 @@ TEST(IF45DP_TEST, BERNOULLI_ODE)
 
 TEST(IF45DP_TEST, BERNOULLI_2D_DECOUPLED)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulli2D(L, NL);
 
     spida::IF45DP solver(L, NL);
@@ -282,7 +292,8 @@ TEST(IF45DP_TEST, BERNOULLI_2D_DECOUPLED)
 
 TEST(SOLVER_ATTR_TEST, ETD34_CONTOUR_DEFAULTS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(-1.0, L, NL);
     spida::ETD34 solver(L, NL);
 
@@ -293,7 +304,8 @@ TEST(SOLVER_ATTR_TEST, ETD34_CONTOUR_DEFAULTS)
 
 TEST(SOLVER_ATTR_TEST, ETD34_CONTOUR_SETTERS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(-1.0, L, NL);
     spida::ETD34 solver(L, NL);
 
@@ -308,7 +320,8 @@ TEST(SOLVER_ATTR_TEST, ETD34_CONTOUR_SETTERS)
 
 TEST(SOLVER_ATTR_TEST, ETD4_CONTOUR_DEFAULTS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(-1.0, L, NL);
     spida::ETD4 solver(L, NL);
 
@@ -320,16 +333,15 @@ TEST(SOLVER_ATTR_TEST, ETD4_CONTOUR_DEFAULTS)
 TEST(SOLVER_ATTR_TEST, SOLVER_SIZE)
 {
     LinOp L = {-1.0, -2.0, -3.0};
-    NLfunc NL = [](const std::vector<dcmplx>&, std::vector<dcmplx>& out) {
-        out.assign(3, 0.0);
-    };
+    NLfunc NL = [](const std::vector<dcmplx>&, std::vector<dcmplx>& out) { out.assign(3, 0.0); };
     spida::ETD34 solver(L, NL);
     EXPECT_EQ(solver.size(), 3u);
 }
 
 TEST(SOLVER_ATTR_TEST, LOG_PROGRESS_DEFAULT)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(-1.0, L, NL);
     spida::ETD34 solver(L, NL);
     EXPECT_FALSE(solver.logProgress());
@@ -343,23 +355,26 @@ TEST(SOLVER_ATTR_TEST, LOG_PROGRESS_DEFAULT)
 
 TEST(SOLVER_CONTROL_TEST, SET_INCREMENT_THRESHOLD_TOO_HIGH_THROWS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setIncrementThreshold(5.0), pw::Exception);  // > MAX_S=4
+    EXPECT_THROW(solver.setIncrementThreshold(5.0), pw::Exception); // > MAX_S=4
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_INCREMENT_THRESHOLD_TOO_LOW_THROWS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setIncrementThreshold(0.5), pw::Exception);  // < 1.0
+    EXPECT_THROW(solver.setIncrementThreshold(0.5), pw::Exception); // < 1.0
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_INCREMENT_THRESHOLD_VALID_NO_THROW)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     EXPECT_NO_THROW(solver.setIncrementThreshold(2.0));
@@ -367,23 +382,26 @@ TEST(SOLVER_CONTROL_TEST, SET_INCREMENT_THRESHOLD_VALID_NO_THROW)
 
 TEST(SOLVER_CONTROL_TEST, SET_DECREMENT_THRESHOLD_TOO_LOW_THROWS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setDecrementThreshold(0.1), pw::Exception);  // < MIN_S=0.25
+    EXPECT_THROW(solver.setDecrementThreshold(0.1), pw::Exception); // < MIN_S=0.25
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_DECREMENT_THRESHOLD_TOO_HIGH_THROWS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setDecrementThreshold(1.0), pw::Exception);  // >= 1.0
+    EXPECT_THROW(solver.setDecrementThreshold(1.0), pw::Exception); // >= 1.0
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_DECREMENT_THRESHOLD_VALID_NO_THROW)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     EXPECT_NO_THROW(solver.setDecrementThreshold(0.5));
@@ -391,7 +409,8 @@ TEST(SOLVER_CONTROL_TEST, SET_DECREMENT_THRESHOLD_VALID_NO_THROW)
 
 TEST(SOLVER_CONTROL_TEST, SET_EPS_REL_NEGATIVE_THROWS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     EXPECT_THROW(solver.setEpsRel(-1e-6), pw::Exception);
@@ -399,7 +418,8 @@ TEST(SOLVER_CONTROL_TEST, SET_EPS_REL_NEGATIVE_THROWS)
 
 TEST(SOLVER_CONTROL_TEST, SET_EPS_REL_ZERO_NO_THROW)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     EXPECT_NO_THROW(solver.setEpsRel(0.0));
@@ -425,7 +445,8 @@ TEST(SOLVER_ACCESSOR_TEST, L_ACCESSOR_SIZE)
 
 TEST(SOLVER_ACCESSOR_TEST, DT_LAST_AFTER_EVOLVE)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     solver.setEpsRel(1e-6);
@@ -436,7 +457,8 @@ TEST(SOLVER_ACCESSOR_TEST, DT_LAST_AFTER_EVOLVE)
 
 TEST(SOLVER_ACCESSOR_TEST, ACCEPT_AND_GET_Y_AFTER_STEP)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     solver.setEpsRel(1e-6);
@@ -450,7 +472,8 @@ TEST(SOLVER_ACCESSOR_TEST, ACCEPT_AND_GET_Y_AFTER_STEP)
 
 TEST(SOLVER_ACCESSOR_TEST, NUM_THREADS_DEFAULT_AND_SET)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(-1.0, L, NL);
     spida::ETD34 solver(L, NL);
     EXPECT_EQ(solver.numThreads(), 1u);
@@ -461,7 +484,8 @@ TEST(SOLVER_ACCESSOR_TEST, NUM_THREADS_DEFAULT_AND_SET)
 TEST(SOLVER_ACCESSOR_TEST, FILE_REPORT_STATS_CREATES_FILE)
 {
     namespace fs = std::filesystem;
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     solver.setEpsRel(1e-6);
@@ -483,9 +507,17 @@ TEST(SOLVER_ACCESSOR_TEST, FILE_REPORT_STATS_CREATES_FILE)
 class SolverTestPropagator : public spida::PropagatorCV {
 public:
     explicit SolverTestPropagator(const std::filesystem::path& path, unsigned sz = 1)
-        : PropagatorCV(path), m_field(sz, dcmplx(0.5)) {}
+        : PropagatorCV(path), m_field(sz, dcmplx(0.5))
+    {
+    }
+
     void updateFields(double) override {}
-    std::vector<dcmplx>& propagator() override { return m_field; }
+
+    std::vector<dcmplx>& propagator() override
+    {
+        return m_field;
+    }
+
 private:
     std::vector<dcmplx> m_field;
 };
@@ -496,7 +528,8 @@ TEST(EVOLVE_WITH_PROPAGATOR_TEST, ETD34_BERNOULLI_WITH_PROPAGATOR)
     fs::path dir = fs::temp_directory_path() / "spida_etd34_prop_test";
     fs::create_directories(dir);
 
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     solver.setEpsRel(1e-7);
@@ -516,12 +549,13 @@ TEST(EVOLVE_WITH_PROPAGATOR_TEST, ETD4_LINEAR_WITH_PROPAGATOR)
     fs::path dir = fs::temp_directory_path() / "spida_etd4_prop_test";
     fs::create_directories(dir);
 
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeLinearSystem(-1.0, L, NL);
     spida::ETD4 solver(L, NL);
 
     SolverTestPropagator prop(dir);
-    prop.propagator()[0] = dcmplx(1.0);  // u0 = 1, exact: u(t) = exp(-t)
+    prop.propagator()[0] = dcmplx(1.0); // u0 = 1, exact: u(t) = exp(-t)
     double tf = 1.0;
     bool ok = solver.evolve(prop, 0.0, tf, 0.01);
 
@@ -569,7 +603,8 @@ TEST(EVOLVE_FAILURE_TEST, IF34_RETURNS_FALSE_WHEN_STEP_COLLAPSES)
 
 TEST(SOLVER_LOG_TEST, ETD34_EVOLVE_WITH_LOG_PROGRESS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
     solver.setEpsRel(1e-6);
@@ -584,7 +619,8 @@ TEST(SOLVER_LOG_TEST, ETD34_EVOLVE_WITH_LOG_PROGRESS)
 
 TEST(SOLVER_LOG_TEST, ETD4_EVOLVE_WITH_LOG_PROGRESS)
 {
-    LinOp L; NLfunc NL;
+    LinOp L;
+    NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD4 solver(L, NL);
     solver.setLogProgress(true);

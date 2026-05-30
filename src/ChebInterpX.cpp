@@ -1,36 +1,46 @@
 
 #include "spida/chebInterpX.h"
+
 #include "spida/chebX.h"
 #include "spida/grid/chebX.h"
-#include "spida/helper/interp.h"
 #include "spida/helper/constants.h"
+#include "spida/helper/interp.h"
+
 #include <vector>
 
-namespace spida{
+namespace spida {
 
-  ChebInterpX::ChebInterpX(int ninterp,double minx,double maxx) :
-      m_chebx(std::make_unique<SpidaChebX>(ChebRootGridX{static_cast<unsigned>(ninterp),minx,maxx})),
+ChebInterpX::ChebInterpX(int ninterp, double minx, double maxx)
+    : m_chebx(
+          std::make_unique<SpidaChebX>(ChebRootGridX{static_cast<unsigned>(ninterp), minx, maxx})),
       m_ycheb(ninterp),
-      m_dycheb(ninterp) { }
-
-  double ChebInterpX::dXInterp(const std::vector<double>& xin,\
-          const std::vector<double>& yin,double xout,int n) 
-  {
-      SplineInterp spline_to_cheb(xin,yin);
-      spline_to_cheb.eval(m_chebx->getGridX().getX(),m_ycheb);
-      m_chebx->dX(m_ycheb,m_dycheb,n);
-      SplineInterp spline_from_cheb(m_chebx->getGridX().getX(),m_dycheb);
-      return spline_from_cheb.eval(xout);
-  }
-
-  void ChebInterpX::dXInterp(const std::vector<double>& xin,const std::vector<double>& yin,
-          const std::vector<double>& xout,std::vector<double>& dyout,int n)
-  {
-      SplineInterp spline_to_cheb(xin,yin);
-      spline_to_cheb.eval(m_chebx->getGridX().getX(),m_ycheb);
-      m_chebx->dX(m_ycheb,m_dycheb,n);
-      SplineInterp spline_from_cheb(m_chebx->getGridX().getX(),m_dycheb);
-      return spline_from_cheb.eval(xout,dyout);
-  }
-
+      m_dycheb(ninterp)
+{
 }
+
+double ChebInterpX::dXInterp(const std::vector<double>& xin,
+                             const std::vector<double>& yin,
+                             double xout,
+                             int n)
+{
+    SplineInterp spline_to_cheb(xin, yin);
+    spline_to_cheb.eval(m_chebx->getGridX().getX(), m_ycheb);
+    m_chebx->dX(m_ycheb, m_dycheb, n);
+    SplineInterp spline_from_cheb(m_chebx->getGridX().getX(), m_dycheb);
+    return spline_from_cheb.eval(xout);
+}
+
+void ChebInterpX::dXInterp(const std::vector<double>& xin,
+                           const std::vector<double>& yin,
+                           const std::vector<double>& xout,
+                           std::vector<double>& dyout,
+                           int n)
+{
+    SplineInterp spline_to_cheb(xin, yin);
+    spline_to_cheb.eval(m_chebx->getGridX().getX(), m_ycheb);
+    m_chebx->dX(m_ycheb, m_dycheb, n);
+    SplineInterp spline_from_cheb(m_chebx->getGridX().getX(), m_dycheb);
+    return spline_from_cheb.eval(xout, dyout);
+}
+
+} // namespace spida

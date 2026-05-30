@@ -1,11 +1,13 @@
 
-#include <gtest/gtest.h>
+#include "spida/helper/constants.h"
+#include "spida/propagator/propagator.h"
+#include "spida/propagator/reporthandler.h"
+
 #include <filesystem>
 #include <memory>
 #include <vector>
-#include "spida/propagator/propagator.h"
-#include "spida/propagator/reporthandler.h"
-#include "spida/helper/constants.h"
+
+#include <gtest/gtest.h>
 #include <pwutils/report.hpp>
 
 using dcmplx = spida::dcmplx;
@@ -16,10 +18,25 @@ namespace fs = std::filesystem;
 class TestPropagatorCV : public spida::PropagatorCV {
 public:
     explicit TestPropagatorCV(const fs::path& path, unsigned sz = 4)
-        : PropagatorCV(path), m_field(sz, dcmplx(1.0)) {}
-    void updateFields(double) override { m_update_count++; }
-    std::vector<dcmplx>& propagator() override { return m_field; }
-    int updateCount() const { return m_update_count; }
+        : PropagatorCV(path), m_field(sz, dcmplx(1.0))
+    {
+    }
+
+    void updateFields(double) override
+    {
+        m_update_count++;
+    }
+
+    std::vector<dcmplx>& propagator() override
+    {
+        return m_field;
+    }
+
+    int updateCount() const
+    {
+        return m_update_count;
+    }
+
 private:
     std::vector<dcmplx> m_field;
     int m_update_count{0};
@@ -29,22 +46,25 @@ private:
 
 class PropagatorTest : public ::testing::Test {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         m_dir = fs::temp_directory_path() / "spida_propagator_test";
         fs::create_directories(m_dir);
     }
-    void TearDown() override {
+
+    void TearDown() override
+    {
         fs::remove_all(m_dir);
     }
+
     fs::path m_dir;
 
     // Helper: make a 1D dat report backed by local data
-    std::unique_ptr<pw::Report1D<double,double>> make1DReport(
-        const std::string& name,
-        const std::vector<double>& x,
-        const std::vector<double>& y)
+    std::unique_ptr<pw::Report1D<double, double>> make1DReport(const std::string& name,
+                                                               const std::vector<double>& x,
+                                                               const std::vector<double>& y)
     {
-        return std::make_unique<pw::Report1D<double,double>>(name, x, y);
+        return std::make_unique<pw::Report1D<double, double>>(name, x, y);
     }
 };
 
@@ -65,7 +85,7 @@ TEST(REPORT_HANDLER_TEST, ADD_1D_REPORT_SETS_HAS_DATA)
     spida::ReportHandler rh;
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0};
-    rh.addReport(std::make_unique<pw::Report1D<double,double>>("test", x, y));
+    rh.addReport(std::make_unique<pw::Report1D<double, double>>("test", x, y));
     EXPECT_TRUE(rh.hasData1D());
     EXPECT_FALSE(rh.hasData2D());
     EXPECT_FALSE(rh.hasDataTrack());
@@ -170,8 +190,8 @@ TEST_F(PropagatorTest, STEP_UPDATE_NO_REPORTS_ALWAYS_TRUE)
 TEST_F(PropagatorTest, STEP_UPDATE_NO_REPORTS_SKIPS_UPDATE_FIELDS)
 {
     TestPropagatorCV prop(m_dir);
-    (void)prop.stepUpdate(0.0);
-    (void)prop.stepUpdate(1.0);
+    (void) prop.stepUpdate(0.0);
+    (void) prop.stepUpdate(1.0);
     EXPECT_EQ(prop.updateCount(), 0);
 }
 
@@ -183,9 +203,9 @@ TEST_F(PropagatorTest, STEP_UPDATE_TRIGGERS_UPDATE_FIELDS_WITH_1D_REPORT)
     prop.addReport(make1DReport("u", x, y));
 
     // steps_per_out1D defaults to 1, so every step triggers updateFields
-    (void)prop.stepUpdate(0.0);
+    (void) prop.stepUpdate(0.0);
     EXPECT_EQ(prop.updateCount(), 1);
-    (void)prop.stepUpdate(1.0);
+    (void) prop.stepUpdate(1.0);
     EXPECT_EQ(prop.updateCount(), 2);
 }
 
@@ -197,12 +217,12 @@ TEST_F(PropagatorTest, STEP_UPDATE_RESPECTS_STEPS_PER_OUTPUT_1D)
     prop.addReport(make1DReport("u", x, y));
     prop.setStepsPerOutput1D(3);
 
-    (void)prop.stepUpdate(0.0);  // step 1 — no report
-    (void)prop.stepUpdate(1.0);  // step 2 — no report
+    (void) prop.stepUpdate(0.0); // step 1 — no report
+    (void) prop.stepUpdate(1.0); // step 2 — no report
     EXPECT_EQ(prop.updateCount(), 0);
-    (void)prop.stepUpdate(2.0);  // step 3 — report fires
+    (void) prop.stepUpdate(2.0); // step 3 — report fires
     EXPECT_EQ(prop.updateCount(), 1);
-    (void)prop.stepUpdate(3.0);  // step 4 — no report
+    (void) prop.stepUpdate(3.0); // step 4 — no report
     EXPECT_EQ(prop.updateCount(), 1);
 }
 
@@ -228,9 +248,9 @@ TEST_F(PropagatorTest, STEP_UPDATE_RETURNS_TRUE_BEFORE_1D_MAX_REACHED)
     prop.setMaxReports1D(3);
     prop.setStepsPerOutput1D(1);
 
-    EXPECT_TRUE(prop.stepUpdate(0.0));   // report 1 → count=1, max=3 → true
-    EXPECT_TRUE(prop.stepUpdate(1.0));   // report 2 → count=2, max=3 → true
-    EXPECT_FALSE(prop.stepUpdate(2.0));  // report 3 → count=3, max=3 → false
+    EXPECT_TRUE(prop.stepUpdate(0.0));  // report 1 → count=1, max=3 → true
+    EXPECT_TRUE(prop.stepUpdate(1.0));  // report 2 → count=2, max=3 → true
+    EXPECT_FALSE(prop.stepUpdate(2.0)); // report 3 → count=3, max=3 → false
 }
 
 TEST_F(PropagatorTest, STEP_UPDATE_SET_STEPS_PER_OUTPUT_SETS_ALL)
@@ -245,9 +265,9 @@ TEST_F(PropagatorTest, STEP_UPDATE_SET_STEPS_PER_OUTPUT_SETS_ALL)
     prop.addReport(std::make_unique<pw::Track<double>>("track", pw::TrackType::Max, data));
     prop.setStepsPerOutput(2);
 
-    (void)prop.stepUpdate(0.0);  // step 1 — no output
+    (void) prop.stepUpdate(0.0); // step 1 — no output
     EXPECT_EQ(prop.updateCount(), 0);
-    (void)prop.stepUpdate(1.0);  // step 2 — both 1D and track fire
+    (void) prop.stepUpdate(1.0); // step 2 — both 1D and track fire
     EXPECT_EQ(prop.updateCount(), 1);
 }
 

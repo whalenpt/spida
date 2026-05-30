@@ -1,9 +1,10 @@
 
-#include <gtest/gtest.h>
-#include <spida/helper/interp.h>
-#include <pwutils/pwexcept.h>
 #include <cmath>
 #include <vector>
+
+#include <gtest/gtest.h>
+#include <pwutils/pwexcept.h>
+#include <spida/helper/interp.h>
 
 // --- tridisolve tests ---
 
@@ -16,9 +17,9 @@ TEST(TRIDISOLVE_TEST, KNOWN_SYSTEM)
     //  [ 0  0 -1  2 ] [x3]   [1]
     // Solution: x = [1, 1, 1, 1]
     std::vector<double> a = {-1.0, -1.0, -1.0};
-    std::vector<double> b = { 2.0,  2.0,  2.0,  2.0};
+    std::vector<double> b = {2.0, 2.0, 2.0, 2.0};
     std::vector<double> c = {-1.0, -1.0, -1.0};
-    std::vector<double> d = { 1.0,  0.0,  0.0,  1.0};
+    std::vector<double> d = {1.0, 0.0, 0.0, 1.0};
     std::vector<double> x;
     spida::tridisolve(a, b, c, d, x);
     ASSERT_EQ(x.size(), 4u);
@@ -28,7 +29,7 @@ TEST(TRIDISOLVE_TEST, KNOWN_SYSTEM)
 
 TEST(TRIDISOLVE_TEST, SIZE_ERROR_SUBDIAG)
 {
-    std::vector<double> a = {1.0};              // size 1, too small
+    std::vector<double> a = {1.0}; // size 1, too small
     std::vector<double> b = {2.0, 2.0, 2.0};
     std::vector<double> c = {1.0, 1.0};
     std::vector<double> d = {1.0, 1.0, 1.0};
@@ -39,7 +40,7 @@ TEST(TRIDISOLVE_TEST, SIZE_ERROR_SUBDIAG)
 TEST(TRIDISOLVE_TEST, SIZE_ERROR_DIAG)
 {
     std::vector<double> a = {1.0, 1.0};
-    std::vector<double> b = {2.0, 2.0};         // size 2, too small
+    std::vector<double> b = {2.0, 2.0}; // size 2, too small
     std::vector<double> c = {1.0, 1.0};
     std::vector<double> d = {1.0, 1.0};
     std::vector<double> x;
@@ -92,7 +93,7 @@ TEST(LINEAR_INTERP_TEST, ERROR_EMPTY_XINTERP)
     std::vector<double> y = {0.0, 1.0, 2.0};
     spida::LinearInterp interp(x, y);
     std::vector<double> xi;
-    EXPECT_THROW((void)interp.eval(xi), pw::Exception);
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
 }
 
 TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_BELOW_RANGE)
@@ -100,7 +101,7 @@ TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_BELOW_RANGE)
     std::vector<double> x = {0.0, 1.0, 2.0};
     std::vector<double> y = {0.0, 1.0, 2.0};
     spida::LinearInterp interp(x, y);
-    EXPECT_THROW((void)interp.eval(-0.1), pw::Exception);
+    EXPECT_THROW((void) interp.eval(-0.1), pw::Exception);
 }
 
 TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_ABOVE_RANGE)
@@ -108,7 +109,7 @@ TEST(LINEAR_INTERP_TEST, ERROR_XINTERP_ABOVE_RANGE)
     std::vector<double> x = {0.0, 1.0, 2.0};
     std::vector<double> y = {0.0, 1.0, 2.0};
     spida::LinearInterp interp(x, y);
-    EXPECT_THROW((void)interp.eval(2.1), pw::Exception);
+    EXPECT_THROW((void) interp.eval(2.1), pw::Exception);
 }
 
 TEST(LINEAR_INTERP_TEST, ERROR_DATA_TOO_SMALL)
@@ -201,6 +202,6 @@ TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_OUT_OF_RANGE)
     std::vector<double> x = {0.0, 1.0, 2.0, 3.0};
     std::vector<double> y = {0.0, 1.0, 2.0, 3.0};
     spida::SplineInterp interp(x, y);
-    EXPECT_THROW((void)interp.eval(-0.5), pw::Exception);
-    EXPECT_THROW((void)interp.eval(3.5), pw::Exception);
+    EXPECT_THROW((void) interp.eval(-0.5), pw::Exception);
+    EXPECT_THROW((void) interp.eval(3.5), pw::Exception);
 }

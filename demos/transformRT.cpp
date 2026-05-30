@@ -19,6 +19,7 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <chrono>
 
 //------------------------------------------------------------------------------
@@ -28,8 +29,8 @@ int main()
 {
 
     using spida::dcmplx;
-    int nr = 200;
-    int nt = 256;
+    unsigned nr = 200;
+    unsigned nt = 256;
     double w0 = 20.0e-6;
     double I0 = 5.0e16;
     double tp = 5.0e-15;
@@ -50,8 +51,8 @@ int main()
     auto u0r = shapeR.shapeRV();
     std::vector<double> u(nr*nt);
 
-    for(auto i = 0; i < nr; i++)
-        for(auto j = 0; j < nt; j++)
+    for(unsigned i = 0; i < nr; i++)
+        for(unsigned j = 0; j < nt; j++)
             u[i*nt + j] = u0r[i]*u0t[j];
 
     // Report inputs
@@ -60,7 +61,6 @@ int main()
     in_report.setItem("ylabel","t");
 
     std::ofstream os;
-    os << std::scientific << std::setprecision(3);
     std::cout << in_report.path() << std::endl;
     os << in_report;
 
@@ -71,7 +71,7 @@ int main()
 
 
     // Compute transforms
-    int nst = gridT.getNst();
+    unsigned nst = gridT.getNst();
     std::vector<dcmplx> v(nr*nst);
     std::vector<double> uop(nr*nt);
 
@@ -83,7 +83,6 @@ int main()
     out_report.setItem("xlabel","kr");
     out_report.setItem("ylabel","omega");
 
-    os << std::scientific << std::setprecision(8);
     std::cout << out_report.path() << std::endl;
     os << out_report;
 
@@ -91,7 +90,6 @@ int main()
     rinop.setItem("xlabel","r");
     rinop.setItem("ylabel","t");
 
-    os << std::scientific << std::setprecision(3);
     std::cout << rinop.path() << std::endl;
     os << rinop;
 

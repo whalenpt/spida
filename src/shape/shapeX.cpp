@@ -1,30 +1,37 @@
-
-#include <cmath>
 #include "spida/shape/shapeX.h"
 
+#include <cmath>
+#include <stdexcept>
 
-namespace spida{
+namespace spida {
 
-ShapeX::ShapeX(const GridX& grid,double A,double w0) :
-            Shape(grid),
-            m_x(grid.getX()),
-            m_A(A),
-            m_w0(w0) {}
+ShapeX::ShapeX(const GridX& grid, double A, double w0)
+    : Shape(grid), m_x(grid.getX()), m_A(A), m_w0(w0)
+{
+    if (w0 == 0.0)
+        throw std::domain_error("ShapeX: width w0 must be non-zero");
+}
 
+void ShapeX::setWidth(double w0)
+{
+    if (w0 == 0.0)
+        throw std::domain_error("ShapeX::setWidth: width w0 must be non-zero");
+    m_w0 = w0;
+}
 
 std::vector<dcmplx> ShapeX::shapeCV() const
 {
     std::vector<dcmplx> v(m_x.size());
-    for(size_t i = 0; i < m_x.size(); i++)
-        v[i] = m_A*compute((m_x[i]-m_offset)/m_w0)*exp(ii*m_phi0);
+    for (size_t i = 0; i < m_x.size(); i++)
+        v[i] = m_A * compute((m_x[i] - m_offset) / m_w0) * exp(ii * m_phi0);
     return v;
 }
 
 std::vector<double> ShapeX::shapeRV() const
 {
     std::vector<double> v(m_x.size());
-    for(size_t i = 0; i < m_x.size(); i++)
-        v[i] = m_A*compute((m_x[i]-m_offset)/m_w0)*cos(m_phi0);
+    for (size_t i = 0; i < m_x.size(); i++)
+        v[i] = (m_A * compute((m_x[i] - m_offset) / m_w0) * exp(ii * m_phi0)).real();
     return v;
 }
 
@@ -43,4 +50,4 @@ double SinX::compute(double x) const
     return sin(x);
 }
 
-}
+} // namespace spida

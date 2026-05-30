@@ -1,12 +1,12 @@
 #pragma once
 
-namespace spida{
+namespace spida {
 
 // Base interface class
-class Grid{
-  protected:
-      Grid() = default;
-      ~Grid() = default;
+class Grid {
+protected:
+    Grid() = default;
+    ~Grid() = default;
 };
 
-}
+} // namespace spida

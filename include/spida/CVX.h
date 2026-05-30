@@ -1,6 +1,6 @@
-/*  
- *  Spectral integration/differentiation algorithms for 
- *  complex data on uniform grids with periodic boundaries. 
+/*
+ *  Spectral integration/differentiation algorithms for
+ *  complex data on uniform grids with periodic boundaries.
  *
  *  Transform uses KissFFT, with phase adjustment since the physical grid
  *  is not assumed to run from 0 to 1.
@@ -13,31 +13,34 @@
 
 #pragma once
 
-#include <vector>
-#include "spida/helper/constants.h"
 #include "spida/grid/uniformCVX.h"
+#include "spida/helper/constants.h"
 #include "spida/transform/fftCVX.h"
 
-namespace spida{
+#include <memory>
+#include <vector>
 
-  // Assumes complex data
-  class SpidaCVX
-  {
-    public:
-      explicit SpidaCVX(const UniformGridCVX& grid);
-      SpidaCVX() = delete;
-      ~SpidaCVX() = default;
-      void dX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) noexcept; 
-      void dSX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) const noexcept; 
-      const std::vector<double>& getX() const;
-      const std::vector<double>& getSX() const;
-      void X_To_SX(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept;
-      void SX_To_X(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept; 
-      const UniformGridCVX& getGridX() const;
-      FFTCVX& getTransformX();
-    private:
-      std::unique_ptr<UniformGridCVX> m_gr;
-      std::unique_ptr<FFTCVX> m_tr;
-      std::vector<dcmplx> m_vs;
-  };
-}
+namespace spida {
+
+// Assumes complex data
+class SpidaCVX {
+public:
+    explicit SpidaCVX(const UniformGridCVX& grid);
+    SpidaCVX() = delete;
+    ~SpidaCVX() = default;
+    void dX(const std::vector<dcmplx>& in, std::vector<dcmplx>& out, unsigned n = 1) noexcept;
+    void
+    dSX(const std::vector<dcmplx>& in, std::vector<dcmplx>& out, unsigned n = 1) const noexcept;
+    const std::vector<double>& getX() const;
+    const std::vector<double>& getSX() const;
+    void X_To_SX(const std::vector<dcmplx>& in, std::vector<dcmplx>& out) noexcept;
+    void SX_To_X(const std::vector<dcmplx>& in, std::vector<dcmplx>& out) noexcept;
+    const UniformGridCVX& getGridX() const;
+    FFTCVX& getTransformX();
+
+private:
+    std::unique_ptr<UniformGridCVX> m_gr;
+    std::unique_ptr<FFTCVX> m_tr;
+    std::vector<dcmplx> m_vs;
+};
+} // namespace spida

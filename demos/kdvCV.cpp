@@ -17,6 +17,7 @@
 #include <spida/rkstiff/ETDAS.h>
 #include <pwutils/report.hpp>
 #include <fstream>
+#include <iostream>
 
 //------------------------------------------------------------------------------
 
@@ -183,7 +184,7 @@ int main()
     double t0 = 0.0;
     double tf = 600.0;
     double h_init = 0.1;
-    solver.evolve(propagator,t0,tf,h_init);
+    if(!solver.evolve(propagator,t0,tf,h_init)) { std::cerr << "Solver failed\n"; return 1; }
 
     return 0;
 

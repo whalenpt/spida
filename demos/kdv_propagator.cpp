@@ -17,6 +17,7 @@
 #include <spida/rkstiff/ETDAS.h>
 #include <pwutils/report.hpp>
 #include <fstream>
+#include <iostream>
 
 //------------------------------------------------------------------------------
 
@@ -124,7 +125,7 @@ int main()
     solver.setEpsRel(1e-4);
     solver.setLogProgress(true);
     solver.setLogFrequency(200);
-    solver.evolve(propagator,0.0,600.0,0.1);
+    if(!solver.evolve(propagator,0.0,600.0,0.1)) { std::cerr << "Solver failed\n"; return 1; }
 
     return 0;
 }

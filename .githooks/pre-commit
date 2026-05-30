@@ -1,0 +1,20 @@
+#!/bin/sh
+# .githooks/pre-commit — format staged C/C++ hunks, abort if reformatting needed.
+set -eu
+
+# Only run if clang-format tooling is present; don't block commits otherwise.
+command -v clang-format >/dev/null 2>&1 || exit 0
+
+# git clang-format outputs the diff it *would* apply to staged content.
+changed="$(git clang-format --staged --diff --extensions cpp,hpp,h,cc 2>/dev/null || true)"
+
+# "no modified files" / empty diff → clean, allow commit.
+case "$changed" in
+  ""|*"no modified files to format"*|*"clang-format did not modify"*)
+    exit 0 ;;
+esac
+
+printf '%s\n' "clang-format would change staged code. Run:" >&2
+printf '%s\n' "    git clang-format --staged --extensions cpp,hpp,h,cc" >&2
+printf '%s\n' "then 'git add -u' and re-commit." >&2
+exit 1

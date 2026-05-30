@@ -1,23 +1,24 @@
 
-#include <gtest/gtest.h>
-#include <spida/CVX.h>
-#include <spida/RVX.h>
-#include <spida/CVT.h>
-#include <spida/RVT.h>
-#include <spida/grid/uniformCVX.h>
-#include <spida/grid/uniformRVX.h>
-#include <spida/grid/uniformCVT.h>
-#include <spida/grid/uniformRVT.h>
-#include <spida/helper/constants.h>
-#include <pwutils/pwexcept.h>
-#include <pwutils/pwmath.hpp>
 #include <cmath>
 #include <random>
 #include <vector>
 
+#include <gtest/gtest.h>
+#include <pwutils/pwexcept.h>
+#include <pwutils/pwmath.hpp>
+#include <spida/CVT.h>
+#include <spida/CVX.h>
+#include <spida/grid/uniformCVT.h>
+#include <spida/grid/uniformCVX.h>
+#include <spida/grid/uniformRVT.h>
+#include <spida/grid/uniformRVX.h>
+#include <spida/helper/constants.h>
+#include <spida/RVT.h>
+#include <spida/RVX.h>
+
 using spida::dcmplx;
-using spida::PI;
 using spida::ii;
+using spida::PI;
 
 // ============================================================
 // SpidaCVX wrapper tests
@@ -31,10 +32,10 @@ TEST(SPIDA_CVX_TEST, ACCESSORS)
 
     EXPECT_EQ(spi.getGridX().getNx(), N);
     EXPECT_DOUBLE_EQ(spi.getGridX().getMinX(), -3.0);
-    EXPECT_DOUBLE_EQ(spi.getGridX().getMaxX(),  3.0);
+    EXPECT_DOUBLE_EQ(spi.getGridX().getMaxX(), 3.0);
     EXPECT_EQ(spi.getX().size(), N);
     EXPECT_EQ(spi.getSX().size(), N);
-    EXPECT_EQ(spi.getX(),  grid.getX());
+    EXPECT_EQ(spi.getX(), grid.getX());
     EXPECT_EQ(spi.getSX(), grid.getSX());
 }
 
@@ -58,7 +59,8 @@ TEST(SPIDA_CVX_TEST, X_TO_SX_AND_BACK)
     std::default_random_engine gen(42);
     std::normal_distribution<double> dist;
     std::vector<dcmplx> in(N), sp(N), out(N);
-    for (auto& v : in) v = dcmplx(dist(gen), dist(gen));
+    for (auto& v : in)
+        v = dcmplx(dist(gen), dist(gen));
 
     spi.X_To_SX(in, sp);
     spi.SX_To_X(sp, out);
@@ -73,11 +75,13 @@ TEST(SPIDA_CVX_TEST, X_TO_SX_GAUSS)
     spida::UniformGridCVX grid(N, -6.0, 6.0);
     spida::SpidaCVX spi(grid);
 
-    const auto& x  = spi.getX();
+    const auto& x = spi.getX();
     const auto& kx = spi.getSX();
     std::vector<dcmplx> in(N), sp(N), expect(N);
-    for (unsigned i = 0; i < N; i++) in[i]     = std::exp(-a * x[i] * x[i]);
-    for (unsigned i = 0; i < N; i++) expect[i]  = std::sqrt(PI / a) * std::exp(-kx[i] * kx[i] / (4.0 * a));
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::exp(-a * x[i] * x[i]);
+    for (unsigned i = 0; i < N; i++)
+        expect[i] = std::sqrt(PI / a) * std::exp(-kx[i] * kx[i] / (4.0 * a));
 
     spi.X_To_SX(in, sp);
     EXPECT_LT(pw::relative_error(expect, sp), 1e-5);
@@ -119,8 +123,10 @@ TEST(SPIDA_CVX_TEST, DX_FIRST_DERIVATIVE_SIN)
 
     const auto& x = spi.getX();
     std::vector<dcmplx> in(N), out(N), expect(N);
-    for (unsigned i = 0; i < N; i++) in[i]     = std::sin(x[i]);
-    for (unsigned i = 0; i < N; i++) expect[i]  = std::cos(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::sin(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        expect[i] = std::cos(x[i]);
 
     spi.dX(in, out);
     EXPECT_LT(pw::relative_error(expect, out), 1e-5);
@@ -135,8 +141,10 @@ TEST(SPIDA_CVX_TEST, DX_SECOND_DERIVATIVE_SIN)
 
     const auto& x = spi.getX();
     std::vector<dcmplx> in(N), out(N), expect(N);
-    for (unsigned i = 0; i < N; i++) in[i]     =  std::sin(x[i]);
-    for (unsigned i = 0; i < N; i++) expect[i]  = -std::sin(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::sin(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        expect[i] = -std::sin(x[i]);
 
     spi.dX(in, out, 2);
     EXPECT_LT(pw::relative_error(expect, out), 1e-5);
@@ -154,8 +162,10 @@ TEST(SPIDA_CVX_TEST, DSX_MATCHES_DX_SPECTRAL_STEP)
 
     // Compute F{sin(x)} and F{cos(x)} to compare
     std::vector<dcmplx> sin_x(N), cos_x(N);
-    for (unsigned i = 0; i < N; i++) sin_x[i] = std::sin(x[i]);
-    for (unsigned i = 0; i < N; i++) cos_x[i] = std::cos(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        sin_x[i] = std::sin(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        cos_x[i] = std::cos(x[i]);
     spi.X_To_SX(sin_x, in_sp);
     spi.X_To_SX(cos_x, expect_sp);
 
@@ -175,10 +185,10 @@ TEST(SPIDA_RVX_TEST, ACCESSORS)
 
     EXPECT_EQ(spi.getGridX().getNx(), N);
     EXPECT_DOUBLE_EQ(spi.getGridX().getMinX(), -3.0);
-    EXPECT_DOUBLE_EQ(spi.getGridX().getMaxX(),  3.0);
+    EXPECT_DOUBLE_EQ(spi.getGridX().getMaxX(), 3.0);
     EXPECT_EQ(spi.getX().size(), N);
     EXPECT_EQ(spi.getSX().size(), grid.getNsx());
-    EXPECT_EQ(spi.getX(),  grid.getX());
+    EXPECT_EQ(spi.getX(), grid.getX());
     EXPECT_EQ(spi.getSX(), grid.getSX());
 }
 
@@ -204,7 +214,8 @@ TEST(SPIDA_RVX_TEST, X_TO_SX_AND_BACK)
     std::normal_distribution<double> dist;
     std::vector<double> in(N), out(N);
     std::vector<dcmplx> sp(grid.getNsx());
-    for (auto& v : in) v = dist(gen);
+    for (auto& v : in)
+        v = dist(gen);
 
     spi.X_To_SX(in, sp);
     spi.SX_To_X(sp, out);
@@ -219,12 +230,14 @@ TEST(SPIDA_RVX_TEST, X_TO_SX_GAUSS)
     spida::UniformGridRVX grid(N, -6.0, 6.0);
     spida::SpidaRVX spi(grid);
 
-    const auto& x  = spi.getX();
+    const auto& x = spi.getX();
     const auto& kx = spi.getSX();
     std::vector<double> in(N);
     std::vector<dcmplx> sp(grid.getNsx()), expect(grid.getNsx());
-    for (unsigned i = 0; i < N; i++)           in[i]     = std::exp(-a * x[i] * x[i]);
-    for (unsigned i = 0; i < kx.size(); i++)   expect[i] = std::sqrt(PI / a) * std::exp(-kx[i] * kx[i] / (4.0 * a));
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::exp(-a * x[i] * x[i]);
+    for (unsigned i = 0; i < kx.size(); i++)
+        expect[i] = std::sqrt(PI / a) * std::exp(-kx[i] * kx[i] / (4.0 * a));
 
     spi.X_To_SX(in, sp);
     EXPECT_LT(pw::relative_error(expect, sp), 1e-5);
@@ -251,8 +264,10 @@ TEST(SPIDA_RVX_TEST, DSX_TWO_BUFFER_OVERLOAD)
 
     const auto& x = spi.getX();
     std::vector<double> sin_x(N), cos_x(N);
-    for (unsigned i = 0; i < N; i++) sin_x[i] = std::sin(x[i]);
-    for (unsigned i = 0; i < N; i++) cos_x[i] = std::cos(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        sin_x[i] = std::sin(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        cos_x[i] = std::cos(x[i]);
 
     std::vector<dcmplx> in_sp(grid.getNsx()), out_sp(grid.getNsx()), expect_sp(grid.getNsx());
     spi.X_To_SX(sin_x, in_sp);
@@ -282,7 +297,8 @@ TEST(SPIDA_RVX_TEST, DSX_INPLACE_MATCHES_TWO_BUFFER)
 
     const auto& x = spi.getX();
     std::vector<double> in(N);
-    for (unsigned i = 0; i < N; i++) in[i] = std::sin(x[i]);
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::sin(x[i]);
 
     std::vector<dcmplx> sp(grid.getNsx());
     spi.X_To_SX(in, sp);
@@ -306,10 +322,10 @@ TEST(SPIDA_CVT_TEST, ACCESSORS)
 
     EXPECT_EQ(spi.getGridT().getNt(), N);
     EXPECT_DOUBLE_EQ(spi.getGridT().getMinT(), -2.0);
-    EXPECT_DOUBLE_EQ(spi.getGridT().getMaxT(),  2.0);
+    EXPECT_DOUBLE_EQ(spi.getGridT().getMaxT(), 2.0);
     EXPECT_EQ(spi.getT().size(), N);
     EXPECT_EQ(spi.getST().size(), N);
-    EXPECT_EQ(spi.getT(),  grid.getT());
+    EXPECT_EQ(spi.getT(), grid.getT());
     EXPECT_EQ(spi.getST(), grid.getST());
 }
 
@@ -333,7 +349,8 @@ TEST(SPIDA_CVT_TEST, T_TO_ST_AND_BACK)
     std::default_random_engine gen(13);
     std::normal_distribution<double> dist;
     std::vector<dcmplx> in(N), sp(N), out(N);
-    for (auto& v : in) v = dcmplx(dist(gen), dist(gen));
+    for (auto& v : in)
+        v = dcmplx(dist(gen), dist(gen));
 
     spi.T_To_ST(in, sp);
     spi.ST_To_T(sp, out);
@@ -348,11 +365,13 @@ TEST(SPIDA_CVT_TEST, T_TO_ST_GAUSS)
     spida::UniformGridCVT grid(N, -6.0, 6.0);
     spida::SpidaCVT spi(grid);
 
-    const auto& t     = spi.getT();
+    const auto& t = spi.getT();
     const auto& omega = spi.getST();
     std::vector<dcmplx> in(N), sp(N), expect(N);
-    for (unsigned i = 0; i < N; i++) in[i]     = std::exp(-a * t[i] * t[i]);
-    for (unsigned i = 0; i < N; i++) expect[i]  = std::sqrt(PI / a) * std::exp(-omega[i] * omega[i] / (4.0 * a));
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::exp(-a * t[i] * t[i]);
+    for (unsigned i = 0; i < N; i++)
+        expect[i] = std::sqrt(PI / a) * std::exp(-omega[i] * omega[i] / (4.0 * a));
 
     spi.T_To_ST(in, sp);
     EXPECT_LT(pw::relative_error(expect, sp), 1e-5);
@@ -393,8 +412,10 @@ TEST(SPIDA_CVT_TEST, DT_FIRST_DERIVATIVE_SIN)
 
     const auto& t = spi.getT();
     std::vector<dcmplx> in(N), out(N), expect(N);
-    for (unsigned i = 0; i < N; i++) in[i]     = std::sin(t[i]);
-    for (unsigned i = 0; i < N; i++) expect[i]  = std::cos(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::sin(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        expect[i] = std::cos(t[i]);
 
     spi.dT(in, out);
     EXPECT_LT(pw::relative_error(expect, out), 1e-5);
@@ -409,8 +430,10 @@ TEST(SPIDA_CVT_TEST, DT_SECOND_DERIVATIVE_SIN)
 
     const auto& t = spi.getT();
     std::vector<dcmplx> in(N), out(N), expect(N);
-    for (unsigned i = 0; i < N; i++) in[i]     =  std::sin(t[i]);
-    for (unsigned i = 0; i < N; i++) expect[i]  = -std::sin(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::sin(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        expect[i] = -std::sin(t[i]);
 
     spi.dT(in, out, 2);
     EXPECT_LT(pw::relative_error(expect, out), 1e-5);
@@ -425,8 +448,10 @@ TEST(SPIDA_CVT_TEST, DST_MATCHES_DT_SPECTRAL_STEP)
 
     const auto& t = spi.getT();
     std::vector<dcmplx> sin_t(N), cos_t(N);
-    for (unsigned i = 0; i < N; i++) sin_t[i] = std::sin(t[i]);
-    for (unsigned i = 0; i < N; i++) cos_t[i] = std::cos(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        sin_t[i] = std::sin(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        cos_t[i] = std::cos(t[i]);
 
     std::vector<dcmplx> in_sp(N), out_sp(N), expect_sp(N);
     spi.T_To_ST(sin_t, in_sp);
@@ -452,7 +477,7 @@ TEST(SPIDA_RVT_TEST, ACCESSORS)
     EXPECT_DOUBLE_EQ(spi.getGridT().getMaxT(), maxT);
     EXPECT_EQ(spi.getT().size(), N);
     EXPECT_EQ(spi.getST().size(), grid.getNst());
-    EXPECT_EQ(spi.getT(),  grid.getT());
+    EXPECT_EQ(spi.getT(), grid.getT());
     EXPECT_EQ(spi.getST(), grid.getST());
 }
 
@@ -478,7 +503,8 @@ TEST(SPIDA_RVT_TEST, T_TO_ST_AND_BACK)
     std::normal_distribution<double> dist;
     std::vector<double> in(N), out(N);
     std::vector<dcmplx> sp(grid.getNst());
-    for (auto& v : in) v = dist(gen);
+    for (auto& v : in)
+        v = dist(gen);
 
     spi.T_To_ST(in, sp);
     spi.ST_To_T(sp, out);
@@ -496,7 +522,7 @@ TEST(SPIDA_RVT_TEST, CVT_TO_ST_AND_BACK)
 
     unsigned nst = grid.getNst();
     std::vector<dcmplx> sp_in(nst, 0.0);
-    sp_in[nst / 2] = 1.0;   // single mid-band frequency: guaranteed analytic
+    sp_in[nst / 2] = 1.0; // single mid-band frequency: guaranteed analytic
 
     std::vector<dcmplx> time_domain(N), sp_out(nst);
     spi.ST_To_CVT(sp_in, time_domain);
@@ -512,12 +538,14 @@ TEST(SPIDA_RVT_TEST, T_TO_ST_GAUSS)
     spida::UniformGridRVT grid(N, -6.0, 6.0);
     spida::SpidaRVT spi(grid);
 
-    const auto& t     = spi.getT();
+    const auto& t = spi.getT();
     const auto& omega = spi.getST();
     std::vector<double> in(N);
     std::vector<dcmplx> sp(grid.getNst()), expect(grid.getNst());
-    for (unsigned i = 0; i < N; i++)             in[i]     = std::exp(-a * t[i] * t[i]);
-    for (unsigned i = 0; i < omega.size(); i++)  expect[i] = std::sqrt(PI / a) * std::exp(-omega[i] * omega[i] / (4.0 * a));
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::exp(-a * t[i] * t[i]);
+    for (unsigned i = 0; i < omega.size(); i++)
+        expect[i] = std::sqrt(PI / a) * std::exp(-omega[i] * omega[i] / (4.0 * a));
 
     spi.T_To_ST(in, sp);
     EXPECT_LT(pw::relative_error(expect, sp), 1e-5);
@@ -543,8 +571,10 @@ TEST(SPIDA_RVT_TEST, DT_FIRST_DERIVATIVE_SIN)
 
     const auto& t = spi.getT();
     std::vector<double> in(N), out(N), expect(N);
-    for (unsigned i = 0; i < N; i++) in[i]     = std::sin(t[i]);
-    for (unsigned i = 0; i < N; i++) expect[i]  = std::cos(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::sin(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        expect[i] = std::cos(t[i]);
 
     spi.dT(in, out);
     EXPECT_LT(pw::relative_error(expect, out), 1e-5);
@@ -559,8 +589,10 @@ TEST(SPIDA_RVT_TEST, DT_SECOND_DERIVATIVE_SIN)
 
     const auto& t = spi.getT();
     std::vector<double> in(N), out(N), expect(N);
-    for (unsigned i = 0; i < N; i++) in[i]     =  std::sin(t[i]);
-    for (unsigned i = 0; i < N; i++) expect[i]  = -std::sin(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        in[i] = std::sin(t[i]);
+    for (unsigned i = 0; i < N; i++)
+        expect[i] = -std::sin(t[i]);
 
     spi.dT(in, out, 2);
     EXPECT_LT(pw::relative_error(expect, out), 1e-5);

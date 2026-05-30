@@ -1,9 +1,79 @@
-// .claude/settings.json
 {
-  "hooks": {
-    "PostToolUse": [{
-      "matcher": "Edit",
-      "hooks": [{"type": "command", "command": "if echo \"$CLAUDE_FILE_PATHS\" | grep -q CMakeLists.txt; then cmake --build build 2>&1 | tail -20; fi"}]
-    }]
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "auto",
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(dd *)",
+      "Bash(shred *)",
+      "Bash(mkfs *)",
+      "Bash(sudo *)",
+      "Bash(su *)",
+      "Bash(chown *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean -fd *)",
+      "Bash(git clean -df *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/.env)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/id_rsa*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gh/**)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(conan upload *)",
+      "Bash(conan remove *)",
+      "Bash(pip install *)"
+    ],
+    "allow": [
+      "Edit",
+      "Write",
+      "Bash(awk *)",
+      "Bash(cat *)",
+      "Bash(clang++ *)",
+      "Bash(clang-format *)",
+      "Bash(clang-tidy *)",
+      "Bash(cmake *)",
+      "Bash(conan *)",
+      "Bash(cp *)",
+      "Bash(ctest *)",
+      "Bash(diff *)",
+      "Bash(echo *)",
+      "Bash(find *)",
+      "Bash(g++ *)",
+      "Bash(gcov *)",
+      "Bash(gdb *)",
+      "Bash(git *)",
+      "Bash(grep *)",
+      "Bash(head *)",
+      "Bash(lcov *)",
+      "Bash(ls *)",
+      "Bash(make *)",
+      "Bash(mkdir *)",
+      "Bash(mv *)",
+      "Bash(ninja *)",
+      "Bash(podman *)",
+      "Bash(python3 *)",
+      "Bash(pytest *)",
+      "Bash(pwd)",
+      "Bash(rg *)",
+      "Bash(sed *)",
+      "Bash(sort *)",
+      "Bash(tail *)",
+      "Bash(tee *)",
+      "Bash(touch *)",
+      "Bash(uniq *)",
+      "Bash(valgrind *)",
+      "Bash(wc *)",
+      "Bash(which *)",
+      "Bash(xargs *)"
+    ]
   }
 }
