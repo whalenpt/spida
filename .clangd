@@ -1,0 +1,31 @@
+# .clangd — language server config. Pairs with .clang-format + .clang-tidy.
+CompileFlags:
+  Add:
+    - -std=c++23
+    - -Wall
+    - -Wextra
+  # Strip flags GCC accepts but clang's parser chokes on (compiler mismatch).
+  Remove:
+    - -fprofile-update=*
+    - -fno-*coverage*
+    - --coverage
+    - -mno-*
+
+Diagnostics:
+  ClangTidy:
+    # Inherit the .clang-tidy file; no need to relist checks here.
+    FastCheckFilter: Strict
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
+
+Index:
+  Background: Build
+  StandardLibrary: Yes
+
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+
+Hover:
+  ShowAKA: Yes

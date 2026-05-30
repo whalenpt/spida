@@ -20,6 +20,9 @@ set(KISSFFT_PKGCONFIG OFF CACHE BOOL "" FORCE)
 set(KISSFFT_TEST OFF CACHE BOOL "" FORCE)
 set(KISSFFT_DATATYPE "double" CACHE STRING "" FORCE)
 
+# Emit compile_commands.json for clangd / tooling.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
@@ -132,6 +135,20 @@ endif()
 # Main library
 # -----------------------------
 add_subdirectory(src)
+
+# -----------------------------
+# clangd: copy compile_commands.json to source root (auto-detected there).
+# Build-time copy so it works for any build dir (build/Release, build/RelWithDebInfo).
+# -----------------------------
+if(PROJECT_IS_TOP_LEVEL AND CMAKE_EXPORT_COMPILE_COMMANDS)
+    add_custom_target(copy-compile-commands ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_BINARY_DIR}/compile_commands.json"
+                "${PROJECT_SOURCE_DIR}/compile_commands.json"
+        DEPENDS "${CMAKE_BINARY_DIR}/compile_commands.json"
+        COMMENT "Copying compile_commands.json to source root for clangd"
+        VERBATIM)
+endif()
 
 # -----------------------------
 # Tests / demos

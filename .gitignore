@@ -8,3 +8,5 @@ coverage.info
 .devcontainer
 .vscode
 .claude/worktrees
+compile_commands.json
+
