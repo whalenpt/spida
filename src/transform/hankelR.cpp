@@ -1,6 +1,5 @@
 
 #include <cmath>
-#include <iostream>
 #include <algorithm>
 #include <vector>
 #include <thread>
@@ -22,7 +21,7 @@ namespace spida {
       initDHT(grid);
   }
 
-  void HankelTransformR::R_To_SR(const double* in,double* out) 
+  void HankelTransformR::R_To_SR(const double* in,double* out) const
   {
 /*
 enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};
@@ -48,7 +47,7 @@ lda -> first dimension of A
       #endif
   }
 
-  void HankelTransformR::R_To_SR(const dcmplx* in,dcmplx* out) 
+  void HankelTransformR::R_To_SR(const dcmplx* in,dcmplx* out) const
   {
       #if defined(HAVE_OPENBLAS)
       const double beta = 0.0;
@@ -63,7 +62,7 @@ lda -> first dimension of A
       #endif
   }
 
-  void HankelTransformR::SR_To_R(const double* in,double* out) 
+  void HankelTransformR::SR_To_R(const double* in,double* out) const
   {
       #if defined(HAVE_OPENBLAS)
       cblas_dgemv(CblasRowMajor,CblasNoTrans,m_nr,m_nr,1.0/m_alpha,m_Ymk.data(),m_nr,in,1,0.0,out,1);
@@ -77,7 +76,7 @@ lda -> first dimension of A
       #endif
   }
 
-  void HankelTransformR::SR_To_R(const dcmplx* in,dcmplx* out) 
+  void HankelTransformR::SR_To_R(const dcmplx* in,dcmplx* out) const
   {
       #if defined(HAVE_OPENBLAS)
       const dcmplx a = 1.0/m_alpha;
@@ -140,7 +139,7 @@ lda -> first dimension of A
                           unsigned tid,\
                           unsigned nthreads,\
                           unsigned nr,\
-                          std::vector<double>& Ymk,\
+                          const std::vector<double>& Ymk,\
                           double alpha,\
                           const dcmplx* v,\
                           dcmplx* w){
@@ -150,7 +149,7 @@ lda -> first dimension of A
                       sum += Ymk[m*nr+k]*v[k];
                   w[m] = alpha*sum;
               }
-          },tid,m_threads,m_nr,std::ref(m_Ymk),m_alpha,in,out));
+          },tid,m_threads,m_nr,std::cref(m_Ymk),m_alpha,in,out));
       }
 
       for(auto& worker : workers){
@@ -177,7 +176,7 @@ lda -> first dimension of A
                           unsigned tid,\
                           unsigned nthreads,\
                           unsigned nr,\
-                          std::vector<double>& Ymk,\
+                          const std::vector<double>& Ymk,\
                           double alpha,\
                           const dcmplx* v,\
                           dcmplx* w){
@@ -187,7 +186,7 @@ lda -> first dimension of A
                       sum += Ymk[k*nr+m]*v[m];
                   w[k] = sum/alpha;
               }
-          },tid,m_threads,m_nr,std::ref(m_Ymk),m_alpha,in,out));
+          },tid,m_threads,m_nr,std::cref(m_Ymk),m_alpha,in,out));
       }
 
       for(auto& worker : workers){

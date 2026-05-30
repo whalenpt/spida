@@ -14,6 +14,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "spida/grid/uniformRVX.h"
 #include "spida/helper/constants.h"
 #include "spida/transform/fftRVX.h"

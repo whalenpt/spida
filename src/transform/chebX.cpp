@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <vector>
 #include <nayukidct/FastDctLee.hpp>
 #include "spida/grid/chebX.h" 
@@ -16,7 +15,7 @@ namespace spida {
   {
         std::reverse_copy(std::begin(in),std::end(in),std::begin(m_uFFT));
         FastDctLee::transform(m_uFFT);
-        for(int j = 0; j < m_nx; j++)  
+        for(unsigned j = 0; j < m_nx; j++)  
             out[j] = 2.0*m_uFFT[j]/static_cast<double>(m_nx);
   }
 

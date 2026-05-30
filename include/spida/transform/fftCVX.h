@@ -6,7 +6,6 @@
 #pragma once
 
 #include <vector>
-#include <thread>
 #include "spida/helper/constants.h"
 #include "spida/grid/uniformCVX.h" 
 #include "kiss_fft.h"

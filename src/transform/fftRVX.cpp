@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <new>
 #include <stdexcept>
 #include "kiss_fftr.h"
 #include "spida/grid/uniformRVX.h" 
@@ -19,13 +19,18 @@ FFTRVX::FFTRVX(const UniformGridRVX& grid) :
     if(!((m_nx%2)==0))
         throw std::invalid_argument("Kiss fftr requires even integer size");
     m_rcfg_forward = kiss_fftr_alloc(m_nx,0,nullptr,nullptr);   
+    if(!m_rcfg_forward) throw std::bad_alloc{};
     m_rcfg_reverse = kiss_fftr_alloc(m_nx,1,nullptr,nullptr);   
+    if(!m_rcfg_reverse){
+        kiss_fftr_free(m_rcfg_forward);
+        throw std::bad_alloc{};
+    }
 }
 
 FFTRVX::~FFTRVX()
 {
-    kiss_fft_free(m_rcfg_forward);
-    kiss_fft_free(m_rcfg_reverse);
+    kiss_fftr_free(m_rcfg_forward);
+    kiss_fftr_free(m_rcfg_reverse);
 }
 
 void FFTRVX::X_To_SX(const double* in,dcmplx* out) noexcept

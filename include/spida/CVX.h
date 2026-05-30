@@ -14,6 +14,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "spida/helper/constants.h"
 #include "spida/grid/uniformCVX.h"
 #include "spida/transform/fftCVX.h"

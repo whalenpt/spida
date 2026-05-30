@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <new>
 #include <stdexcept>
 #include "kiss_fft.h"
 #include "spida/grid/uniformCVT.h" 
@@ -24,7 +24,12 @@ FFTCVT::FFTCVT(const UniformGridCVT& grid) :
 
     // T-transform centered around -iwt -> use inverse kissfft for forward direction
     m_cfg_forward = kiss_fft_alloc(m_nt,1,nullptr,nullptr); 
+    if(!m_cfg_forward) throw std::bad_alloc{};
     m_cfg_reverse = kiss_fft_alloc(m_nt,0,nullptr,nullptr);
+    if(!m_cfg_reverse){
+        kiss_fft_free(m_cfg_forward);
+        throw std::bad_alloc{};
+    }
 }
 
 FFTCVT::~FFTCVT()

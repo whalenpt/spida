@@ -1,6 +1,7 @@
 #include <algorithm>
+#include <cassert>
 #include <cmath>
-#include <iostream>
+#include <new>
 #include <stdexcept>
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
@@ -16,7 +17,7 @@ FFTRVT::FFTRVT(const UniformGridRVT& grid) :
     m_minI(grid.getMinI()),
     m_maxI(grid.getMaxI()),
     m_rFFTr(grid.getNt(),0.0),
-    m_temp(grid.getNt(),0.0),
+    m_temp(grid.getNt()/2+1,0.0),
     m_cFFT(grid.getNt(),0.0),
     m_omega(grid.getST()),
     m_mint(grid.getMinT()),
@@ -28,18 +29,37 @@ FFTRVT::FFTRVT(const UniformGridRVT& grid) :
     // T-transform centered around -iwt -> use inverse kissfft for forward direction (s.t.
     // fft central frequency is the first half of the grid and aligns with the UniformGridT class)
     m_cfg_forward = kiss_fft_alloc(m_nt,1,nullptr,nullptr); 
+    if(!m_cfg_forward) throw std::bad_alloc{};
     m_cfg_reverse = kiss_fft_alloc(m_nt,0,nullptr,nullptr);
+    if(!m_cfg_reverse){
+        kiss_fft_free(m_cfg_forward);
+        throw std::bad_alloc{};
+    }
 
     m_rcfg_forward = kiss_fftr_alloc(m_nt,0,nullptr,nullptr);   
+    if(!m_rcfg_forward){
+        kiss_fft_free(m_cfg_forward);
+        kiss_fft_free(m_cfg_reverse);
+        throw std::bad_alloc{};
+    }
     m_rcfg_reverse = kiss_fftr_alloc(m_nt,1,nullptr,nullptr);   
+    if(!m_rcfg_reverse){
+        kiss_fft_free(m_cfg_forward);
+        kiss_fft_free(m_cfg_reverse);
+        kiss_fftr_free(m_rcfg_forward);
+        throw std::bad_alloc{};
+    }
+
+    assert(m_maxI < m_nt/2+1);
+    assert(m_minI <= m_maxI);
 }
 
 FFTRVT::~FFTRVT()
 {
     kiss_fft_free(m_cfg_forward);
     kiss_fft_free(m_cfg_reverse);
-    kiss_fft_free(m_rcfg_forward);
-    kiss_fft_free(m_rcfg_reverse);
+    kiss_fftr_free(m_rcfg_forward);
+    kiss_fftr_free(m_rcfg_reverse);
 
 }
 

@@ -46,16 +46,18 @@ class HankelFFTRRVT
         void SRT_To_SRST(const std::vector<double>& in,std::vector<dcmplx>& out); // tested - success
         void SRST_To_SRT(const std::vector<dcmplx>& in,std::vector<double>& out); // tested - success
 
-        enum class State{Wait,\
-            T_To_ST,\
-            ST_To_T,\
-            CMP_R_To_SR,\
-            CMP_SR_To_R,\
-            R_To_SR,\
-            SR_To_R,\
-            CVT_To_ST,\
-            ST_To_CVT,\
-            Done};
+        enum class State{
+            Wait,
+            T_To_ST,
+            ST_To_T,
+            CMP_R_To_SR,
+            CMP_SR_To_R,
+            R_To_SR,
+            SR_To_R,
+            CVT_To_ST,
+            ST_To_CVT,
+            Done
+        };
 
     private:
         unsigned m_nr;

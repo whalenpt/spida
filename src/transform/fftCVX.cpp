@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <new>
 #include <stdexcept>
 #include "kiss_fft.h"
 #include "spida/grid/uniformCVX.h" 
@@ -22,7 +22,12 @@ FFTCVX::FFTCVX(const UniformGridCVX& grid) :
     if(!((m_nx%2)==0))
         throw std::invalid_argument("Kiss fft requires even integer size");
     m_cfg_forward = kiss_fft_alloc(m_nx,0,nullptr,nullptr); 
+    if(!m_cfg_forward) throw std::bad_alloc{};
     m_cfg_reverse = kiss_fft_alloc(m_nx,1,nullptr,nullptr);
+    if(!m_cfg_reverse){
+        kiss_fft_free(m_cfg_forward);
+        throw std::bad_alloc{};
+    }
 }
 
 FFTCVX::~FFTCVX()

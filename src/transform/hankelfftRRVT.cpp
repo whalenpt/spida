@@ -22,15 +22,15 @@ HankelFFTRRVT::HankelFFTRRVT(const BesselRootGridR& gridR,const UniformGridRVT& 
     m_rs(m_nr*m_nst),
     m_ss(m_nr*m_nst)
 {
+    for(unsigned i = 0; i < m_nThreads; i++) {
+        m_transformT.push_back(std::make_unique<FFTRVT>(gridT));
+        m_transformR.push_back(std::make_unique<HankelTransformR>(gridR));
+    }
+
     for (unsigned m = 1; m < m_nThreads; m++)
     {
         m_ready.push_back(false);
         m_thread.push_back(std::thread(&HankelFFTRRVT::worker_thread,this,m));
-    }
-
-    for(unsigned i = 0; i < m_nThreads; i++) {
-        m_transformT.push_back(std::make_unique<FFTRVT>(gridT));
-        m_transformR.push_back(std::make_unique<HankelTransformR>(gridR));
     }
 }
 

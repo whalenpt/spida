@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <iostream>
 #include "spida/helper/constants.h"
 
 namespace spida{
@@ -17,23 +16,23 @@ class HankelTransformR
         HankelTransformR& operator=(const HankelTransformR& sp)=delete;
 
         // Read data input to transform
-        void R_To_SR(const double* in,double* out);
-        void SR_To_R(const double* in,double* out);
-        void R_To_SR(const std::vector<double>& in,std::vector<double>& out) 
+        void R_To_SR(const double* in,double* out) const;
+        void SR_To_R(const double* in,double* out) const;
+        void R_To_SR(const std::vector<double>& in,std::vector<double>& out) const
             {return R_To_SR(in.data(),out.data());}
-        void SR_To_R(const std::vector<double>& in,std::vector<double>& out)
+        void SR_To_R(const std::vector<double>& in,std::vector<double>& out) const
             { return SR_To_R(in.data(),out.data());}
  
         // Complex data input to transform
-        void R_To_SR(const dcmplx* in,dcmplx* out);
-        void SR_To_R(const dcmplx* in,dcmplx* out);
-        void R_To_SR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) 
+        void R_To_SR(const dcmplx* in,dcmplx* out) const;
+        void SR_To_R(const dcmplx* in,dcmplx* out) const;
+        void R_To_SR(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) const
             { return R_To_SR(in.data(),out.data());}
-        void SR_To_R(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
+        void SR_To_R(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) const
             { return SR_To_R(in.data(),out.data());}
 
-        const std::vector<double>& getYmk() const {return m_Ymk;}
-        unsigned getNr() const {return m_nr;}
+        [[nodiscard]] const std::vector<double>& getYmk() const {return m_Ymk;}
+        [[nodiscard]] unsigned getNr() const {return m_nr;}
     private:
         unsigned m_nr;
         double m_alpha;
@@ -67,8 +66,8 @@ class HankelTransformRb
         void SR_To_R(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)
             { return SR_To_R(in.data(),out.data());}
 
-        const std::vector<double>& getYmk() const {return m_Ymk;}
-        unsigned getNr() const {return m_nr;}
+        [[nodiscard]] const std::vector<double>& getYmk() const {return m_Ymk;}
+        [[nodiscard]] unsigned getNr() const {return m_nr;}
     private:
         unsigned m_threads;
         unsigned m_nr;

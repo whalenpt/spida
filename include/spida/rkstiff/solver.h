@@ -60,7 +60,7 @@ class SolverCV
         /// @param t0 Initial time
         /// @param tf Final time
         /// @param h_init Initial time step-size
-        virtual bool evolve(std::vector<dcmplx>& u,double t0,double tf,double h_init) noexcept = 0;
+        [[nodiscard]] virtual bool evolve(std::vector<dcmplx>& u,double t0,double tf,double h_init) noexcept = 0;
 
         /// @brief Propagates a PropagatorCV object from t0 to tf using the class LinOp and NLfunc
         /// @param propagator Class holding the field being propagated plus functions and other arrays
@@ -68,7 +68,7 @@ class SolverCV
         /// @param tf Final time
         /// @param h_init Initial time step-size
 
-        virtual bool evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept = 0;
+        [[nodiscard]] virtual bool evolve(PropagatorCV& propagator,double t0,double tf,double h) noexcept = 0;
 
         ///
         /// @brief Updates coefficients used in the numerical solver
