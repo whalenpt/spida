@@ -13,6 +13,7 @@ option(SPIDA_DEMOS "Build spida demos" OFF)
 option(WITH_OPENBLAS "Use OpenBLAS" OFF)
 option(SPIDA_COVERAGE "Enable code coverage instrumentation" OFF)
 option(SPIDA_UPDATE_SUBMODULES "Update git submodules on configure" ON)
+option(SPIDA_SETUP_GIT_HOOKS "Wire git core.hooksPath to .githooks on configure" ON)
 
 set(KISSFFT_TOOLS OFF CACHE BOOL "" FORCE)
 set(KISSFFT_PKGCONFIG OFF CACHE BOOL "" FORCE)
@@ -46,18 +47,41 @@ set(KISSFFT_STATIC ON CACHE BOOL "" FORCE)
 # Git submodules
 # -----------------------------
 find_package(Git QUIET)
-
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git" AND SPIDA_UPDATE_SUBMODULES)
     message(STATUS "Updating git submodules")
-
     execute_process(
         COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         RESULT_VARIABLE GIT_RESULT
     )
-
     if(NOT GIT_RESULT EQUAL 0)
         message(FATAL_ERROR "git submodule update failed: ${GIT_RESULT}")
+    endif()
+endif()
+
+# -----------------------------
+# Git hooks (dev convenience; only when developing spida itself)
+# -----------------------------
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git"
+        AND PROJECT_IS_TOP_LEVEL AND SPIDA_SETUP_GIT_HOOKS)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} config --local --get core.hooksPath
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE SPIDA_HOOKS_PATH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(NOT SPIDA_HOOKS_PATH STREQUAL ".githooks")
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} config --local core.hooksPath .githooks
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            RESULT_VARIABLE SPIDA_HOOKS_RESULT
+        )
+        if(SPIDA_HOOKS_RESULT EQUAL 0)
+            message(STATUS "Git hooks wired to .githooks/")
+        else()
+            message(WARNING "Failed to set core.hooksPath (${SPIDA_HOOKS_RESULT})")
+        endif()
     endif()
 endif()
 
