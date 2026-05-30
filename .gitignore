@@ -4,3 +4,7 @@ build
 CMakeUserPresets.json
 coverage.filtered.info
 coverage.info
+
+.devcontainer
+.vscode
+.claude/worktrees
