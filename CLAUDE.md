@@ -1,39 +1,34 @@
-# SPIDA — Claude Code project guide
-
-Spectral Integration and Differentiation Algorithms (C++23 library).
-
-## Git Conventions
-- Default branch is `develop`, not `main`. Always use `develop` in CI configs, workflow files, and git commands unless explicitly told otherwise.
-
-## Code Layout
-
-```
-src/          Production headers and sources (transforms, grids, solvers, shapes)
-test/         GoogleTest suites — one file per feature area
-external/     Bundled third-party code (kissfft, nayukidct, pwutils) — git submodules
-demos/        Demo programs
-```
-
 ## Build
 
-Dependencies are managed with Conan 2. The CI image (`ghcr.io/whalenpt/spida:v1.4`) has
-Conan pre-configured and packages pre-cached, so `--build=missing` is instant there.
+Dependencies are managed with Conan 2. The build works in any environment with Conan 2
+and a C++23 toolchain — no container or prebuilt image is required.
 
+### MANDATORY build sequence — follow exactly, do not deviate
+
+**Release:**
 ```bash
-# Install deps + configure + build (Release)
-conan install . -of build/Release -s build_type=Release
-cmake --preset conan-release
+conan install . -of build/Release --build=missing -s build_type=Release
+cmake --preset conan-release -DSPIDA_TEST=ON -DSPIDA_DEMOS=ON
 cmake --build --preset conan-release --parallel
+```
 
-# Same for Coverage (RelWithDebInfo + gcov instrumentation)
-conan install . -of build/RelWithDebInfo -s build_type=RelWithDebInfo
+**Coverage (RelWithDebInfo + gcov instrumentation):**
+```bash
+conan install . -of build/RelWithDebInfo --build=missing -s build_type=RelWithDebInfo
 cmake --preset conan-relwithdebinfo -DSPIDA_TEST=ON -DSPIDA_COVERAGE=ON
 cmake --build --preset conan-relwithdebinfo --parallel
 ```
 
-Available CMake presets: `conan-release`, `conan-relwithdebinfo`. Always verify preset names against `CMakePresets.json` before using them in CI or build commands.
-
-The build is **static-only**: `BUILD_SHARED_LIBS` is forced `OFF`. Do not introduce shared-library patterns.
+### Build rules (ENFORCED — no exceptions without explicit user instruction)
+- ALWAYS use `--build=missing` on `conan install`. Do not assume any package is pre-cached.
+- ALWAYS configure and build via `cmake --preset`. NEVER run raw `cmake -B <dir>` or `cmake --build <dir>`.
+- NEVER build, configure, or test an individual target unless the user explicitly asks for it. Build the whole preset.
+- NEVER guess or infer a CMake target name. Valid target names come only from `cmake --build --preset <preset> --target help` or from explicit declarations in `CMakeLists.txt`. If you don't have a confirmed name, do not invent one.
+- NEVER mix directory casing: it is `build/Release` and `build/RelWithDebInfo` exactly. `build/release` is wrong on Linux.
+- The only valid presets are `conan-release` and `conan-relwithdebinfo`. Verify against `CMakePresets.json` before using any preset name.
+- If ANY step fails, STOP and report that exact failure. Do NOT try alternative targets, directories, build types, or ad-hoc `cmake`/`make` invocations to work around it.
+- The build is **static-only**: `BUILD_SHARED_LIBS` is forced `OFF`. Do not introduce shared-library patterns.
+- After any CMake change, run `rm -rf build/` before reconfiguring to avoid stale cache issues.
 
 ## Run Tests
 
@@ -55,7 +50,6 @@ lcov --list coverage.filtered.info
 ## CMake & Build Conventions
 - This is a C++23 project; verify C++23 enforcement when modifying CMakeLists.txt.
 - When fixing CMake install/export errors, prefer adjusting target visibility (PUBLIC/PRIVATE/INTERFACE) carefully — INTERFACE libraries and PUBLIC linkage frequently break the install export set. Verify the export set still resolves before declaring done.
-- After CMake changes, clear the build cache (`rm -rf build/`) before reconfiguring to avoid stale cache issues.
 - Do NOT add target aliases that may collide with submodule-provided targets; check submodules first.
 - **Before any structural CMake change** (target type, linkage visibility, name, merge/split): map every target that depends on it transitively, every test/demo that includes its headers, and every `install(TARGETS ...)`/`export(TARGETS ...)` rule that references it. Propose the change only after this discovery pass, noting explicitly which dependents need updates.
 
