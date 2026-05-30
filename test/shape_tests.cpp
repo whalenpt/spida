@@ -1,16 +1,16 @@
 
-#include <gtest/gtest.h>
-#include <spida/helper/constants.h>
-#include <spida/grid/uniformRVT.h>
-#include <spida/grid/uniformRVX.h>
-#include <spida/grid/besselR.h>
-#include <spida/shape/shapeT.h>
-#include <spida/shape/shapeX.h>
-#include <spida/shape/shapeR.h>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 
+#include <gtest/gtest.h>
+#include <spida/grid/besselR.h>
+#include <spida/grid/uniformRVT.h>
+#include <spida/grid/uniformRVX.h>
+#include <spida/helper/constants.h>
+#include <spida/shape/shapeR.h>
+#include <spida/shape/shapeT.h>
+#include <spida/shape/shapeX.h>
 
 TEST(SHAPE_TEST, GAUSST_SET_VARIABLES)
 {
@@ -64,7 +64,6 @@ TEST(SHAPE_TEST, SUPERGAUSST_SET_VARIABLES)
     EXPECT_DOUBLE_EQ(M, shape.M());
 }
 
-
 TEST(SHAPE_TEST, BESSELT_SET_VARIABLES)
 {
     spida::UniformGridRVT grid(4096, -240e-15, 240e-15, 1.1e14, 1.4e16);
@@ -79,7 +78,7 @@ TEST(SHAPE_TEST, BESSELT_SET_VARIABLES)
     EXPECT_DOUBLE_EQ(apod, shape.apodization());
 }
 
-TEST(SHAPE_TEST,GAUSST_COMPUTE)
+TEST(SHAPE_TEST, GAUSST_COMPUTE)
 {
     int N = 4096;
     double tmin = -240e-15;
@@ -92,40 +91,40 @@ TEST(SHAPE_TEST,GAUSST_COMPUTE)
     double tp = 20.0e-15;
     double car_freq = 4.7091e14;
 
-    spida::GaussT shape(grid,std::sqrt(I0),tp);
+    spida::GaussT shape(grid, std::sqrt(I0), tp);
     shape.setFastPhase(car_freq);
-	auto y = shape.shapeRV();
+    auto y = shape.shapeRV();
 
-    auto itmax = std::max_element(std::begin(y),std::end(y));
-    auto itmin = std::min_element(std::begin(y),std::end(y));
-	EXPECT_NEAR(223606797.74997896,*itmax,1e-6);
-    EXPECT_NEAR(-200519096.49044815,*itmin,1e-6);
-	EXPECT_NEAR(90533935.926272079,y[(N-N/16)/2],1e-6);
-	EXPECT_NEAR(90533935.926272079,y[(N+N/16)/2],1e-6);
+    auto itmax = std::max_element(std::begin(y), std::end(y));
+    auto itmin = std::min_element(std::begin(y), std::end(y));
+    EXPECT_NEAR(223606797.74997896, *itmax, 1e-6);
+    EXPECT_NEAR(-200519096.49044815, *itmin, 1e-6);
+    EXPECT_NEAR(90533935.926272079, y[(N - N / 16) / 2], 1e-6);
+    EXPECT_NEAR(90533935.926272079, y[(N + N / 16) / 2], 1e-6);
 }
 
-TEST(SHAPE_TEST,SECHT_COMPUTE)
+TEST(SHAPE_TEST, SECHT_COMPUTE)
 {
     int nt = 4096;
     double I0 = 5.0e16;
     double tp = 20.0e-15;
     double car_freq = 4.7091e14;
 
-    spida::UniformGridRVT grid(nt,-240e-15,240e-15,1.10803e14,1.448963e16);
-    spida::SechT shape(grid,std::sqrt(I0),tp);
+    spida::UniformGridRVT grid(nt, -240e-15, 240e-15, 1.10803e14, 1.448963e16);
+    spida::SechT shape(grid, std::sqrt(I0), tp);
     shape.setFastPhase(car_freq);
-	auto y = shape.shapeRV();
+    auto y = shape.shapeRV();
 
-    auto itmax = std::max_element(std::begin(y),std::end(y));
-    auto itmin = std::min_element(std::begin(y),std::end(y));
+    auto itmax = std::max_element(std::begin(y), std::end(y));
+    auto itmin = std::min_element(std::begin(y), std::end(y));
 
-	EXPECT_NEAR(223606797.74997896,*itmax,1e-6);
-    EXPECT_NEAR(-211808302.73070601,*itmin,1e-6);
-	EXPECT_NEAR(122726544.58500151,y[(nt-nt/16)/2],1e-6);
-	EXPECT_NEAR(122726544.58500151,y[(nt+nt/16)/2],1e-6);
+    EXPECT_NEAR(223606797.74997896, *itmax, 1e-6);
+    EXPECT_NEAR(-211808302.73070601, *itmin, 1e-6);
+    EXPECT_NEAR(122726544.58500151, y[(nt - nt / 16) / 2], 1e-6);
+    EXPECT_NEAR(122726544.58500151, y[(nt + nt / 16) / 2], 1e-6);
 }
 
-TEST(SHAPE_TEST,AIRYT_COMPUTE)
+TEST(SHAPE_TEST, AIRYT_COMPUTE)
 {
     int nt = 4096;
     double I0 = 5.0e16;
@@ -135,21 +134,21 @@ TEST(SHAPE_TEST,AIRYT_COMPUTE)
     double maxT = 120e-15;
     double apod = 0.2;
 
-    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    spida::AiryT shape(grid,std::sqrt(I0),tp,apod);
+    spida::UniformGridRVT grid(nt, minT, maxT, 1.10803e14, 1.448963e16);
+    spida::AiryT shape(grid, std::sqrt(I0), tp, apod);
     shape.setFastPhase(omega0);
-	auto y = shape.shapeRV();
+    auto y = shape.shapeRV();
 
-    auto itmax = std::max_element(std::begin(y),std::end(y));
-    auto itmin = std::min_element(std::begin(y),std::end(y));
+    auto itmax = std::max_element(std::begin(y), std::end(y));
+    auto itmin = std::min_element(std::begin(y), std::end(y));
 
-	EXPECT_NEAR(111197223.83176377,*itmax,1e-6);
-    EXPECT_NEAR(-115045662.1447591,*itmin,1e-6);
-	EXPECT_NEAR(8518347.9235188272,y[(nt-nt/16)/2],1e-6);
-	EXPECT_NEAR(-18030265.656660724,y[(nt+nt/16)/2],1e-6);
+    EXPECT_NEAR(111197223.83176377, *itmax, 1e-6);
+    EXPECT_NEAR(-115045662.1447591, *itmin, 1e-6);
+    EXPECT_NEAR(8518347.9235188272, y[(nt - nt / 16) / 2], 1e-6);
+    EXPECT_NEAR(-18030265.656660724, y[(nt + nt / 16) / 2], 1e-6);
 }
 
-TEST(SHAPE_TEST,BESSELT_COMPUTE)
+TEST(SHAPE_TEST, BESSELT_COMPUTE)
 {
     int nt = 4096;
     double I0 = 5.0e16;
@@ -159,18 +158,18 @@ TEST(SHAPE_TEST,BESSELT_COMPUTE)
     double maxT = 240e-15;
     double apod = 0.5;
 
-    spida::UniformGridRVT grid(nt,minT,maxT,1.10803e14,1.448963e16);
-    spida::BesselT shape(grid,std::sqrt(I0),tp,apod);
+    spida::UniformGridRVT grid(nt, minT, maxT, 1.10803e14, 1.448963e16);
+    spida::BesselT shape(grid, std::sqrt(I0), tp, apod);
     shape.setFastPhase(omega0);
-	auto y = shape.shapeRV();
+    auto y = shape.shapeRV();
 
-    auto itmax = std::max_element(std::begin(y),std::end(y));
-    auto itmin = std::min_element(std::begin(y),std::end(y));
+    auto itmax = std::max_element(std::begin(y), std::end(y));
+    auto itmin = std::min_element(std::begin(y), std::end(y));
 
-	EXPECT_NEAR(223606797.74997896,*itmax,1e-6);
-    EXPECT_NEAR(-185314259.84787187,*itmin,1e-6);
-	EXPECT_NEAR(46643813.615054831,y[(nt-nt/16)/2],1e-6);
-	EXPECT_NEAR(46643813.615054831,y[(nt+nt/16)/2],1e-6);
+    EXPECT_NEAR(223606797.74997896, *itmax, 1e-6);
+    EXPECT_NEAR(-185314259.84787187, *itmin, 1e-6);
+    EXPECT_NEAR(46643813.615054831, y[(nt - nt / 16) / 2], 1e-6);
+    EXPECT_NEAR(46643813.615054831, y[(nt + nt / 16) / 2], 1e-6);
 }
 
 // ============================================================
@@ -210,10 +209,10 @@ TEST(SHAPE_TEST, GAUSST_ENVELOPE_EQUALS_SHAPECV_WHEN_FAST_PHASE_ZERO)
 {
     // With omega0=0 the fast phase factor is exp(0)=1, so shapeCV == envelope
     spida::UniformGridRVT grid(64, -5.0, 5.0);
-    spida::GaussT shape(grid, 2.0, 1.0);   // omega0 defaults to 0
+    spida::GaussT shape(grid, 2.0, 1.0); // omega0 defaults to 0
 
     auto env = shape.envelope();
-    auto cv  = shape.shapeCV();
+    auto cv = shape.shapeCV();
     ASSERT_EQ(env.size(), cv.size());
     for (size_t i = 0; i < env.size(); i++) {
         EXPECT_NEAR(env[i].real(), cv[i].real(), 1e-14);
@@ -231,8 +230,8 @@ TEST(SHAPE_TEST, GAUSST_ENVELOPE_PEAK_AT_CENTER)
 
     auto env = shape.envelope();
     // envelope peak should equal A (at t=0, compute(0)=exp(0)=1, slowPhase=0)
-    EXPECT_NEAR(env[nt/2].real(), A, 1e-12);
-    EXPECT_NEAR(env[nt/2].imag(), 0.0, 1e-12);
+    EXPECT_NEAR(env[nt / 2].real(), A, 1e-12);
+    EXPECT_NEAR(env[nt / 2].imag(), 0.0, 1e-12);
 }
 
 TEST(SHAPE_TEST, GAUSST_CHIRP_MAKES_ENVELOPE_COMPLEX)
@@ -254,10 +253,10 @@ TEST(SHAPE_TEST, SECHT_SHAPECV_PEAK)
     unsigned nt = 64;
     spida::UniformGridRVT grid(nt, -5.0, 5.0);
     double A = 2.0;
-    spida::SechT shape(grid, A, 1.0);  // compute(0) = 1/cosh(0) = 1
+    spida::SechT shape(grid, A, 1.0); // compute(0) = 1/cosh(0) = 1
 
     auto cv = shape.shapeCV();
-    EXPECT_NEAR(cv[nt/2].real(), A, 1e-12);
+    EXPECT_NEAR(cv[nt / 2].real(), A, 1e-12);
 }
 
 TEST(SHAPE_TEST, SUPERGAUSST_COMPUTE)
@@ -269,7 +268,7 @@ TEST(SHAPE_TEST, SUPERGAUSST_COMPUTE)
 
     auto rv = shape.shapeRV();
     // Peak at t=0: compute(0) = exp(0) = 1
-    EXPECT_NEAR(rv[nt/2], A, 1e-12);
+    EXPECT_NEAR(rv[nt / 2], A, 1e-12);
     // Values are positive (super-Gaussian is non-negative)
     for (double v : rv)
         EXPECT_GE(v, 0.0);
@@ -375,14 +374,14 @@ TEST(SHAPEX_TEST, PHASE_ROTATES_SHAPECV)
 TEST(SHAPEX_TEST, OFFSET_SHIFTS_ARGUMENT)
 {
     // CosX at x=1 with offset=1 equals CosX at x=0 without offset
-    spida::UniformGridRVX grid(4, 0.0, 4.0);   // x = {0, 1, 2, 3}
+    spida::UniformGridRVX grid(4, 0.0, 4.0); // x = {0, 1, 2, 3}
 
     spida::CosX no_offset(grid, 1.0, 1.0);
     spida::CosX with_offset(grid, 1.0, 1.0);
     with_offset.setOffset(1.0);
 
-    auto rv_none = no_offset.shapeRV();    // cos(x[i])
-    auto rv_off  = with_offset.shapeRV();  // cos(x[i] - 1)
+    auto rv_none = no_offset.shapeRV();  // cos(x[i])
+    auto rv_off = with_offset.shapeRV(); // cos(x[i] - 1)
 
     // rv_off[1] = cos((1-1)/1) = cos(0) = 1 == rv_none[0]
     EXPECT_NEAR(rv_off[1], rv_none[0], 1e-12);
@@ -427,7 +426,7 @@ TEST(SHAPER_TEST, GAUSSR_SHAPERV_SIZE_AND_POSITIVE)
 
     EXPECT_EQ(rv.size(), 16u);
     for (double v : rv)
-        EXPECT_GT(v, 0.0);   // GaussR is always positive
+        EXPECT_GT(v, 0.0); // GaussR is always positive
 }
 
 TEST(SHAPER_TEST, GAUSSR_SHAPERV_DECREASING)

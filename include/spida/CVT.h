@@ -1,6 +1,6 @@
-/*  
- *  Spectral integration/differentiation algorithms for 
- *  complex data on uniform grids with periodic boundaries. 
+/*
+ *  Spectral integration/differentiation algorithms for
+ *  complex data on uniform grids with periodic boundaries.
  *
  *  Transform uses KissFFT, with phase adjustment since the physical grid
  *  is not assumed to run from 0 to 1.
@@ -13,32 +13,33 @@
 
 #pragma once
 
-#include <vector>
-#include "spida/helper/constants.h"
 #include "spida/grid/uniformCVT.h"
+#include "spida/helper/constants.h"
 #include "spida/transform/fftCVT.h"
 
-namespace spida{
+#include <vector>
 
-  // Assumes complex data
-  class SpidaCVT
-  {
-    public:
-      explicit SpidaCVT(const UniformGridCVT& grid);
-      SpidaCVT() = delete;
-      ~SpidaCVT() = default;
-      void dT(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) noexcept; 
-      void dST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out,unsigned n = 1) noexcept; 
-      const std::vector<double>& getT() const;
-      const std::vector<double>& getST() const;
-      void T_To_ST(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept;
-      void ST_To_T(const std::vector<dcmplx>& in,std::vector<dcmplx>& out) noexcept; 
-      const UniformGridCVT& getGridT() const;
-      FFTCVT& getTransformT();
-    private:
-      std::unique_ptr<UniformGridCVT> m_gr;
-      std::unique_ptr<FFTCVT> m_tr;
-      std::vector<dcmplx> m_vs;
-  };
+namespace spida {
 
-}
+// Assumes complex data
+class SpidaCVT {
+public:
+    explicit SpidaCVT(const UniformGridCVT& grid);
+    SpidaCVT() = delete;
+    ~SpidaCVT() = default;
+    void dT(const std::vector<dcmplx>& in, std::vector<dcmplx>& out, unsigned n = 1) noexcept;
+    void dST(const std::vector<dcmplx>& in, std::vector<dcmplx>& out, unsigned n = 1) noexcept;
+    const std::vector<double>& getT() const;
+    const std::vector<double>& getST() const;
+    void T_To_ST(const std::vector<dcmplx>& in, std::vector<dcmplx>& out) noexcept;
+    void ST_To_T(const std::vector<dcmplx>& in, std::vector<dcmplx>& out) noexcept;
+    const UniformGridCVT& getGridT() const;
+    FFTCVT& getTransformT();
+
+private:
+    std::unique_ptr<UniformGridCVT> m_gr;
+    std::unique_ptr<FFTCVT> m_tr;
+    std::vector<dcmplx> m_vs;
+};
+
+} // namespace spida

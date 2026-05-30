@@ -1,14 +1,15 @@
 
-#include <gtest/gtest.h>
-#include <spida/grid/uniformCVX.h>
-#include <spida/grid/uniformRVX.h>
-#include <spida/grid/uniformCVT.h>
-#include <spida/grid/uniformRVT.h>
-#include <spida/grid/chebX.h>
-#include <spida/helper/constants.h>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
+
+#include <gtest/gtest.h>
+#include <spida/grid/chebX.h>
+#include <spida/grid/uniformCVT.h>
+#include <spida/grid/uniformCVX.h>
+#include <spida/grid/uniformRVT.h>
+#include <spida/grid/uniformRVX.h>
+#include <spida/helper/constants.h>
 
 // --- UniformGridCVX tests ---
 
@@ -47,7 +48,7 @@ TEST(UNIFORM_GRID_CVX_TEST, SPECTRAL_GRID_RANGE)
     spida::UniformGridCVX grid(N, minX, maxX);
 
     EXPECT_NEAR(grid.getMinSX(), -(N * spida::PI) / (maxX - minX), 1e-12);
-    EXPECT_NEAR(grid.getMaxSX(),  (N * spida::PI) / (maxX - minX), 1e-12);
+    EXPECT_NEAR(grid.getMaxSX(), (N * spida::PI) / (maxX - minX), 1e-12);
 }
 
 TEST(UNIFORM_GRID_CVX_TEST, FREQSHIFT_REAL_ROUNDTRIP)
@@ -143,7 +144,7 @@ TEST(UNIFORM_GRID_CVT_TEST, SPECTRAL_RANGE)
     spida::UniformGridCVT grid(N, minT, maxT);
 
     EXPECT_NEAR(grid.getMinST(), -(N * spida::PI) / (maxT - minT), 1e-12);
-    EXPECT_NEAR(grid.getMaxST(),  (N * spida::PI) / (maxT - minT), 1e-12);
+    EXPECT_NEAR(grid.getMaxST(), (N * spida::PI) / (maxT - minT), 1e-12);
 }
 
 TEST(UNIFORM_GRID_CVT_TEST, ERROR_ODD_NT)
@@ -236,14 +237,14 @@ TEST(UNIFORM_GRID_RVT_TEST, ERROR_INDX_OUT_OF_RANGE)
 {
     unsigned N = 64;
     spida::UniformGridRVT grid(N, -1.0, 1.0);
-    EXPECT_THROW((void)grid.indxToFreq(N / 2 + 1), std::domain_error);
+    EXPECT_THROW((void) grid.indxToFreq(N / 2 + 1), std::domain_error);
 }
 
 TEST(UNIFORM_GRID_RVT_TEST, ERROR_FREQ_NEGATIVE)
 {
     unsigned N = 64;
     spida::UniformGridRVT grid(N, -1.0, 1.0);
-    EXPECT_THROW((void)grid.freqToIndx(-1.0), std::domain_error);
+    EXPECT_THROW((void) grid.freqToIndx(-1.0), std::domain_error);
 }
 
 TEST(UNIFORM_GRID_RVT_TEST, ERROR_INVALID_FREQ_RANGE)

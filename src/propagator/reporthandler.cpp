@@ -1,11 +1,13 @@
+#include "spida/propagator/reporthandler.h"
+
 #include <format>
 #include <fstream>
 #include <iostream>
+
 #include <pwutils/pwstats.h>
 #include <pwutils/report.hpp>
-#include "spida/propagator/reporthandler.h"
 
-namespace spida{
+namespace spida {
 
 ReportHandler::~ReportHandler() = default;
 
@@ -26,62 +28,70 @@ void ReportHandler::addReport(std::unique_ptr<pw::TrackData> def)
 
 void ReportHandler::setItem(std::string_view key, double val)
 {
-    for(auto const& def : this->m_defs_1D)
+    for (auto const& def : this->m_defs_1D)
         def->setItem(std::string(key), val);
-    for(auto const& def : this->m_defs_2D)
+    for (auto const& def : this->m_defs_2D)
         def->setItem(std::string(key), val);
-    for(auto const& def : this->m_tracker_defs)
+    for (auto const& def : this->m_tracker_defs)
         def->setItem(std::string(key), val);
 }
 
 void ReportHandler::report1D(const std::filesystem::path& dir_path, std::size_t rep_num)
 {
-    for(auto const& def : this->m_defs_1D){
+    for (auto const& def : this->m_defs_1D) {
         def->setDirPath(dir_path);
         std::ofstream os;
-        try{
+        try {
             def->report(os, static_cast<unsigned>(rep_num));
-        } catch(const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             std::cerr << std::format("Failed to report file: {} — {}\n",
-                    def->path(static_cast<int>(rep_num)).string(), e.what());
-        } catch(...) {
+                                     def->path(static_cast<int>(rep_num)).string(),
+                                     e.what());
+        }
+        catch (...) {
             std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                    def->path(static_cast<int>(rep_num)).string());
+                                     def->path(static_cast<int>(rep_num)).string());
         }
     }
 }
 
 void ReportHandler::report2D(const std::filesystem::path& dir_path, std::size_t rep_num)
 {
-    for(auto const& def : this->m_defs_2D){
+    for (auto const& def : this->m_defs_2D) {
         def->setDirPath(dir_path);
         std::ofstream os;
-        try{
+        try {
             def->report(os, static_cast<unsigned>(rep_num));
-        } catch(const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             std::cerr << std::format("Failed to report file: {} — {}\n",
-                    def->path(static_cast<int>(rep_num)).string(), e.what());
-        } catch(...) {
+                                     def->path(static_cast<int>(rep_num)).string(),
+                                     e.what());
+        }
+        catch (...) {
             std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                    def->path(static_cast<int>(rep_num)).string());
+                                     def->path(static_cast<int>(rep_num)).string());
         }
     }
 }
 
 void ReportHandler::reportTrack(const std::filesystem::path& dir_path, double t)
 {
-    for(auto const& def : this->m_tracker_defs){
+    for (auto const& def : this->m_tracker_defs) {
         def->setDirPath(dir_path);
         def->updateTracker(t);
         std::ofstream os;
-        try{
+        try {
             def->report(os);
-        } catch(const std::exception& e){
-            std::cerr << std::format("Failed to report file: {} — {}\n",
-                    def->path().string(), e.what());
-        } catch(...){
+        }
+        catch (const std::exception& e) {
+            std::cerr << std::format(
+                "Failed to report file: {} — {}\n", def->path().string(), e.what());
+        }
+        catch (...) {
             std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                    def->path().string());
+                                     def->path().string());
         }
     }
 }
@@ -92,4 +102,4 @@ void ReportHandler::reportData(const std::filesystem::path& dir_path, std::size_
     this->report2D(dir_path, rep_num);
 }
 
-}
+} // namespace spida

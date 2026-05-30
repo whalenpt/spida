@@ -3,6 +3,6 @@
 
 #include <numbers>
 
-namespace pw{
-    inline constexpr double PI = std::numbers::pi;
+namespace pw {
+inline constexpr double PI = std::numbers::pi;
 }

@@ -1,31 +1,43 @@
 
-#include <format>
-#include <stdexcept>
-#include <filesystem>
-#include <pwutils/pwstats.h>
-#include <pwutils/report.hpp>
 #include "spida/propagator/propagator.h"
 
-namespace spida{
+#include <filesystem>
+#include <format>
+#include <stdexcept>
+
+#include <pwutils/pwstats.h>
+#include <pwutils/report.hpp>
+
+namespace spida {
 
 namespace {
 void validatePositive(std::size_t val, const char* name)
 {
-    if(val == 0)
-        throw std::invalid_argument(std::format(
-            "BasePropagator::{} requires a value greater than zero.", name));
+    if (val == 0)
+        throw std::invalid_argument(
+            std::format("BasePropagator::{} requires a value greater than zero.", name));
 }
-}
+} // namespace
 
 BasePropagator::~BasePropagator() = default;
 
-void BasePropagator::addReport(std::unique_ptr<pw::ReportData1D> def) {this->m_report_handler.addReport(std::move(def));}
-void BasePropagator::addReport(std::unique_ptr<pw::ReportData2D> def) {this->m_report_handler.addReport(std::move(def));}
-void BasePropagator::addReport(std::unique_ptr<pw::TrackData> def)    {this->m_report_handler.addReport(std::move(def));}
+void BasePropagator::addReport(std::unique_ptr<pw::ReportData1D> def)
+{
+    this->m_report_handler.addReport(std::move(def));
+}
 
-BasePropagator::BasePropagator(const std::filesystem::path& dir_path) :
-    m_dir_path(dir_path),
-    m_stat(std::make_unique<pw::StatCenter>())
+void BasePropagator::addReport(std::unique_ptr<pw::ReportData2D> def)
+{
+    this->m_report_handler.addReport(std::move(def));
+}
+
+void BasePropagator::addReport(std::unique_ptr<pw::TrackData> def)
+{
+    this->m_report_handler.addReport(std::move(def));
+}
+
+BasePropagator::BasePropagator(const std::filesystem::path& dir_path)
+    : m_dir_path(dir_path), m_stat(std::make_unique<pw::StatCenter>())
 {
     this->m_stat->setHeader("REPORT STATS");
     this->m_stat->addTracker("t", 0.0);
@@ -108,20 +120,23 @@ bool BasePropagator::readyForReport(std::size_t step) const
 
 bool BasePropagator::maxReportReached() const
 {
-    return this->m_report_count1D >= this->m_max_reports1D
-        || this->m_report_count2D >= this->m_max_reports2D;
+    return this->m_report_count1D >= this->m_max_reports1D ||
+           this->m_report_count2D >= this->m_max_reports2D;
 }
 
 bool BasePropagator::stepUpdate(double t)
 {
     const auto step = this->m_steps_taken + 1;
     this->m_stat->updateTracker("t", t);
-    if(this->readyForReport(step))
+    if (this->readyForReport(step))
         this->updateFields(t);
-    if(this->ready1D(step))    this->report1D(t);
-    if(this->ready2D(step))    this->report2D(t);
-    if(this->readyTrack(step)) this->reportTrack(t);
-    if(this->m_log_progress && !(step % this->m_log_freq))
+    if (this->ready1D(step))
+        this->report1D(t);
+    if (this->ready2D(step))
+        this->report2D(t);
+    if (this->readyTrack(step))
+        this->reportTrack(t);
+    if (this->m_log_progress && !(step % this->m_log_freq))
         this->reportStats();
     this->m_steps_taken = step;
     return !this->maxReportReached();
@@ -134,14 +149,17 @@ void BasePropagator::reportStats() const
 
 void BasePropagator::report(double t)
 {
-    if(this->m_report_handler.hasData1D())    this->report1D(t);
-    if(this->m_report_handler.hasData2D())    this->report2D(t);
-    if(this->m_report_handler.hasDataTrack()) this->reportTrack(t);
+    if (this->m_report_handler.hasData1D())
+        this->report1D(t);
+    if (this->m_report_handler.hasData2D())
+        this->report2D(t);
+    if (this->m_report_handler.hasDataTrack())
+        this->reportTrack(t);
 }
 
 void BasePropagator::report1D(double t)
 {
-    if(!this->m_report_handler.hasData1D())
+    if (!this->m_report_handler.hasData1D())
         return;
     this->m_stat->startTimer("Time Reporting 1D");
     this->m_report_handler.setItem("t", t);
@@ -153,7 +171,7 @@ void BasePropagator::report1D(double t)
 
 void BasePropagator::report2D(double t)
 {
-    if(!this->m_report_handler.hasData2D())
+    if (!this->m_report_handler.hasData2D())
         return;
     this->m_stat->startTimer("Time Reporting 2D");
     this->m_report_handler.setItem("t", t);
@@ -165,7 +183,7 @@ void BasePropagator::report2D(double t)
 
 void BasePropagator::reportTrack(double t)
 {
-    if(!this->m_report_handler.hasDataTrack())
+    if (!this->m_report_handler.hasDataTrack())
         return;
     this->m_stat->startTimer("Time Reporting Trackers");
     this->m_report_handler.setItem("t", t);
@@ -174,4 +192,4 @@ void BasePropagator::reportTrack(double t)
     this->m_stat->incrementCounter("Number Reports Track");
 }
 
-}
+} // namespace spida

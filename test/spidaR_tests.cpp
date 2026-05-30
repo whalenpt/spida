@@ -1,16 +1,16 @@
-#include <gtest/gtest.h>
-#include <spida/R.h>
-#include <spida/helper/constants.h>
-#include <spida/grid/besselR.h>
-#include <pwutils/pwmath.hpp>
 #include <random>
 
+#include <gtest/gtest.h>
+#include <pwutils/pwmath.hpp>
+#include <spida/grid/besselR.h>
+#include <spida/helper/constants.h>
+#include <spida/R.h>
 
-TEST(SPIDA_R_TEST,INVERSES)
+TEST(SPIDA_R_TEST, INVERSES)
 {
     int N = 25;
     double rmax = 2.0;
-    spida::BesselRootGridR grid(N,rmax);
+    spida::BesselRootGridR grid(N, rmax);
     spida::SpidaR spidaR(grid);
 
     std::default_random_engine generator;
@@ -18,19 +18,19 @@ TEST(SPIDA_R_TEST,INVERSES)
     std::vector<double> in(N);
     std::vector<double> out(N);
     std::vector<double> expect(N);
-    for(int i = 0; i < N; i++)
+    for (int i = 0; i < N; i++)
         in[i] = distribution(generator);
-    spidaR.R_To_SR(in,out);
-    spidaR.SR_To_R(out,expect);
-    EXPECT_LT(pw::relative_error(in,expect),1e-6);
+    spidaR.R_To_SR(in, out);
+    spidaR.SR_To_R(out, expect);
+    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
 }
 
-TEST(SPIDA_R_TEST,INVERSES_COMPLEX)
+TEST(SPIDA_R_TEST, INVERSES_COMPLEX)
 {
     using spida::dcmplx;
     int N = 25;
     double rmax = 2.0;
-    spida::BesselRootGridR grid(N,rmax);
+    spida::BesselRootGridR grid(N, rmax);
     spida::SpidaR spidaR(grid);
 
     std::default_random_engine generator;
@@ -38,19 +38,19 @@ TEST(SPIDA_R_TEST,INVERSES_COMPLEX)
     std::vector<dcmplx> in(N);
     std::vector<dcmplx> out(N);
     std::vector<dcmplx> expect(N);
-    for(int i = 0; i < N; i++)
-        in[i] = dcmplx(distribution(generator),distribution(generator));
-    spidaR.R_To_SR(in,out);
-    spidaR.SR_To_R(out,expect);
-    EXPECT_LT(pw::relative_error(in,expect),1e-6);
+    for (int i = 0; i < N; i++)
+        in[i] = dcmplx(distribution(generator), distribution(generator));
+    spidaR.R_To_SR(in, out);
+    spidaR.SR_To_R(out, expect);
+    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
 }
 
 // H0{exp(-ar^2)}=(1/2a)*exp(-kr^2/(4a))
-TEST(SPIDA_R_TEST,GAUSS)
+TEST(SPIDA_R_TEST, GAUSS)
 {
     int N = 25;
     double rmax = 2.0;
-    spida::BesselRootGridR grid(N,rmax);
+    spida::BesselRootGridR grid(N, rmax);
     spida::SpidaR spidaR(grid);
 
     const auto& r = grid.getR();
@@ -61,12 +61,12 @@ TEST(SPIDA_R_TEST,GAUSS)
     std::vector<double> exact(N);
 
     double a = 5.0;
-    for(int i = 0; i < N; i++)
-        in[i] = exp(-a*pow(r[i],2));
-    for(int i = 0; i < N; i++){
-        double beta = 1.0/(2.0*a);
-        exact[i] = beta*exp(-pow(kr[i],2)/(4.0*a));
+    for (int i = 0; i < N; i++)
+        in[i] = exp(-a * pow(r[i], 2));
+    for (int i = 0; i < N; i++) {
+        double beta = 1.0 / (2.0 * a);
+        exact[i] = beta * exp(-pow(kr[i], 2) / (4.0 * a));
     }
-    spidaR.R_To_SR(in,out);
-    EXPECT_LT(pw::relative_error(out,exact),1e-6);
+    spidaR.R_To_SR(in, out);
+    EXPECT_LT(pw::relative_error(out, exact), 1e-6);
 }

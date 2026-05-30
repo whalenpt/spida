@@ -2,25 +2,23 @@
 /// @brief GoogleTest suite for the pwutils library: pwmath, pwstrings, report,
 ///        pwstats, pwconstants/pwdefs.
 
-#include <gtest/gtest.h>
-
-#include <pwutils/pwconstants.h>
-#include <pwutils/pwdefs.h>
-#include <pwutils/pwmath.hpp>
-#include <pwutils/pwstats.h>
-#include <pwutils/pwstrings.h>
-#include <pwutils/report.hpp>
-
-#include <nlohmann/json.hpp>
-
-#include <complex>
 #include <cmath>
+#include <complex>
 #include <filesystem>
 #include <fstream>
 #include <numbers>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include <gtest/gtest.h>
+#include <nlohmann/json.hpp>
+#include <pwutils/pwconstants.h>
+#include <pwutils/pwdefs.h>
+#include <pwutils/pwmath.hpp>
+#include <pwutils/pwstats.h>
+#include <pwutils/pwstrings.h>
+#include <pwutils/report.hpp>
 
 namespace fs = std::filesystem;
 using dcmplx = pw::dcmplx;
@@ -38,7 +36,7 @@ TEST(PWCONSTANTS_TEST, IMAGINARY_UNIT_SQUARED_IS_MINUS_ONE)
 {
     dcmplx result = pw::ii * pw::ii;
     EXPECT_NEAR(result.real(), -1.0, 1e-15);
-    EXPECT_NEAR(result.imag(),  0.0, 1e-15);
+    EXPECT_NEAR(result.imag(), 0.0, 1e-15);
 }
 
 TEST(PWCONSTANTS_TEST, AXIS_LABEL_STRINGS)
@@ -86,7 +84,7 @@ TEST(PWMATH_INTCEIL_TEST, EXACT_DIVISION_SIZE_T)
 TEST(PWMATH_INTCEIL_TEST, INEXACT_DIVISION_SIZE_T)
 {
     EXPECT_EQ(pw::intceil(std::size_t{11}, std::size_t{5}), std::size_t{3});
-    EXPECT_EQ(pw::intceil(std::size_t{1},  std::size_t{5}), std::size_t{1});
+    EXPECT_EQ(pw::intceil(std::size_t{1}, std::size_t{5}), std::size_t{1});
 }
 
 TEST(PWMATH_FACTORIAL_TEST, ZERO_AND_ONE)
@@ -97,9 +95,9 @@ TEST(PWMATH_FACTORIAL_TEST, ZERO_AND_ONE)
 
 TEST(PWMATH_FACTORIAL_TEST, SMALL_VALUES)
 {
-    EXPECT_EQ(pw::factorial(2),   2);
-    EXPECT_EQ(pw::factorial(3),   6);
-    EXPECT_EQ(pw::factorial(4),  24);
+    EXPECT_EQ(pw::factorial(2), 2);
+    EXPECT_EQ(pw::factorial(3), 6);
+    EXPECT_EQ(pw::factorial(4), 24);
     EXPECT_EQ(pw::factorial(5), 120);
 }
 
@@ -130,7 +128,7 @@ TEST(PWMATH_ISDOUBLE_TEST, VALID_DOUBLES)
     EXPECT_TRUE(pw::isDouble("1e-3"));
     EXPECT_TRUE(pw::isDouble("0.0"));
     EXPECT_TRUE(pw::isDouble("-2.5"));
-    EXPECT_TRUE(pw::isDouble("42"));     // integers are valid doubles
+    EXPECT_TRUE(pw::isDouble("42")); // integers are valid doubles
 }
 
 TEST(PWMATH_ISDOUBLE_TEST, INVALID_INPUTS)
@@ -276,7 +274,7 @@ TEST(PWMATH_RELATIVE_ERROR_COMPLEX_TEST, DIFFERENT_VECTORS_GIVE_POSITIVE)
 TEST(PWSTRINGS_TRIM_TEST, STRIPS_LEADING_AND_TRAILING_SPACES)
 {
     EXPECT_EQ(pw::trimString("  hello  "), "hello");
-    EXPECT_EQ(pw::trimString("  "),        "");
+    EXPECT_EQ(pw::trimString("  "), "");
     EXPECT_EQ(pw::trimString("no spaces"), "no spaces");
 }
 
@@ -350,37 +348,37 @@ TEST(PWSTRINGS_ISWHITESPACE_TEST, NON_SPACE_IS_NOT_WHITESPACE)
 TEST(PWSTRINGS_DECOMMENT_TEST, STRIPS_FROM_HASH_TO_END)
 {
     EXPECT_EQ(pw::decommentString("hello # comment"), "hello ");
-    EXPECT_EQ(pw::decommentString("no comment"),       "no comment");
-    EXPECT_EQ(pw::decommentString("# full comment"),   "");
+    EXPECT_EQ(pw::decommentString("no comment"), "no comment");
+    EXPECT_EQ(pw::decommentString("# full comment"), "");
 }
 
 TEST(PWSTRINGS_COUNTWORDS_TEST, COUNTS_SPACE_SEPARATED_WORDS)
 {
     EXPECT_EQ(pw::countWords("one two three"), 3);
-    EXPECT_EQ(pw::countWords("word"),          1);
-    EXPECT_EQ(pw::countWords(""),              0);
-    EXPECT_EQ(pw::countWords("  spaced  "),    1);
+    EXPECT_EQ(pw::countWords("word"), 1);
+    EXPECT_EQ(pw::countWords(""), 0);
+    EXPECT_EQ(pw::countWords("  spaced  "), 1);
 }
 
 TEST(PWSTRINGS_COUNTCHARACTERS_TEST, COUNTS_OCCURRENCES)
 {
     EXPECT_EQ(pw::countCharacters("aababc", 'a'), 3);
-    EXPECT_EQ(pw::countCharacters("hello",  'z'), 0);
-    EXPECT_EQ(pw::countCharacters("",       'a'), 0);
+    EXPECT_EQ(pw::countCharacters("hello", 'z'), 0);
+    EXPECT_EQ(pw::countCharacters("", 'a'), 0);
 }
 
 TEST(PWSTRINGS_LOWERCASE_TEST, CONVERTS_TO_LOWER)
 {
     EXPECT_EQ(pw::stringLowerCase("Hello World"), "hello world");
-    EXPECT_EQ(pw::stringLowerCase("ABC"),         "abc");
-    EXPECT_EQ(pw::stringLowerCase(""),            "");
+    EXPECT_EQ(pw::stringLowerCase("ABC"), "abc");
+    EXPECT_EQ(pw::stringLowerCase(""), "");
 }
 
 TEST(PWSTRINGS_UPPERCASE_TEST, CONVERTS_TO_UPPER)
 {
     EXPECT_EQ(pw::stringUpperCase("hello world"), "HELLO WORLD");
-    EXPECT_EQ(pw::stringUpperCase("abc"),         "ABC");
-    EXPECT_EQ(pw::stringUpperCase(""),            "");
+    EXPECT_EQ(pw::stringUpperCase("abc"), "ABC");
+    EXPECT_EQ(pw::stringUpperCase(""), "");
 }
 
 TEST(PWSTRINGS_FINDSTRING_TEST, FINDS_PRESENT_SUBSTRING)
@@ -417,7 +415,7 @@ TEST(PWSTRINGS_SPLITSTRING_TEST, RETURNS_FALSE_WHEN_PATTERN_ABSENT)
     bool found = pw::splitString("hello", "(xyz)", first, last);
     EXPECT_FALSE(found);
     EXPECT_EQ(first, "hello");
-    EXPECT_EQ(last,  "");
+    EXPECT_EQ(last, "");
 }
 
 // ============================================================
@@ -468,16 +466,20 @@ TEST(REPORT_FS_TEST, CREATE_DIRECTORY_NO_OVERWRITE_PRESERVES_CONTENTS)
 /// @brief Fixture with a per-test temp directory that is cleaned up automatically.
 class ReportTest : public ::testing::Test {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         m_dir = fs::temp_directory_path() / "spida_pwutils_test";
         fs::create_directories(m_dir);
     }
-    void TearDown() override {
+
+    void TearDown() override
+    {
         fs::remove_all(m_dir);
     }
 
     /// @brief Parse the JSON at path, asserting the file exists first.
-    nlohmann::json readJson(const fs::path& p) {
+    nlohmann::json readJson(const fs::path& p)
+    {
         EXPECT_TRUE(fs::exists(p)) << "Expected file: " << p;
         std::ifstream ifs{p};
         return nlohmann::json::parse(ifs);
@@ -673,7 +675,7 @@ TEST_F(ReportTest, REPORTCOMPLEX1D_DEFAULT_WRITES_XY_COMPLEX)
 TEST_F(ReportTest, REPORTCOMPLEX1D_POWER_MODE_WRITES_XY_WITH_POWER_META)
 {
     std::vector<double> x{0.0, 1.0};
-    std::vector<dcmplx> y{{3.0, 4.0}, {1.0, 0.0}};  // |3+4i|^2=25, |1|^2=1
+    std::vector<dcmplx> y{{3.0, 4.0}, {1.0, 0.0}}; // |3+4i|^2=25, |1|^2=1
     pw::ReportComplex1D<double, double> r{"power", x, y};
     r.setDirPath(m_dir);
     r.setPower(true);
@@ -685,7 +687,7 @@ TEST_F(ReportTest, REPORTCOMPLEX1D_POWER_MODE_WRITES_XY_WITH_POWER_META)
     EXPECT_EQ(j["type"].get<std::string>(), "xy");
     EXPECT_EQ(j["meta"]["field"].get<std::string>(), "power");
     EXPECT_NEAR(j["y"][0].get<double>(), 25.0, 1e-10);
-    EXPECT_NEAR(j["y"][1].get<double>(),  1.0, 1e-10);
+    EXPECT_NEAR(j["y"][1].get<double>(), 1.0, 1e-10);
 }
 
 TEST_F(ReportTest, REPORTCOMPLEX1D_GETPOWER_DEFAULT_FALSE)
@@ -823,7 +825,7 @@ TEST_F(ReportTest, TRACK_ACCUMULATES_TIME_STEPS)
 
 TEST_F(ReportTest, TRACKCOMPLEX_MAX_WRITES_MAX_POWER_META)
 {
-    std::vector<dcmplx> data{{3.0, 4.0}, {1.0, 0.0}};  // |3+4i|=5 wins
+    std::vector<dcmplx> data{{3.0, 4.0}, {1.0, 0.0}}; // |3+4i|=5 wins
     pw::TrackComplex<double> tc{"cmax", pw::TrackType::Max, data};
     tc.setDirPath(m_dir);
 
@@ -840,7 +842,7 @@ TEST_F(ReportTest, TRACKCOMPLEX_MAX_WRITES_MAX_POWER_META)
 
 TEST_F(ReportTest, TRACKCOMPLEX_MIN_WRITES_MIN_POWER_META)
 {
-    std::vector<dcmplx> data{{3.0, 4.0}, {1.0, 0.0}};  // |1|=1 is min
+    std::vector<dcmplx> data{{3.0, 4.0}, {1.0, 0.0}}; // |1|=1 is min
     pw::TrackComplex<double> tc{"cmin", pw::TrackType::Min, data};
     tc.setDirPath(m_dir);
 
@@ -1011,11 +1013,11 @@ TEST(PWSTATS_STATCENTER_TEST, STAT_UPDATE_OBEYS_FREQUENCY)
 {
     pw::StatCenter sc{"FREQ", 3u};
     std::ostringstream oss;
-    sc.statUpdate(oss);  // call 1
-    sc.statUpdate(oss);  // call 2
+    sc.statUpdate(oss); // call 1
+    sc.statUpdate(oss); // call 2
     EXPECT_EQ(oss.str().find("FREQ"), std::string::npos)
         << "Should not report before frequency threshold";
-    sc.statUpdate(oss);  // call 3 — should fire
+    sc.statUpdate(oss); // call 3 — should fire
     EXPECT_NE(oss.str().find("FREQ"), std::string::npos);
 }
 
