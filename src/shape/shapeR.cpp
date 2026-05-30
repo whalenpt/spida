@@ -1,4 +1,5 @@
 #include <cmath>
+#include <stdexcept>
 #include <vector>
 #include "spida/shape/shapeR.h"
 
@@ -8,7 +9,18 @@ ShapeR::ShapeR(const GridR& grid,double A,double w0) :
             Shape(grid),
             m_r(grid.getR()),
             m_A(A),
-            m_w0(w0) {}
+            m_w0(w0)
+{
+    if(w0 == 0.0)
+        throw std::domain_error("ShapeR: width w0 must be non-zero");
+}
+
+void ShapeR::setWidth(double w0)
+{
+    if(w0 == 0.0)
+        throw std::domain_error("ShapeR::setWidth: width w0 must be non-zero");
+    m_w0 = w0;
+}
 
 void ShapeR::setFocus(double f)
 {

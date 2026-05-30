@@ -3,6 +3,7 @@
 
 #include <string>
 #include <complex>
+#include <stdexcept>
 #include <boost/math/special_functions/bessel.hpp>
 #include "spida/helper/constants.h"
 #include "spida/grid/gridT.h"
@@ -19,11 +20,16 @@ class ShapeT : public Shape
         ShapeT(const GridT& grid,double A,double tp) :
             Shape(grid),
             m_t(grid.getT()),
-            m_A(A),m_tp(tp) {}
+            m_A(A),m_tp(tp)
+        {
+            if(tp == 0.0)
+                throw std::domain_error("ShapeT: pulse width tp must be non-zero");
+        }
 
         ~ShapeT() override = default;
         void setAmplitude(double v) {m_A = v;}
-        void setWidth(double v) {m_tp = v;}
+        // Precondition: v != 0.0  (throws std::domain_error otherwise)
+        void setWidth(double v);
         void setChirp(double v) {m_chirp = v;}
         void setOffset(double v) {m_offset = v;}
         void setSlowPhase(double v) {m_slow_phase = v;}
@@ -36,9 +42,9 @@ class ShapeT : public Shape
         double fastPhase() const {return m_omega0;}
         double slowPhase() const {return m_slow_phase;}
 
-        std::vector<dcmplx> shapeCV() const;
-        std::vector<double> shapeRV() const;
-        std::vector<dcmplx> envelope() const;
+        [[nodiscard]] std::vector<dcmplx> shapeCV() const;
+        [[nodiscard]] std::vector<double> shapeRV() const;
+        [[nodiscard]] std::vector<dcmplx> envelope() const;
         const std::vector<double>& getT() const {return m_t;} 
 
     private:
@@ -84,7 +90,7 @@ class AiryT : public ShapeT
         double apodization() const {return m_apod;}
     private:
         double compute(double t) const override;
-        double m_apod;
+        double m_apod{1.0};
 };
 
 class SuperGaussT : public ShapeT
@@ -97,7 +103,7 @@ class SuperGaussT : public ShapeT
         double M() const {return m_M;}
     private:
         double compute(double t) const override;
-        double m_M;
+        double m_M{1.0};
 };
 
 class BesselT : public ShapeT
@@ -110,8 +116,9 @@ class BesselT : public ShapeT
         double apodization() const {return m_apod;}
     private:
         double compute(double t) const override;
-        double m_apod;
-        double m_j1{boost::math::cyl_bessel_j_zero<double>(0,1)};
+        double m_apod{1.0};
+        // First zero of J_0, computed once at program start (not per instance).
+        static const double s_j1;
 };
 
 }

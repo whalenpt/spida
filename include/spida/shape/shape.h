@@ -8,7 +8,7 @@ namespace spida{
 class Shape 
 {
     public:
-        explicit Shape(const Grid&) {}; 
+        explicit Shape([[maybe_unused]] const Grid&) noexcept {}
         virtual ~Shape() = default;
         virtual double amplitude() const = 0;
 };

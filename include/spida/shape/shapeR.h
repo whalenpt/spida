@@ -1,6 +1,7 @@
 #pragma once
 
 #include <complex>
+#include <stdexcept>
 #include <string>
 #include "spida/grid/gridR.h"
 #include "spida/helper/constants.h"
@@ -16,13 +17,17 @@ class ShapeR : public Shape
         ShapeR(const GridR& grid,double A,double w0); 
         ~ShapeR() override = default;
         void setAmplitude(double A) {m_A = A;}
-        void setWidth(double w0) {m_w0 = w0;}
+        // Precondition: w0 != 0.0  (throws std::domain_error otherwise)
+        void setWidth(double w0);
         void setFocus(double f);
         double amplitude() const override {return m_A;}
         double width() const {return m_w0;}
         double focus() const {return m_f;}
-        std::vector<dcmplx> shapeCV() const;
-        std::vector<double> shapeRV() const;
+        [[nodiscard]] std::vector<dcmplx> shapeCV() const;
+        // Returns the real part of shapeCV(). When a focus is set the
+        // quadratic phase is non-trivial and the imaginary part is silently
+        // discarded; use shapeCV() directly if the full complex field is needed.
+        [[nodiscard]] std::vector<double> shapeRV() const;
         const std::vector<double>& getR() const {return m_r;} 
 
     private:

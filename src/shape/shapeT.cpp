@@ -1,9 +1,5 @@
-
-
 #include <cmath>
-#include <cstdlib>
-#include <iostream>
-#include <string>
+#include <stdexcept>
 #include "spida/helper/constants.h"
 #include "spida/shape/shapeT.h"
 #include <boost/math/special_functions/airy.hpp>
@@ -11,6 +7,12 @@
 
 namespace spida{
 
+void ShapeT::setWidth(double v)
+{
+    if(v == 0.0)
+        throw std::domain_error("ShapeT::setWidth: pulse width tp must be non-zero");
+    m_tp = v;
+}
 
 std::vector<dcmplx> ShapeT::shapeCV() const
 {
@@ -57,19 +59,21 @@ double SechT::compute(double t) const
 }
 
 double SuperGaussT::compute(double t) const {
-    return exp(-pow(t,2*m_M));
+    return exp(-pow(std::abs(t),2.0*m_M));
 }
 
 double AiryT::compute(double t) const
 {
-	double airy = boost::math::airy_ai<double>(t);
+    double airy = boost::math::airy_ai<double>(t);
     double apodization = exp(-pow(m_apod*t,2));
     return airy*apodization;
 }
 
-double  BesselT::compute(double t) const
+const double BesselT::s_j1 = boost::math::cyl_bessel_j_zero<double>(0,1);
+
+double BesselT::compute(double t) const
 {
-    double bessel = boost::math::cyl_bessel_j<double>(0,m_j1*fabs(t));
+    double bessel = boost::math::cyl_bessel_j<double>(0,s_j1*fabs(t));
     double apodization = exp(-pow(m_apod*t,2));
     return bessel*apodization;
 }
