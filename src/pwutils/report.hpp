@@ -17,6 +17,15 @@
 #include "pwutils/pwdefs.h"
 #include "pwutils/pwmath.hpp"
 
+namespace nlohmann {
+template<typename T>
+struct adl_serializer<std::complex<T>> {
+    static void to_json(json& j, const std::complex<T>& c) {
+        j = json::array({c.real(), c.imag()});
+    }
+};
+}
+
 namespace pw {
 
 // ---------- File-system helpers ----------
@@ -177,8 +186,12 @@ private:
     const std::vector<Tx>& m_x;
     const std::vector<Ty>& m_y;
     void reportImplement(std::ofstream& os) const override {
-        os << nlohmann::json{{"type","xy"},{"meta",buildMeta(getMetadata())},
-                             {"x",m_x},{"y",m_y}}.dump(2);
+        nlohmann::json j;
+        j["type"] = "xy";
+        j["meta"] = buildMeta(getMetadata());
+        j["x"] = m_x;
+        j["y"] = m_y;
+        os << j.dump(2);
     }
 };
 
@@ -214,9 +227,13 @@ private:
         std::vector<Ty> pow_y(m_y.size());
         for (std::size_t i = 0; i < m_y.size(); i++)
             pow_y[i] = static_cast<Ty>(std::norm(m_y[i]));
-        nlohmann::json meta = buildMeta(getMetadata());
-        meta["field"] = "power";
-        os << nlohmann::json{{"type","xy"},{"meta",meta},{"x",m_x},{"y",pow_y}}.dump(2);
+        nlohmann::json j;
+        j["type"] = "xy";
+        j["meta"] = buildMeta(getMetadata());
+        j["meta"]["field"] = "power";
+        j["x"] = m_x;
+        j["y"] = pow_y;
+        os << j.dump(2);
     }
 
     void reportComplex(std::ofstream& os) const {
@@ -225,8 +242,13 @@ private:
             yr[i] = m_y[i].real();
             yi[i] = m_y[i].imag();
         }
-        os << nlohmann::json{{"type","xy_complex"},{"meta",buildMeta(getMetadata())},
-                             {"x",m_x},{"yr",yr},{"yi",yi}}.dump(2);
+        nlohmann::json j;
+        j["type"] = "xy_complex";
+        j["meta"] = buildMeta(getMetadata());
+        j["x"] = m_x;
+        j["yr"] = yr;
+        j["yi"] = yi;
+        os << j.dump(2);
     }
 
     void reportImplement(std::ofstream& os) const override {
@@ -268,8 +290,13 @@ private:
                 row.push_back(m_z[i * m_y.size() + j]);
             zj.push_back(std::move(row));
         }
-        os << nlohmann::json{{"type","xyz"},{"meta",buildMeta(getMetadata())},
-                             {"x",xs},{"y",ys},{"z",zj}}.dump(2);
+        nlohmann::json j;
+        j["type"] = "xyz";
+        j["meta"] = buildMeta(getMetadata());
+        j["x"] = xs;
+        j["y"] = ys;
+        j["z"] = zj;
+        os << j.dump(2);
     }
 };
 
@@ -312,8 +339,6 @@ private:
         std::size_t sx = getStrideX(), sy = getStrideY();
         std::vector<Tx> xs; std::vector<Ty> ys;
         buildAxes(sx, sy, xs, ys);
-        nlohmann::json meta = buildMeta(getMetadata());
-        meta["field"] = "power";
         nlohmann::json zj = nlohmann::json::array();
         for (std::size_t i = 0; i < m_x.size(); i += sx) {
             nlohmann::json row = nlohmann::json::array();
@@ -321,8 +346,14 @@ private:
                 row.push_back(static_cast<Tz>(std::norm(m_z[i * m_y.size() + j])));
             zj.push_back(std::move(row));
         }
-        os << nlohmann::json{{"type","xyz"},{"meta",meta},
-                             {"x",xs},{"y",ys},{"z",zj}}.dump(2);
+        nlohmann::json j;
+        j["type"] = "xyz";
+        j["meta"] = buildMeta(getMetadata());
+        j["meta"]["field"] = "power";
+        j["x"] = xs;
+        j["y"] = ys;
+        j["z"] = zj;
+        os << j.dump(2);
     }
 
     void reportComplex(std::ofstream& os) const {
@@ -342,8 +373,14 @@ private:
             zrj.push_back(std::move(rrow));
             zij.push_back(std::move(irow));
         }
-        os << nlohmann::json{{"type","xyz_complex"},{"meta",buildMeta(getMetadata())},
-                             {"x",xs},{"y",ys},{"zr",zrj},{"zi",zij}}.dump(2);
+        nlohmann::json j;
+        j["type"] = "xyz_complex";
+        j["meta"] = buildMeta(getMetadata());
+        j["x"] = xs;
+        j["y"] = ys;
+        j["zr"] = zrj;
+        j["zi"] = zij;
+        os << j.dump(2);
     }
 
     void reportImplement(std::ofstream& os) const override {
@@ -379,10 +416,13 @@ private:
     std::vector<double> m_t;
     std::vector<T> m_vals;
     void reportImplement(std::ofstream& os) const override {
-        nlohmann::json meta = buildMeta(getMetadata());
-        meta["track"] = (getTrackType() == TrackType::Max) ? "max" : "min";
-        os << nlohmann::json{{"type","xy"},{"meta",meta},
-                             {"x",m_t},{"y",m_vals}}.dump(2);
+        nlohmann::json j;
+        j["type"] = "xy";
+        j["meta"] = buildMeta(getMetadata());
+        j["meta"]["track"] = (getTrackType() == TrackType::Max) ? "max" : "min";
+        j["x"] = m_t;
+        j["y"] = m_vals;
+        os << j.dump(2);
     }
 };
 
@@ -410,10 +450,13 @@ private:
     std::vector<double> m_t;
     std::vector<T> m_vals;
     void reportImplement(std::ofstream& os) const override {
-        nlohmann::json meta = buildMeta(getMetadata());
-        meta["track"] = (getTrackType() == TrackType::Max) ? "max_power" : "min_power";
-        os << nlohmann::json{{"type","xy"},{"meta",meta},
-                             {"x",m_t},{"y",m_vals}}.dump(2);
+        nlohmann::json j;
+        j["type"] = "xy";
+        j["meta"] = buildMeta(getMetadata());
+        j["meta"]["track"] = (getTrackType() == TrackType::Max) ? "max_power" : "min_power";
+        j["x"] = m_t;
+        j["y"] = m_vals;
+        os << j.dump(2);
     }
 };
 
