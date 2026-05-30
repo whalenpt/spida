@@ -11,7 +11,7 @@ namespace spida{
 namespace {
 void validatePositive(std::size_t val, const char* name)
 {
-    if(val < 1)
+    if(val == 0)
         throw std::invalid_argument(std::format(
             "BasePropagator::{} requires a value greater than zero.", name));
 }
@@ -145,8 +145,7 @@ void BasePropagator::report1D(double t)
         return;
     this->m_stat->startTimer("Time Reporting 1D");
     this->m_report_handler.setItem("t", t);
-    this->m_report_handler.report1D(this->m_dir_path,
-            static_cast<unsigned>(this->m_report_count1D));
+    this->m_report_handler.report1D(this->m_dir_path, this->m_report_count1D);
     this->m_stat->endTimer("Time Reporting 1D");
     this->m_report_count1D++;
     this->m_stat->incrementCounter("Number Reports 1D");
@@ -158,8 +157,7 @@ void BasePropagator::report2D(double t)
         return;
     this->m_stat->startTimer("Time Reporting 2D");
     this->m_report_handler.setItem("t", t);
-    this->m_report_handler.report2D(this->m_dir_path,
-            static_cast<unsigned>(this->m_report_count2D));
+    this->m_report_handler.report2D(this->m_dir_path, this->m_report_count2D);
     this->m_stat->endTimer("Time Reporting 2D");
     this->m_report_count2D++;
     this->m_stat->incrementCounter("Number Reports 2D");

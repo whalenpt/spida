@@ -18,15 +18,13 @@ namespace spida{
 
 class BasePropagator
 {
-    static inline constexpr std::size_t DEFAULT_MAX_REPORTS_1D = 500;
-    static inline constexpr std::size_t DEFAULT_MAX_REPORTS_2D = 200;
-
     public:
         explicit BasePropagator(const std::filesystem::path& dir_path);
         virtual ~BasePropagator();
         virtual void updateFields(double t) = 0;
 
         [[nodiscard]] ReportHandler& reportHandler() {return this->m_report_handler;}
+        [[nodiscard]] const ReportHandler& reportHandler() const {return this->m_report_handler;}
         void setDirPath(const std::filesystem::path& dir_path) {this->m_dir_path = dir_path;}
         void setLogProgress(bool val) {this->m_log_progress = val;}
         void setLogFrequency(std::size_t val);
@@ -53,6 +51,9 @@ class BasePropagator
         [[nodiscard]] bool stepUpdate(double t);
 
     private:
+        static constexpr std::size_t DEFAULT_MAX_REPORTS_1D = 500;
+        static constexpr std::size_t DEFAULT_MAX_REPORTS_2D = 200;
+
         ReportHandler m_report_handler;
 
         [[nodiscard]] bool ready1D(std::size_t step) const;
