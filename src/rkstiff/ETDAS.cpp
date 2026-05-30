@@ -133,6 +133,7 @@ void ETD35::worker_coeff(double ds,int tid){
     r[j] = contourRadius()*exp(ii*expv);
   }
 
+  const double mult = ds/static_cast<double>(contourPoints());
   for(unsigned i = tid; i < m_sz; i+=SolverCV::threadManager().getNumThreads())
   {
     dcmplx Lval(ds*L[i]);
@@ -173,8 +174,7 @@ void ETD35::worker_coeff(double ds,int tid){
         a76val+= (-10980.0 - 6722.0*z - 1741.0*pow(z,2) + exp(z)*(10980.0 - 4258.0*z + 509.0*pow(z,2)))/
           (2700.0*pow(z,3));
       }
-      double mult = ds/static_cast<double>(contourPoints());
-      a21[i] = mult*a21val; a31[i] = mult*a31val; a32[i] = mult*a32val; 
+      a21[i] = mult*a21val; a31[i] = mult*a31val; a32[i] = mult*a32val;
       a41[i] = mult*a41val; a43[i] = mult*a43val; 
       a51[i] = mult*a51val; a52[i] = mult*a52val; a54[i] = mult*a54val;
       a61[i] = mult*a61val; a62[i] = mult*a62val;
@@ -268,7 +268,7 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,\
         N1_init = true;
         statCenter().incrementCounter("Nonlinear Function Evaluations",1);
     }
-    if(SolverCV_AS::accept()){
+    else if(SolverCV_AS::accept()){
         SolverCV::NL()(ynew,N1);
         statCenter().incrementCounter("Nonlinear Function Evaluations",1);
     }

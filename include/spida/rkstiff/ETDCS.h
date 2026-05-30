@@ -14,13 +14,13 @@ class SolverCS_ETD : public SolverCV_CS
         ~SolverCS_ETD() override = default;
         void setModeCutoff(double val) {m_mode_cutoff = val;}
         void setContourRadius(double val) {m_contour_radi = val;}
-        void setContourPoints(int val) {m_contourM = val;}
+        void setContourPoints(unsigned val) {m_contourM = val;}
         double modeCutoff() const {return m_mode_cutoff;}
         double contourRadius() const {return m_contour_radi;}
-        int contourPoints() const {return m_contourM;}
+        unsigned contourPoints() const {return m_contourM;}
     private:
         double m_mode_cutoff{0.01};
-        int m_contourM{32};
+        unsigned m_contourM{32};
         double m_contour_radi{1.0};
 };
 
@@ -32,7 +32,7 @@ class ETD4 : public SolverCS_ETD
     private:
         void updateCoefficients(double dt) noexcept override;
         void updateStages(std::vector<dcmplx>& in) noexcept override;
-        int m_sz;
+        unsigned m_sz;
         const std::vector<dcmplx>& L;
         std::vector<dcmplx> EL; std::vector<dcmplx> EL2; 
         std::vector<dcmplx> N1; std::vector<dcmplx> N2; 

@@ -185,8 +185,7 @@ bool SolverCV_AS::evolve(std::vector<dcmplx>& u,double t0,double tf,double h) no
         h = tf-t0;
     double dt = h;
     double dt_next;
-    bool report = true;
-    while(SolverCV::currentTime() < tf && report){
+    while(SolverCV::currentTime() < tf){
         if(!SolverCV_AS::step(u,dt,dt_next))
             return false;
         if(SolverCV::currentTime() + dt_next > tf)
@@ -275,10 +274,11 @@ bool SolverCV_CS::evolve(PropagatorCV& propagator,double t0,double tf,double h) 
 bool SolverCV_CS::evolve(std::vector<dcmplx>& u,double t0,double tf,double h) noexcept
 {
     SolverCV::setCurrentTime(t0);
-    bool report = true;
-    while(SolverCV::currentTime() < tf && report){
+    while(SolverCV::currentTime() < tf){
         if ((SolverCV::currentTime() + h) > tf)
             h = tf - SolverCV::currentTime();
+        if(h < Control::MIN_H)
+            break;
         SolverCV_CS::step(u,h);
     }
     if(SolverCV::logProgress())
@@ -306,7 +306,7 @@ void Control::setDecrementThreshold(double val)
 {
     if(val < MIN_S){
         std::string msg = "DecrementThreshold must be greater than MIN_S = "\
-             + std::to_string(MAX_S) + ". Please set the decrementThreshold of "\
+             + std::to_string(MIN_S) + ". Please set the decrementThreshold of "\
              + std::to_string(val) + "to a higher value";
         throw pw::Exception("Control::setDecrementThreshold",msg);
     }
@@ -329,7 +329,7 @@ void Control::setEpsRel(double val)
 }
 
 
-double Control::computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) const noexcept
+double Control::computeS(const std::vector<dcmplx>& errVec,const std::vector<dcmplx>& ynew) const noexcept
 {
     double s = computeRawS(errVec,ynew);
     if(std::isinf(s))
@@ -349,28 +349,34 @@ double Control::computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) 
     return s_stab;
 }
 
-double Control::computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) const noexcept
+double Control::computeRawS(const std::vector<dcmplx>& errVec,const std::vector<dcmplx>& ynew) const noexcept
 {
     double enorm = 0.0;
     double ynorm = 0.0;
-    if(m_normType == ErrorNorm::NORM2){
-        for(size_t i = 0; i < errVec.size(); i++){
-            enorm += pow(abs(errVec[i]),2);
-            ynorm += pow(abs(ynew[i]),2);
-        }
-        enorm = sqrt(enorm);
-        ynorm = sqrt(ynorm);
+    const auto n = errVec.size();
+    switch(m_normType){
+        case ErrorNorm::NORM1:
+            for(size_t i = 0; i < n; i++){
+                enorm += abs(errVec[i]);
+                ynorm += abs(ynew[i]);
+            }
+            break;
+        case ErrorNorm::NORMINF:
+            for(size_t i = 0; i < n; i++){
+                enorm = std::max(enorm, abs(errVec[i]));
+                ynorm = std::max(ynorm, abs(ynew[i]));
+            }
+            break;
+        default: // NORM2, NORMSYS, NORMW2
+            for(size_t i = 0; i < n; i++){
+                enorm += pow(abs(errVec[i]),2);
+                ynorm += pow(abs(ynew[i]),2);
+            }
+            enorm = sqrt(enorm);
+            ynorm = sqrt(ynorm);
+            break;
     }
-    else{
-        for(size_t i = 0; i < errVec.size(); i++){
-            enorm += pow(abs(errVec[i]),2);
-            ynorm += pow(abs(ynew[i]),2);
-        }
-        enorm = sqrt(enorm);
-        ynorm = sqrt(ynorm);
-    }
-
-    double errTol= m_epsRel*ynorm;
+    double errTol = m_epsRel*ynorm;
     return errTol/enorm;
 }
 

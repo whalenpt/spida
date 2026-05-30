@@ -33,10 +33,6 @@ namespace pw{
 // define everything in the spida namespace
 namespace spida{
 
-/// Maximum number of step size attempts to reach required error threshold
-constexpr auto MAX_LOOP = 100;
-
-
 class PropagatorCV;
 using NLfunc = std::function<void(const std::vector<dcmplx>& in,std::vector<dcmplx>& out)>; 
 using LinOp = std::vector<dcmplx>;
@@ -54,6 +50,10 @@ class SolverCV
 
         SolverCV(const LinOp& L,const NLfunc& NL,bool use_refs=false);
         virtual ~SolverCV();
+        SolverCV(const SolverCV&) = delete;
+        SolverCV& operator=(const SolverCV&) = delete;
+        SolverCV(SolverCV&&) = delete;
+        SolverCV& operator=(SolverCV&&) = delete;
 
         /// @brief Propagates a vector u from t0 to tf using the class LinOp and NLfunc
         /// @param u Field being propagated
@@ -173,8 +173,8 @@ class Control{
         void setDecrementThreshold(double val);
         void setEpsRel(double val);
         void setNorm(ErrorNorm norm) {m_normType = norm;}
-        double computeS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) const noexcept;
-        double computeRawS(std::vector<dcmplx>& errVec,std::vector<dcmplx>& ynew) const noexcept;
+        double computeS(const std::vector<dcmplx>& errVec,const std::vector<dcmplx>& ynew) const noexcept;
+        double computeRawS(const std::vector<dcmplx>& errVec,const std::vector<dcmplx>& ynew) const noexcept;
         bool checkLoopCount(unsigned num_loops) const noexcept;
         bool checkStepSize(double step_size) const noexcept;
 
@@ -248,7 +248,7 @@ class SolverCV_AS : public SolverCV
 
         /// Setter for error norm, default is the 2-norm
         /// @param Control::ErrorNorm enum value for norm 
-        void setNorm(Control::ErrorNorm norm) const {m_control->setNorm(norm);}
+        void setNorm(Control::ErrorNorm norm) {m_control->setNorm(norm);}
 
         void setAccept(bool val) {m_accept = val;}
         bool accept() const {return m_accept;}

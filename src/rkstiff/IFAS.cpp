@@ -152,7 +152,7 @@ void IF45DP::updateStages(const std::vector<dcmplx>& in,std::vector<dcmplx>& yne
     for(unsigned i = 0; i < m_sz; i++) 
         ynew[i] = EL[i]*in[i] + a71[i]*N1[i] + a73[i]*N3[i] \
                    + a74[i]*N4[i] + a75[i]*N5[i] + a76*N6[i];
-    SolverCV::NL()(tempK,N7);
+    SolverCV::NL()(ynew,N7);
 
     for (unsigned i = 0; i < m_sz; i++)
         errVec[i] = r1[i]*N1[i]+r3[i]*N3[i] + r4[i]*N4[i] + r5[i]*N5[i] + r6*N6[i] + r7*N7[i];

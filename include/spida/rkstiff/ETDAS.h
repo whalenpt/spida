@@ -1,7 +1,6 @@
 // ETDAS.h
 #pragma once
 
-#include <iostream>
 #include "spida/rkstiff/solver.h"
 #include "spida/helper/constants.h"
 
