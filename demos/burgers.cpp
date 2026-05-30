@@ -18,6 +18,7 @@
 #include <spida/propagator/propagator.h>
 #include <pwutils/report.hpp>
 #include <fstream>
+#include <iostream>
 
 //------------------------------------------------------------------------------
 
@@ -128,7 +129,7 @@ int main()
     solver.setLogProgress(true);
     solver.setLogFrequency(200);
     solver.setModeCutoff(0.001);
-    solver.evolve(propagator,0.0,1.0,0.5);
+    if(!solver.evolve(propagator,0.0,1.0,0.5)) { std::cerr << "Solver failed\n"; return 1; }
 
     return 0;
 }

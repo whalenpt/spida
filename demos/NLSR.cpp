@@ -17,6 +17,7 @@
 #include <spida/propagator/propagator.h>
 #include <pwutils/report.hpp>
 #include <complex> // std::norm -> std::norm(dcmplx(3,4)) = 25
+#include <iostream>
 
 //------------------------------------------------------------------------------
 
@@ -144,6 +145,6 @@ int main()
     solver.setEpsRel(1e-5);
     solver.setLogProgress(true);
     solver.setLogFrequency(10);
-    solver.evolve(propagator,0.0,0.8,0.01);
+    if(!solver.evolve(propagator,0.0,0.8,0.01)) { std::cerr << "Solver failed\n"; return 1; }
     return 0;
 }

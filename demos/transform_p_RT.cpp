@@ -31,8 +31,8 @@ int main()
 {
 
     using spida::dcmplx;
-    int nr = 1600;
-    int nt = 16384;
+    unsigned nr = 1600;
+    unsigned nt = 16384;
     double w0 = 20.0e-6;
     double I0 = 5.0e16;
     double tp = 5.0e-15;
@@ -53,12 +53,12 @@ int main()
     auto u0r = shapeR.shapeRV();
     std::vector<double> u(nr*nt);
 
-    for(auto i = 0; i < nr; i++)
-        for(auto j = 0; j < nt; j++)
+    for(unsigned i = 0; i < nr; i++)
+        for(unsigned j = 0; j < nt; j++)
             u[i*nt + j] = u0r[i]*u0t[j];
 
     // Compute transforms
-    int nst = gridT.getNst();
+    unsigned nst = gridT.getNst();
 
     std::vector<dcmplx> v(nr*nst);
     std::vector<double> uop(nr*nt);

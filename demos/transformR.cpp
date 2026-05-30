@@ -16,13 +16,14 @@
 #include <pwutils/report.hpp>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 //------------------------------------------------------------------------------
 
 int main()
 {
     // dcmplx is short for std::complex<double>
-    int nr = 200;
+    unsigned nr = 200;
     double w0 = 20.0e-6;
     double I0 = 5.0e16;
 
@@ -44,10 +45,7 @@ int main()
     out_report.setItem("xlabel","kr");
 
     std::ofstream os;
-    // can set precision for reporting
-    os << std::scientific << std::setprecision(3);
     os << in_report;
-    os << std::scientific << std::setprecision(8);
     os << out_report;
 
     std::cout << in_report.path().string() << std::endl;
@@ -55,7 +53,7 @@ int main()
 
     using spida::dcmplx;
     std::vector<dcmplx> ucmplx(nr);
-    for(auto i = 0; i < nr; i++)
+    for(unsigned i = 0; i < nr; i++)
         ucmplx[i] = dcmplx(u[i],0.0);
     std::vector<dcmplx> vcmplx(nr);
 

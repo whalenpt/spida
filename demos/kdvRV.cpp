@@ -16,6 +16,7 @@
 #include <spida/rkstiff/ETDAS.h>
 #include <pwutils/report.hpp>
 #include <fstream>
+#include <iomanip>
 
 //------------------------------------------------------------------------------
 
@@ -64,6 +65,7 @@ class KdV_RV
         std::function<void(const std::vector<dcmplx>&,std::vector<dcmplx>&)> NL; /**< Nonlinear function */
         spida::SpidaRVX& spida() {return m_spida;}
 
+    private:
         spida::UniformGridRVX m_grid; /**< Grid class holding both real-space uniform grid and spectral-space grid */
         spida::SpidaRVX m_spida; /** < Spida object which contains ffts and differentiation functions */
         std::vector<double> m_uphys; /**< Physical space field */
@@ -121,7 +123,6 @@ int main()
     std::cout << "First spectral space report file location: " << reportS.path() << std::endl;
 
     std::ofstream os;
-    os << std::scientific << std::setprecision(8);
     os << report;
     os << reportS;
 

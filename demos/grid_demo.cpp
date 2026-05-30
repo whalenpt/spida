@@ -20,7 +20,7 @@
 int main()
 {
     std::cout << std::endl << "BesselRootGridR..." << std::endl;
-    int N = 8;
+    unsigned N = 8;
     spida::BesselRootGridR grid(N,1.0);
     std::cout << "Bessel Root Grid: " << std::endl;
     for(const auto& item : grid.getR())

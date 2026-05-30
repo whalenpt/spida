@@ -17,6 +17,7 @@
 #include <spida/rkstiff/IFAS.h>
 #include <pwutils/report.hpp>
 #include <fstream>
+#include <iostream>
 
 //------------------------------------------------------------------------------
 
@@ -118,7 +119,7 @@ int main()
     solver.setEpsRel(1e-4);
     solver.setLogProgress(true);
     solver.setLogFrequency(200);
-    solver.evolve(propagator,0.0,50.0,0.5);
+    if(!solver.evolve(propagator,0.0,50.0,0.5)) { std::cerr << "Solver failed\n"; return 1; }
 
     return 0;
 }
