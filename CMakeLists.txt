@@ -36,7 +36,7 @@ endif()
 # -----------------------------
 # Build type default
 # -----------------------------
-if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR AND NOT CMAKE_BUILD_TYPE)
+if(PROJECT_IS_TOP_LEVEL AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
@@ -153,7 +153,7 @@ endif()
 # -----------------------------
 # Tests / demos
 # -----------------------------
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+if(PROJECT_IS_TOP_LEVEL)
 
     if(SPIDA_TEST)
         enable_testing()
