@@ -1,4 +1,4 @@
-#include "spida/propagator/reporthandler.h"
+#include "propagator/reporthandler.h"
 
 #include <format>
 #include <fstream>
