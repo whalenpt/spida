@@ -1,7 +1,6 @@
 #pragma once
 
 #include "spida/helper/constants.h"
-#include "spida/propagator/reporthandler.h"
 
 #include <cstddef>
 #include <filesystem>
@@ -17,21 +16,15 @@ class TrackData;
 
 namespace spida {
 
+class ReportHandler;
+
 class BasePropagator {
 public:
     explicit BasePropagator(const std::filesystem::path& dir_path);
     virtual ~BasePropagator();
     virtual void updateFields(double t) = 0;
 
-    [[nodiscard]] ReportHandler& reportHandler()
-    {
-        return this->m_report_handler;
-    }
-
-    [[nodiscard]] const ReportHandler& reportHandler() const
-    {
-        return this->m_report_handler;
-    }
+    [[nodiscard]] bool hasData1D() const;
 
     void setDirPath(const std::filesystem::path& dir_path)
     {
@@ -78,7 +71,7 @@ private:
     static constexpr std::size_t DEFAULT_MAX_REPORTS_1D = 500;
     static constexpr std::size_t DEFAULT_MAX_REPORTS_2D = 200;
 
-    ReportHandler m_report_handler;
+    std::unique_ptr<ReportHandler> m_report_handler;
 
     [[nodiscard]] bool ready1D(std::size_t step) const;
     [[nodiscard]] bool ready2D(std::size_t step) const;

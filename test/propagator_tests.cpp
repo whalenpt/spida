@@ -1,7 +1,7 @@
 
+#include "propagator/reporthandler.h"
 #include "spida/helper/constants.h"
 #include "spida/propagator/propagator.h"
-#include "spida/propagator/reporthandler.h"
 
 #include <filesystem>
 #include <memory>
@@ -169,11 +169,10 @@ TEST(PROPAGATOR_CV_TEST, SET_MAX_REPORTS_2D_ZERO_THROWS)
     EXPECT_THROW(prop.setMaxReports2D(0), std::invalid_argument);
 }
 
-TEST(PROPAGATOR_CV_TEST, REPORT_HANDLER_ACCESSIBLE)
+TEST(PROPAGATOR_CV_TEST, REPORT_HANDLER_NO_DATA_1D_BY_DEFAULT)
 {
     TestPropagatorCV prop(fs::temp_directory_path());
-    spida::ReportHandler& rh = prop.reportHandler();
-    EXPECT_FALSE(rh.hasData1D());
+    EXPECT_FALSE(prop.hasData1D());
 }
 
 // ============================================================
