@@ -184,6 +184,7 @@ TEST_F(PropagatorTest, STEP_UPDATE_NO_REPORTS_ALWAYS_TRUE)
     TestPropagatorCV prop(m_dir);
     for (int i = 0; i < 10; i++)
         EXPECT_TRUE(prop.stepUpdate(static_cast<double>(i)));
+    EXPECT_EQ(prop.updateCount(), 0);
 }
 
 TEST_F(PropagatorTest, STEP_UPDATE_NO_REPORTS_SKIPS_UPDATE_FIELDS)

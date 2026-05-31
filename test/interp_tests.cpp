@@ -1,5 +1,6 @@
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -151,7 +152,7 @@ TEST(SPLINE_INTERP_TEST, SMOOTH_FUNCTION_ACCURACY)
     // Spline on f(x) = sin(x) should be accurate.
     unsigned N = 20;
     double minx = 0.0;
-    double maxx = 3.14159265358979;
+    double maxx = std::numbers::pi;
     std::vector<double> x(N), y(N);
     for (unsigned i = 0; i < N; i++) {
         x[i] = minx + i * (maxx - minx) / (N - 1);
@@ -176,7 +177,7 @@ TEST(SPLINE_INTERP_TEST, SINGLE_POINT_EVAL)
     spida::SplineInterp interp(x, y);
     EXPECT_NEAR(interp.eval(0.0), 0.0, 1e-10);
     EXPECT_NEAR(interp.eval(9.0), 81.0, 1e-10);
-    EXPECT_NEAR(interp.eval(4.5), 4.5 * 4.5, 1e-3);
+    EXPECT_NEAR(interp.eval(4.5), 4.5 * 4.5, 1e-10);
 }
 
 TEST(SPLINE_INTERP_TEST, IN_PLACE_VECTOR_EVAL)
@@ -197,11 +198,18 @@ TEST(SPLINE_INTERP_TEST, IN_PLACE_VECTOR_EVAL)
     EXPECT_NEAR(yi[2], 4.0, 1e-12);
 }
 
-TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_OUT_OF_RANGE)
+TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_BELOW_RANGE)
 {
     std::vector<double> x = {0.0, 1.0, 2.0, 3.0};
     std::vector<double> y = {0.0, 1.0, 2.0, 3.0};
     spida::SplineInterp interp(x, y);
     EXPECT_THROW((void) interp.eval(-0.5), pw::Exception);
+}
+
+TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_ABOVE_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0, 3.0};
+    std::vector<double> y = {0.0, 1.0, 2.0, 3.0};
+    spida::SplineInterp interp(x, y);
     EXPECT_THROW((void) interp.eval(3.5), pw::Exception);
 }

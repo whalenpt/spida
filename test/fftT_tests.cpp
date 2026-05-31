@@ -33,7 +33,7 @@ TEST(FFTCVT_TEST, INVERSES)
     tr.T_To_ST(in, out);
     tr.ST_To_T(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
 }
 
 // a = 1/tp^2
@@ -151,7 +151,7 @@ TEST(FFTRVT_TEST, INVERSES)
     tr.T_To_ST(in, out);
     tr.ST_To_T(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
 }
 
 // FFT{exp(-(t/tp)^2)exp(-i*omega0*t}= tp*sqrt(pi)*exp(-tp^2*(omega-omega0)^2/4)
@@ -194,17 +194,16 @@ TEST(FFTRVT_TEST, GAUSST)
     EXPECT_LT(pw::relative_error(ysp, ysp_ex), 1e-5);
 
     auto ycmplx = shape.shapeCV();
-    std::vector<dcmplx> ysp_exCV(grid.getNst(), 0.0);
-    // y = f(t)*exp(i\omega0t) - > FFT{y} = FFT{f(\omega - \omega0)}
-    // For complex fields, multiplication by exp(i\omega0t) in real space is a simple shift in
-    // spectral space
+    // F{f(t)*exp(i*omega0*t)} = F{f(omega - omega0)}: expected complex-envelope spectrum
+    std::vector<dcmplx> ysp_expectedCV(grid.getNst(), 0.0);
     for (size_t j = 0; j < grid.getNst(); j++)
-        ysp_exCV[j] =
+        ysp_expectedCV[j] =
             std::sqrt(I0) * tp * sqrt(PI) * exp(-pow(tp, 2) * pow(omega[j] - omega0, 2) / 4.0);
 
-    // Complex valued transform -> phase works fine
-    transform.CVT_To_ST(ycmplx, ysp_exCV);
-    EXPECT_LT(pw::relative_error(ysp, ysp_ex), 1e-6);
+    // Complex-valued transform output must match the expected Gaussian spectrum
+    std::vector<dcmplx> ysp_outCV(grid.getNst(), 0.0);
+    transform.CVT_To_ST(ycmplx, ysp_outCV);
+    EXPECT_LT(pw::relative_error(ysp_expectedCV, ysp_outCV), 1e-5);
 }
 
 TEST(FFTRVT_TEST, COS)
@@ -256,4 +255,7 @@ TEST(FFTRVT_TEST, DERIVATIVE_SIN)
     std::vector<dcmplx> out1(grid.getNst());
     spida::FFTRVT tr(grid);
     tr.T_To_ST(in, out1);
+    // sin(t) on [0, 2pi]: all spectral energy is in bin 1, purely imaginary
+    EXPECT_NEAR(out1[1].real(), 0.0, 1e-10);
+    EXPECT_NEAR(std::abs(out1[1]), spida::PI, 1e-10);
 }

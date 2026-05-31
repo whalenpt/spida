@@ -30,7 +30,7 @@ TEST(FFTCVX_TEST, INVERSES)
     tr.X_To_SX(in, out);
     tr.SX_To_X(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
 }
 
 TEST(FFTCVX_TEST, GAUSS)
@@ -176,7 +176,7 @@ TEST(FFTRVX_TEST, INVERSES)
     tr.X_To_SX(in, out);
     tr.SX_To_X(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
 }
 
 TEST(FFTRVX_TEST, GAUSS)

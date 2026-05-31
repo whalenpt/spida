@@ -95,8 +95,8 @@ TEST(ETD34_TEST, BERNOULLI_2D_DECOUPLED)
     bool ok = solver.evolve(u, 0.0, tf, 0.1);
 
     EXPECT_TRUE(ok);
-    EXPECT_NEAR(u[0].real(), bernoulliExact(tf), 1e-4);
-    EXPECT_NEAR(u[1].real(), bernoulli2ndExact(tf), 1e-4);
+    EXPECT_NEAR(u[0].real(), bernoulliExact(tf), 1e-5);
+    EXPECT_NEAR(u[1].real(), bernoulli2ndExact(tf), 1e-5);
 }
 
 TEST(ETD34_TEST, CURRENT_TIME_UPDATED)
@@ -151,9 +151,10 @@ TEST(ETD35_TEST, BETTER_ACCURACY_THAN_ETD34)
     double exact = bernoulliExact(tf);
     double err34 = std::abs(u34[0].real() - exact);
     double err35 = std::abs(u35[0].real() - exact);
-    // ETD35 is 5th-order, ETD34 is 4th-order - both should be accurate
+    // ETD35 (5th-order) must be strictly more accurate than ETD34 (4th-order) at the same epsRel
     EXPECT_LT(err34, 1e-3);
     EXPECT_LT(err35, 1e-3);
+    EXPECT_LT(err35, err34);
 }
 
 // --- ETD4 constant-step solver tests ---
@@ -248,8 +249,8 @@ TEST(IF34_TEST, OSCILLATORY_NONLINEAR)
     bool ok = solver.evolve(u, 0.0, 1.0, 0.1);
 
     EXPECT_TRUE(ok);
-    // Modulus should be close to 1 (small nonlinear perturbation)
-    EXPECT_NEAR(std::abs(u[0]), 1.0, 0.1);
+    // NL = 0.01*u^2 is a small perturbation; modulus deviation is O(0.01) over t=[0,1]
+    EXPECT_NEAR(std::abs(u[0]), 1.0, 1e-2);
 }
 
 // --- IF45DP adaptive-step Dormand-Prince integrating-factor solver tests ---

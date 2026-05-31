@@ -208,10 +208,10 @@ TEST(UNIFORM_GRID_RVT_TEST, FREQ_RANGE_CONSTRUCTOR)
     double maxST = 1.4e16;
     spida::UniformGridRVT grid(N, minT, maxT, minST, maxST);
 
-    // Grid snaps to nearest bin, so actual min/max are within one bin-width of requested
+    // Grid snaps to nearest bin; actual min/max are within half a bin-width of requested
     double dst = 2.0 * spida::PI / (maxT - minT);
-    EXPECT_NEAR(grid.getMinST(), minST, dst);
-    EXPECT_NEAR(grid.getMaxST(), maxST, dst);
+    EXPECT_NEAR(grid.getMinST(), minST, dst / 2.0);
+    EXPECT_NEAR(grid.getMaxST(), maxST, dst / 2.0);
     EXPECT_LT(grid.getNst(), N / 2 + 1);
     EXPECT_GT(grid.getNst(), 0u);
 }
@@ -281,8 +281,11 @@ TEST(CHEB_GRID_X_TEST, EXTREMA_ENDPOINTS)
     int N = 16;
     spida::ChebExtremaGridX grid(N, -1.0, 1.0);
     const auto& x = grid.getX();
-    EXPECT_NEAR(std::abs(x.front()), 1.0, 1e-12);
-    EXPECT_NEAR(std::abs(x.back()), 1.0, 1e-12);
+    // Extrema nodes include exactly ±1; check values not just magnitudes (ordering-independent)
+    const double xmin = std::min(x.front(), x.back());
+    const double xmax = std::max(x.front(), x.back());
+    EXPECT_NEAR(xmin, -1.0, 1e-12);
+    EXPECT_NEAR(xmax, 1.0, 1e-12);
 }
 
 TEST(CHEB_GRID_X_TEST, ROOT_PROPERTIES)
