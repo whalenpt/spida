@@ -524,7 +524,7 @@ TEST_F(PropagatorTest, STEP_UPDATE_CALLS_REPORT_STATS_WHEN_LOG_ENABLED)
     prop.setLogProgress(true);
     prop.setLogFrequency(1);
 
-    EXPECT_NO_THROW(prop.stepUpdate(0.0));
+    EXPECT_NO_THROW((void) prop.stepUpdate(0.0));
     EXPECT_EQ(prop.updateCount(), 1);
 }
 
