@@ -216,6 +216,32 @@ TEST(ETD4_TEST, BERNOULLI_ODE)
     EXPECT_NEAR(u[0].real(), bernoulliExact(1.0), 1e-5);
 }
 
+TEST(ETD4_TEST, FOURTH_ORDER_CONVERGENCE)
+{
+    // Halving the step size on a 4th-order method must reduce the error by ~2^4 = 16.
+    LinOp L;
+    NLfunc NL;
+    makeBernoulliSystem(L, NL);
+    const double exact = bernoulliExact(1.0);
+
+    spida::ETD4 s_coarse(L, NL);
+    std::vector<dcmplx> u_coarse = {0.5};
+    s_coarse.evolve(u_coarse, 0.0, 1.0, 0.02);
+    const double err_coarse = std::abs(u_coarse[0].real() - exact);
+
+    spida::ETD4 s_fine(L, NL);
+    std::vector<dcmplx> u_fine = {0.5};
+    s_fine.evolve(u_fine, 0.0, 1.0, 0.01);
+    const double err_fine = std::abs(u_fine[0].real() - exact);
+
+    ASSERT_GT(err_coarse, 0.0);
+    ASSERT_GT(err_fine, 0.0);
+    const double ratio = err_coarse / err_fine;
+    // Accept [8, 32]: 4th-order gives ~16, some slack for pre-asymptotic regime.
+    EXPECT_GT(ratio, 8.0)  << "ETD4 convergence ratio below 4th-order expectation";
+    EXPECT_LT(ratio, 32.0) << "ETD4 convergence ratio above 4th-order expectation";
+}
+
 // --- IF34 adaptive-step integrating-factor solver tests ---
 
 TEST(IF34_TEST, BERNOULLI_ODE)

@@ -869,9 +869,9 @@ TEST(PWSTATS_COUNTER_TEST, INITIAL_COUNT_IS_ZERO_BY_DEFAULT)
     c.addCounter("hits");
     std::ostringstream oss;
     c.report(oss);
-    // The report should contain "hits" and show 0
+    // Report format: "  key:                           <value right-justified in 16 chars>\n"
     EXPECT_NE(oss.str().find("hits"), std::string::npos);
-    EXPECT_NE(oss.str().find('0'), std::string::npos);
+    EXPECT_NE(oss.str().find(" 0 "), std::string::npos);
 }
 
 TEST(PWSTATS_COUNTER_TEST, INITIAL_COUNT_WITH_NONZERO_START)
@@ -891,7 +891,7 @@ TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_DEFAULT_AMOUNT)
     c.increment("x");
     std::ostringstream oss;
     c.report(oss);
-    EXPECT_NE(oss.str().find('2'), std::string::npos);
+    EXPECT_NE(oss.str().find(" 2 "), std::string::npos);
 }
 
 TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_CUSTOM_AMOUNT)
@@ -901,7 +901,7 @@ TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_CUSTOM_AMOUNT)
     c.increment("x", 5u);
     std::ostringstream oss;
     c.report(oss);
-    EXPECT_NE(oss.str().find('5'), std::string::npos);
+    EXPECT_NE(oss.str().find(" 5 "), std::string::npos);
 }
 
 TEST(PWSTATS_COUNTER_TEST, INCREMENT_UNKNOWN_KEY_ADDS_IT)
@@ -961,11 +961,12 @@ TEST(PWSTATS_TIMER_TEST, ADDED_TIMER_APPEARS_IN_REPORT)
     EXPECT_NE(oss.str().find("init"), std::string::npos);
 }
 
-TEST(PWSTATS_TIMER_TEST, START_THEN_END_TIMER_RETURNS_FALSE_DUE_TO_LOGIC_BUG)
+// DISABLED: Timer::endTimer has an inverted map_it != end() condition (should be ==),
+// so it always returns false for an added timer.  The test currently asserts the
+// wrong (buggy) behavior; re-enable and update the expectation once the bug is fixed.
+TEST(PWSTATS_TIMER_TEST, DISABLED_START_THEN_END_TIMER_RETURNS_FALSE_DUE_TO_LOGIC_BUG)
 {
-    // NOTE: Timer::endTimer has an inverted condition at map_it != end()
-    // (should be ==), so it always returns false for an added timer.
-    // This test documents the actual runtime behavior.
+    // Documents the actual (buggy) runtime behavior.
     pw::Timer t;
     t.addTimer("work");
     t.startTimer("work");
