@@ -14,7 +14,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/whalenpt/spida:v1.3
+      image: ghcr.io/whalenpt/spida:v1.4
     steps:
       - name: Checkout
         uses: actions/checkout@v4
