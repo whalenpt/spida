@@ -491,3 +491,62 @@ TEST(REPORT_HANDLER_TEST, REPORT_DATA_CALLS_BOTH_1D_AND_2D)
 
     fs::remove_all(dir);
 }
+
+// ============================================================
+//  P2: setLogFrequency(0) throw (propagator.cpp:95-99)
+// ============================================================
+
+TEST(PROPAGATOR_CV_TEST, SET_LOG_FREQUENCY_ZERO_THROWS)
+{
+    TestPropagatorCV prop(fs::temp_directory_path());
+    EXPECT_THROW(prop.setLogFrequency(0), std::invalid_argument);
+}
+
+TEST(PROPAGATOR_CV_TEST, SET_LOG_FREQUENCY_NONZERO_ACCEPTED)
+{
+    TestPropagatorCV prop(fs::temp_directory_path());
+    EXPECT_NO_THROW(prop.setLogFrequency(5));
+}
+
+// ============================================================
+//  P2: stepUpdate log-progress branch (propagator.cpp:140)
+// ============================================================
+
+TEST_F(PropagatorTest, STEP_UPDATE_CALLS_REPORT_STATS_WHEN_LOG_ENABLED)
+{
+    std::vector<double> x{0.0, 1.0};
+    std::vector<double> y{0.0, 1.0};
+    TestPropagatorCV prop(m_dir);
+    prop.addReport(make1DReport("u", x, y));
+    prop.setLogProgress(true);
+    prop.setLogFrequency(1);
+
+    EXPECT_NO_THROW(prop.stepUpdate(0.0));
+    EXPECT_EQ(prop.updateCount(), 1);
+}
+
+// ============================================================
+//  P2: report1D / reportTrack / report2D early-return guards
+//  (propagator.cpp:162, 174, 187) — noop when no reports added
+// ============================================================
+
+TEST_F(PropagatorTest, REPORT_1D_NOOP_WHEN_NO_1D_REPORTS_ADDED)
+{
+    TestPropagatorCV prop(m_dir);
+    EXPECT_NO_THROW(prop.report1D(0.0));
+    EXPECT_TRUE(fs::is_empty(m_dir));
+}
+
+TEST_F(PropagatorTest, REPORT_TRACK_NOOP_WHEN_NO_TRACK_REPORTS_ADDED)
+{
+    TestPropagatorCV prop(m_dir);
+    EXPECT_NO_THROW(prop.reportTrack(0.0));
+    EXPECT_TRUE(fs::is_empty(m_dir));
+}
+
+TEST_F(PropagatorTest, REPORT_2D_NOOP_WHEN_NO_2D_REPORTS_ADDED_DIRECT_CALL)
+{
+    TestPropagatorCV prop(m_dir);
+    EXPECT_NO_THROW(prop.report2D(0.0));
+    EXPECT_TRUE(fs::is_empty(m_dir));
+}

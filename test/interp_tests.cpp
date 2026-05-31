@@ -312,3 +312,39 @@ TEST(SPLINE_INTERP_TEST, ERROR_VECTOR_XINTERP_ABOVE_RANGE)
     std::vector<double> xi = {0.5, 2.1}; // xi.back() > x.back()
     EXPECT_THROW((void) interp.eval(xi), pw::Exception);
 }
+
+// ============================================================
+//  P2: SplineInterp constructor size<3 guard (interp.cpp:151-152)
+// ============================================================
+
+TEST(SPLINE_INTERP_TEST, ERROR_ONLY_TWO_POINTS_THROWS)
+{
+    // Two points passes checkData() but fails the spline minimum-size guard
+    std::vector<double> x = {0.0, 1.0};
+    std::vector<double> y = {0.0, 1.0};
+    EXPECT_THROW(spida::SplineInterp interp(x, y), pw::Exception);
+}
+
+TEST(SPLINE_INTERP_TEST, ERROR_ONE_POINT_THROWS)
+{
+    // One point fails checkData() directly
+    std::vector<double> x = {0.0};
+    std::vector<double> y = {0.0};
+    EXPECT_THROW(spida::SplineInterp interp(x, y), pw::Exception);
+}
+
+TEST(SPLINE_INTERP_TEST, ERROR_SIZE_MISMATCH_THROWS)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0};
+    EXPECT_THROW(spida::SplineInterp interp(x, y), pw::Exception);
+}
+
+TEST(SPLINE_INTERP_TEST, THREE_POINTS_MINIMUM_ACCEPTED)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 4.0};
+    EXPECT_NO_THROW(spida::SplineInterp interp(x, y));
+    spida::SplineInterp interp(x, y);
+    EXPECT_NEAR(interp.eval(1.0), 1.0, 1e-12);
+}

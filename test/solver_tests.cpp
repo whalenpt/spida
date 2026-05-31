@@ -713,3 +713,118 @@ TEST(ETD35_TEST, SMALL_MODE_CONTOUR_BRANCH_BERNOULLI)
     EXPECT_NEAR(u[0].imag(), 0.0, 1e-12);
 }
 
+// ============================================================
+//  P2: NORM1 and NORMINF error norms (solver.cpp:394-404)
+// ============================================================
+
+TEST(SOLVER_CONTROL_TEST, ETD34_NORM1_SOLVES_BERNOULLI)
+{
+    LinOp L;
+    NLfunc NL;
+    makeBernoulliSystem(L, NL);
+    spida::ETD34 solver(L, NL);
+    solver.setEpsRel(1e-6);
+    solver.setNorm(spida::Control::ErrorNorm::NORM1);
+
+    std::vector<dcmplx> u = {0.5};
+    bool ok = solver.evolve(u, 0.0, 1.0, 0.1);
+    EXPECT_TRUE(ok);
+    EXPECT_NEAR(u[0].real(), bernoulliExact(1.0), 1e-4);
+}
+
+TEST(SOLVER_CONTROL_TEST, ETD34_NORMINF_SOLVES_BERNOULLI)
+{
+    LinOp L;
+    NLfunc NL;
+    makeBernoulliSystem(L, NL);
+    spida::ETD34 solver(L, NL);
+    solver.setEpsRel(1e-6);
+    solver.setNorm(spida::Control::ErrorNorm::NORMINF);
+
+    std::vector<dcmplx> u = {0.5};
+    bool ok = solver.evolve(u, 0.0, 1.0, 0.1);
+    EXPECT_TRUE(ok);
+    EXPECT_NEAR(u[0].real(), bernoulliExact(1.0), 1e-4);
+}
+
+TEST(SOLVER_CONTROL_TEST, IF45DP_NORM1_SOLVES_BERNOULLI)
+{
+    LinOp L;
+    NLfunc NL;
+    makeBernoulliSystem(L, NL);
+    spida::IF45DP solver(L, NL);
+    solver.setEpsRel(1e-6);
+    solver.setNorm(spida::Control::ErrorNorm::NORM1);
+
+    std::vector<dcmplx> u = {0.5};
+    bool ok = solver.evolve(u, 0.0, 1.0, 0.1);
+    EXPECT_TRUE(ok);
+    EXPECT_NEAR(u[0].real(), bernoulliExact(1.0), 1e-4);
+}
+
+// ============================================================
+//  P2: ETD35 and IF45DP failure modes
+// ============================================================
+
+TEST(EVOLVE_FAILURE_TEST, ETD35_RETURNS_FALSE_WHEN_STEP_COLLAPSES)
+{
+    LinOp L = {dcmplx(-1.0)};
+    NLfunc NL_huge = [](const std::vector<dcmplx>& in, std::vector<dcmplx>& out) {
+        out[0] = dcmplx(1e50) * in[0];
+    };
+    spida::ETD35 solver(L, NL_huge);
+    solver.setEpsRel(1e-10);
+
+    std::vector<dcmplx> u = {0.5};
+    bool ok = solver.evolve(u, 0.0, 1.0, 0.1);
+    EXPECT_FALSE(ok);
+}
+
+TEST(EVOLVE_FAILURE_TEST, IF45DP_RETURNS_FALSE_WHEN_STEP_COLLAPSES)
+{
+    LinOp L = {dcmplx(-1.0)};
+    NLfunc NL_huge = [](const std::vector<dcmplx>& in, std::vector<dcmplx>& out) {
+        out[0] = dcmplx(1e50) * in[0];
+    };
+    spida::IF45DP solver(L, NL_huge);
+    solver.setEpsRel(1e-10);
+
+    std::vector<dcmplx> u = {0.5};
+    bool ok = solver.evolve(u, 0.0, 1.0, 0.1);
+    EXPECT_FALSE(ok);
+}
+
+// ============================================================
+//  P2: use_refs=true constructor path (solver.cpp:51-53)
+// ============================================================
+
+TEST(SOLVER_CONSTRUCTOR_TEST, ETD34_USE_REFS_TRUE_SOLVES_BERNOULLI)
+{
+    LinOp L;
+    NLfunc NL;
+    makeBernoulliSystem(L, NL);
+
+    spida::ETD34 solver(L, NL, /*use_refs=*/true);
+    solver.setEpsRel(1e-7);
+
+    std::vector<dcmplx> u = {0.5};
+    bool ok = solver.evolve(u, 0.0, 1.0, 0.1);
+    EXPECT_TRUE(ok);
+    EXPECT_NEAR(u[0].real(), bernoulliExact(1.0), 1e-5);
+}
+
+TEST(SOLVER_CONSTRUCTOR_TEST, IF34_USE_REFS_TRUE_SOLVES_BERNOULLI)
+{
+    LinOp L;
+    NLfunc NL;
+    makeBernoulliSystem(L, NL);
+
+    spida::IF34 solver(L, NL, 0.84, 4.0, /*use_refs=*/true);
+    solver.setEpsRel(1e-7);
+
+    std::vector<dcmplx> u = {0.5};
+    bool ok = solver.evolve(u, 0.0, 1.0, 0.1);
+    EXPECT_TRUE(ok);
+    EXPECT_NEAR(u[0].real(), bernoulliExact(1.0), 1e-5);
+}
+

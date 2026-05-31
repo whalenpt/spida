@@ -483,3 +483,54 @@ TEST(UNIFORM_GRID_CVX_TEST, FREQSHIFT_COMPLEX_INPLACE_MATCHES_RETURN)
         EXPECT_DOUBLE_EQ(out[i].imag(), expected[i].imag());
     }
 }
+
+// ============================================================
+//  P2: UniformGridRVT error paths
+// ============================================================
+
+TEST(UNIFORM_GRID_RVT_TEST, ERROR_FREQ_EXCEEDS_MAX_POSSIBLE)
+{
+    // freqToIndx throws when omeg > maxPossibleFreq() (uniformRVT.cpp:58-59)
+    spida::UniformGridRVT grid(64, -1.0, 1.0);
+    const double too_high = grid.maxPossibleFreq() + 1.0;
+    EXPECT_THROW((void) grid.freqToIndx(too_high), std::domain_error);
+}
+
+TEST(UNIFORM_GRID_RVT_TEST, ERROR_FREQ_RANGE_NEGATIVE_MIN_ST)
+{
+    // verifyFrequencyRange throws when minST < 0 (uniformRVT.cpp:86)
+    double dst = 2.0 * spida::PI / 2.0;
+    EXPECT_THROW(
+        spida::UniformGridRVT(64u, -1.0, 1.0, -dst, 3.0 * dst),
+        std::domain_error);
+}
+
+TEST(UNIFORM_GRID_RVT_TEST, ERROR_FREQ_RANGE_MIN_EXCEEDS_MAX_ST)
+{
+    // verifyFrequencyRange throws when minST >= maxST
+    double dst = 2.0 * spida::PI / 2.0;
+    EXPECT_THROW(
+        spida::UniformGridRVT(64u, -1.0, 1.0, 4.0 * dst, 2.0 * dst),
+        std::domain_error);
+}
+
+// ============================================================
+//  P2: UniformGridT base constructor guards (uniformT.cpp:13-17)
+// ============================================================
+
+TEST(UNIFORM_GRID_RVT_TEST, ERROR_NT_LESS_THAN_TWO)
+{
+    // UniformGridT throws when nt < 2 (uniformT.cpp:13)
+    EXPECT_THROW(spida::UniformGridRVT(1u, -1.0, 1.0), std::invalid_argument);
+}
+
+TEST(UNIFORM_GRID_CVT_TEST, ERROR_MIN_T_EQUALS_MAX_T)
+{
+    // UniformGridT throws when minT >= maxT (uniformT.cpp:15-17)
+    EXPECT_THROW(spida::UniformGridCVT(16u, 2.0, 2.0), std::invalid_argument);
+}
+
+TEST(UNIFORM_GRID_CVT_TEST, ERROR_MIN_T_GREATER_THAN_MAX_T)
+{
+    EXPECT_THROW(spida::UniformGridCVT(16u, 3.0, 1.0), std::invalid_argument);
+}

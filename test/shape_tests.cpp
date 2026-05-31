@@ -622,3 +622,70 @@ TEST(SHAPEX_TEST, SHAPEX_SETWIDTH_VALID_UPDATES)
     shape.setWidth(2.0);
     EXPECT_DOUBLE_EQ(shape.width(), 2.0);
 }
+
+// ============================================================
+//  P2: setOffset shifts waveform peak (shapeT.cpp)
+// ============================================================
+
+TEST(SHAPE_TEST, GAUSST_OFFSET_SHIFTS_PEAK)
+{
+    unsigned nt = 128;
+    spida::UniformGridRVT grid(nt, -10.0, 10.0);
+    const double offset = 2.0;
+    spida::GaussT shape(grid, 1.0, 1.0);
+    shape.setOffset(offset);
+    EXPECT_DOUBLE_EQ(shape.offset(), offset);
+
+    auto rv = shape.shapeRV();
+    const auto& t = shape.getT();
+
+    // Peak must be nearest grid point to the offset
+    auto it = std::max_element(rv.begin(), rv.end());
+    std::size_t peak_idx = static_cast<std::size_t>(std::distance(rv.begin(), it));
+    double dx = 20.0 / nt; // grid spacing
+    EXPECT_NEAR(t[peak_idx], offset, dx);
+}
+
+TEST(SHAPE_TEST, GAUSST_ZERO_OFFSET_PEAK_AT_CENTER)
+{
+    unsigned nt = 128;
+    spida::UniformGridRVT grid(nt, -10.0, 10.0);
+    spida::GaussT shape(grid, 1.0, 1.0); // default offset = 0
+
+    auto rv = shape.shapeRV();
+    auto it = std::max_element(rv.begin(), rv.end());
+    std::size_t peak_idx = static_cast<std::size_t>(std::distance(rv.begin(), it));
+    EXPECT_NEAR(shape.getT()[peak_idx], 0.0, 20.0 / nt);
+}
+
+// ============================================================
+//  P2: shapeCV with non-zero fastPhase — imaginary content
+// ============================================================
+
+TEST(SHAPE_TEST, GAUSST_SHAPECV_HAS_NONZERO_IMAG_WITH_FAST_PHASE)
+{
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    spida::GaussT shape(grid, 1.0, 1.0);
+    shape.setFastPhase(1.0);
+
+    auto cv = shape.shapeCV();
+    double max_imag = 0.0;
+    for (const auto& v : cv)
+        max_imag = std::max(max_imag, std::abs(v.imag()));
+    EXPECT_GT(max_imag, 0.0);
+}
+
+TEST(SHAPE_TEST, GAUSST_SHAPECV_ZERO_FAST_PHASE_IS_REAL)
+{
+    // Without fastPhase, shapeCV should match shapeRV (all imaginary parts ~0)
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    spida::GaussT shape(grid, 1.0, 1.0);
+
+    auto cv = shape.shapeCV();
+    auto rv = shape.shapeRV();
+    ASSERT_EQ(cv.size(), rv.size());
+    for (std::size_t i = 0; i < rv.size(); ++i) {
+        EXPECT_NEAR(cv[i].real(), rv[i], 1e-14);
+        EXPECT_NEAR(cv[i].imag(), 0.0, 1e-14);
+    }
+}
