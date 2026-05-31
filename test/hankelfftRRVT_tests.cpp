@@ -204,6 +204,9 @@ TEST_F(HankelFFT_RRVTTEST, MULTITHREADED4)
     EXPECT_LT(pw::relative_error(zeta, zetab), 1e-6);
 }
 
+
+
+// ---------------------------------------------------------------------------
 // H0{exp(-(r/w0)^2)}=(w0^2/2)*exp(-w0^2*kr^2/4)
 // FFT{exp(-(t/tp)^2)}= tp*sqrt(pi)*exp(-tp^2*omega^2/4)
 // F{exp(-(r/w0)^2-(t/tp)^2)} = (tp*w0^2*sqrt(pi)/2)*exp(-w0^2*kr^2/4-tp^2*omega^2/4)

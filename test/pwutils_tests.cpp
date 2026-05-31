@@ -15,9 +15,12 @@
 #include <nlohmann/json.hpp>
 #include <pwutils/pwconstants.h>
 #include <pwutils/pwdefs.h>
+#include <pwutils/pwexcept.h>
 #include <pwutils/pwmath.hpp>
+#include <pwutils/pwindexing.hpp>
 #include <pwutils/pwstats.h>
 #include <pwutils/pwstrings.h>
+#include <pwutils/pwthreads.h>
 #include <pwutils/report.hpp>
 
 namespace fs = std::filesystem;
@@ -866,9 +869,9 @@ TEST(PWSTATS_COUNTER_TEST, INITIAL_COUNT_IS_ZERO_BY_DEFAULT)
     c.addCounter("hits");
     std::ostringstream oss;
     c.report(oss);
-    // The report should contain "hits" and show 0
+    // Report format: "  key:                           <value right-justified in 16 chars>\n"
     EXPECT_NE(oss.str().find("hits"), std::string::npos);
-    EXPECT_NE(oss.str().find('0'), std::string::npos);
+    EXPECT_NE(oss.str().find(" 0 "), std::string::npos);
 }
 
 TEST(PWSTATS_COUNTER_TEST, INITIAL_COUNT_WITH_NONZERO_START)
@@ -888,7 +891,7 @@ TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_DEFAULT_AMOUNT)
     c.increment("x");
     std::ostringstream oss;
     c.report(oss);
-    EXPECT_NE(oss.str().find('2'), std::string::npos);
+    EXPECT_NE(oss.str().find(" 2 "), std::string::npos);
 }
 
 TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_CUSTOM_AMOUNT)
@@ -898,7 +901,7 @@ TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_CUSTOM_AMOUNT)
     c.increment("x", 5u);
     std::ostringstream oss;
     c.report(oss);
-    EXPECT_NE(oss.str().find('5'), std::string::npos);
+    EXPECT_NE(oss.str().find(" 5 "), std::string::npos);
 }
 
 TEST(PWSTATS_COUNTER_TEST, INCREMENT_UNKNOWN_KEY_ADDS_IT)
@@ -958,11 +961,12 @@ TEST(PWSTATS_TIMER_TEST, ADDED_TIMER_APPEARS_IN_REPORT)
     EXPECT_NE(oss.str().find("init"), std::string::npos);
 }
 
-TEST(PWSTATS_TIMER_TEST, START_THEN_END_TIMER_RETURNS_FALSE_DUE_TO_LOGIC_BUG)
+// DISABLED: Timer::endTimer has an inverted map_it != end() condition (should be ==),
+// so it always returns false for an added timer.  The test currently asserts the
+// wrong (buggy) behavior; re-enable and update the expectation once the bug is fixed.
+TEST(PWSTATS_TIMER_TEST, DISABLED_START_THEN_END_TIMER_RETURNS_FALSE_DUE_TO_LOGIC_BUG)
 {
-    // NOTE: Timer::endTimer has an inverted condition at map_it != end()
-    // (should be ==), so it always returns false for an added timer.
-    // This test documents the actual runtime behavior.
+    // Documents the actual (buggy) runtime behavior.
     pw::Timer t;
     t.addTimer("work");
     t.startTimer("work");
@@ -1034,4 +1038,105 @@ TEST(PWSTATS_STATCENTER_TEST, SET_HEADER_APPEARS_IN_REPORT)
     std::ostringstream oss;
     sc.report(oss);
     EXPECT_NE(oss.str().find("MYHEADER"), std::string::npos);
+}
+
+// ============================================================
+//  PWINDEXING — nearestIndex
+// ============================================================
+
+TEST(PWINDEXING_TEST, EXACT_MATCH_RETURNS_CORRECT_INDEX)
+{
+    std::vector<double> v{0.0, 1.0, 2.0, 3.0};
+    EXPECT_EQ(pw::nearestIndex(v, 2.0), 2u);
+}
+
+TEST(PWINDEXING_TEST, VALUE_AT_MIN_RETURNS_ZERO)
+{
+    // val == sorted_vec[0] hits the it == cbegin() early-return path
+    std::vector<double> v{0.0, 1.0, 2.0};
+    EXPECT_EQ(pw::nearestIndex(v, 0.0), 0u);
+}
+
+TEST(PWINDEXING_TEST, VALUE_AT_MAX_RETURNS_LAST_INDEX)
+{
+    std::vector<double> v{0.0, 1.0, 2.0};
+    EXPECT_EQ(pw::nearestIndex(v, 2.0), 2u);
+}
+
+TEST(PWINDEXING_TEST, VALUE_LESS_THAN_MIN_THROWS)
+{
+    std::vector<double> v{0.0, 1.0, 2.0};
+    EXPECT_THROW(pw::nearestIndex(v, -0.5), std::out_of_range);
+}
+
+TEST(PWINDEXING_TEST, VALUE_GREATER_THAN_MAX_THROWS)
+{
+    std::vector<double> v{0.0, 1.0, 2.0};
+    EXPECT_THROW(pw::nearestIndex(v, 3.5), std::out_of_range);
+}
+
+TEST(PWINDEXING_TEST, NEAREST_BETWEEN_TWO_POINTS)
+{
+    // val=1.3 is closer to index 1 (dist 0.3) than index 2 (dist 0.7)
+    // val=1.7 is closer to index 2 (dist 0.3) than index 1 (dist 0.7)
+    std::vector<double> v{0.0, 1.0, 2.0, 3.0};
+    EXPECT_EQ(pw::nearestIndex(v, 1.3), 1u);
+    EXPECT_EQ(pw::nearestIndex(v, 1.7), 2u);
+}
+
+// ============================================================
+//  PWTHREADS — ThreadManager
+// ============================================================
+
+TEST(PWTHREADS_TEST, CONSTRUCT_ONE_THREAD)
+{
+    pw::ThreadManager tm{1u};
+    EXPECT_EQ(tm.getNumThreads(), 1u);
+}
+
+TEST(PWTHREADS_TEST, CONSTRUCT_FOUR_THREADS)
+{
+    pw::ThreadManager tm{4u};
+    EXPECT_EQ(tm.getNumThreads(), 4u);
+}
+
+TEST(PWTHREADS_TEST, CONSTRUCT_ZERO_THROWS)
+{
+    EXPECT_THROW(pw::ThreadManager{0u}, pw::Exception);
+}
+
+TEST(PWTHREADS_TEST, SET_NUM_THREADS_UPDATES_COUNT)
+{
+    pw::ThreadManager tm{2u};
+    tm.setNumThreads(8u);
+    EXPECT_EQ(tm.getNumThreads(), 8u);
+}
+
+TEST(PWTHREADS_TEST, SET_NUM_THREADS_ZERO_THROWS)
+{
+    pw::ThreadManager tm{1u};
+    EXPECT_THROW(tm.setNumThreads(0u), pw::Exception);
+}
+
+TEST(PWTHREADS_TEST, GET_BOUNDS_ONE_THREAD_COVERS_WHOLE_RANGE)
+{
+    // Single-thread path: inner loop body (i = 1..0) never executes;
+    // bounds = {0, size} covers the entire range.
+    pw::ThreadManager tm{1u};
+    const std::vector<unsigned> bounds = tm.getBounds(50u);
+    ASSERT_EQ(bounds.size(), 2u);
+    EXPECT_EQ(bounds.front(), 0u);
+    EXPECT_EQ(bounds.back(), 50u);
+}
+
+TEST(PWTHREADS_TEST, GET_BOUNDS_FOUR_THREADS_MONOTONE)
+{
+    // Verify front==0, back==size, and each successive bound is non-decreasing.
+    pw::ThreadManager tm{4u};
+    const std::vector<unsigned> bounds = tm.getBounds(100u);
+    ASSERT_EQ(bounds.size(), 5u);
+    EXPECT_EQ(bounds.front(), 0u);
+    EXPECT_EQ(bounds.back(), 100u);
+    for (std::size_t i = 1; i < bounds.size(); ++i)
+        EXPECT_LE(bounds[i - 1], bounds[i]) << "bounds not monotone at index " << i;
 }

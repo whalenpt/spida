@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <random>
+#include <stdexcept>
 
 #include <gtest/gtest.h>
 #include <pwutils/pwmath.hpp>
@@ -33,7 +34,7 @@ TEST(FFTCVT_TEST, INVERSES)
     tr.T_To_ST(in, out);
     tr.ST_To_T(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
 }
 
 // a = 1/tp^2
@@ -151,7 +152,7 @@ TEST(FFTRVT_TEST, INVERSES)
     tr.T_To_ST(in, out);
     tr.ST_To_T(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
 }
 
 // FFT{exp(-(t/tp)^2)exp(-i*omega0*t}= tp*sqrt(pi)*exp(-tp^2*(omega-omega0)^2/4)
@@ -194,17 +195,16 @@ TEST(FFTRVT_TEST, GAUSST)
     EXPECT_LT(pw::relative_error(ysp, ysp_ex), 1e-5);
 
     auto ycmplx = shape.shapeCV();
-    std::vector<dcmplx> ysp_exCV(grid.getNst(), 0.0);
-    // y = f(t)*exp(i\omega0t) - > FFT{y} = FFT{f(\omega - \omega0)}
-    // For complex fields, multiplication by exp(i\omega0t) in real space is a simple shift in
-    // spectral space
+    // F{f(t)*exp(i*omega0*t)} = F{f(omega - omega0)}: expected complex-envelope spectrum
+    std::vector<dcmplx> ysp_expectedCV(grid.getNst(), 0.0);
     for (size_t j = 0; j < grid.getNst(); j++)
-        ysp_exCV[j] =
+        ysp_expectedCV[j] =
             std::sqrt(I0) * tp * sqrt(PI) * exp(-pow(tp, 2) * pow(omega[j] - omega0, 2) / 4.0);
 
-    // Complex valued transform -> phase works fine
-    transform.CVT_To_ST(ycmplx, ysp_exCV);
-    EXPECT_LT(pw::relative_error(ysp, ysp_ex), 1e-6);
+    // Complex-valued transform output must match the expected Gaussian spectrum
+    std::vector<dcmplx> ysp_outCV(grid.getNst(), 0.0);
+    transform.CVT_To_ST(ycmplx, ysp_outCV);
+    EXPECT_LT(pw::relative_error(ysp_expectedCV, ysp_outCV), 1e-5);
 }
 
 TEST(FFTRVT_TEST, COS)
@@ -256,4 +256,90 @@ TEST(FFTRVT_TEST, DERIVATIVE_SIN)
     std::vector<dcmplx> out1(grid.getNst());
     spida::FFTRVT tr(grid);
     tr.T_To_ST(in, out1);
+    // sin(t) on [0, 2pi]: all spectral energy is in bin 1, purely imaginary
+    EXPECT_NEAR(out1[1].real(), 0.0, 1e-10);
+    EXPECT_NEAR(std::abs(out1[1]), spida::PI, 1e-10);
+}
+
+TEST(FFTCVT_TEST, ODD_N_THROWS)
+{
+    EXPECT_THROW(spida::FFTCVT(spida::UniformGridCVT{33u, -1.0, 1.0}), std::invalid_argument);
+}
+
+TEST(FFTRVT_TEST, ODD_N_THROWS)
+{
+    EXPECT_THROW(spida::FFTRVT(spida::UniformGridRVT{33u, -1.0, 1.0}), std::invalid_argument);
+}
+
+// ============================================================
+//  P2: Non-power-of-2 even sizes (N=48) — never exercised
+// ============================================================
+
+TEST(FFTCVT_TEST, NON_POWER_OF_2_ROUND_TRIP)
+{
+    unsigned N = 48;
+    using spida::dcmplx;
+    std::default_random_engine gen(42);
+    std::normal_distribution<double> dist;
+    std::vector<dcmplx> in(N), sp(N), out(N);
+    for (auto& v : in)
+        v = dcmplx(dist(gen), dist(gen));
+
+    spida::FFTCVT tr(spida::UniformGridCVT{N, -3.0, 3.0});
+    tr.T_To_ST(in, sp);
+    tr.ST_To_T(sp, out);
+    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+}
+
+TEST(FFTRVT_TEST, NON_POWER_OF_2_ROUND_TRIP)
+{
+    unsigned N = 48;
+    using spida::dcmplx;
+    spida::UniformGridRVT grid(N, -3.0, 3.0);
+    std::default_random_engine gen(43);
+    std::normal_distribution<double> dist;
+    std::vector<double> in(N), out(N);
+    std::vector<dcmplx> sp(grid.getNst());
+    for (auto& v : in)
+        v = dist(gen);
+
+    spida::FFTRVT tr(grid);
+    tr.T_To_ST(in, sp);
+    tr.ST_To_T(sp, out);
+    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+}
+
+// ============================================================
+//  P2: FFTRVT band-limited round-trip with minI > 0
+//  (fftRVT.cpp:85,92-93 — zero-fill loop for sub-band)
+// ============================================================
+
+TEST(FFTRVT_TEST, BAND_LIMITED_ROUND_TRIP_WITH_MIN_FREQ)
+{
+    // Choose minST > 0 so minI > 0: exercises the sub-band zero-fill loop
+    // (fftRVT.cpp:85 and trailing zero-fill at lines 92-93).
+    // Build the signal from the spectral domain to guarantee band-limitedness,
+    // then verify ST -> T -> ST is the identity.
+    unsigned N = 64;
+    double minT = -4.0, maxT = 4.0;
+    double dst = 2.0 * spida::PI / (maxT - minT);
+    double minST = 3.0 * dst;
+    double maxST = 10.0 * dst;
+    spida::UniformGridRVT grid(N, minT, maxT, minST, maxST);
+    EXPECT_GT(grid.getMinI(), 0u);
+
+    using spida::dcmplx;
+    std::default_random_engine gen(99);
+    std::normal_distribution<double> dist;
+    std::vector<dcmplx> sp_in(grid.getNst());
+    for (auto& v : sp_in)
+        v = dcmplx(dist(gen), dist(gen));
+
+    // ST -> T uses the zero-fill; T -> ST should recover the original spectrum.
+    std::vector<double> t_domain(N);
+    std::vector<dcmplx> sp_out(grid.getNst());
+    spida::FFTRVT tr(grid);
+    tr.ST_To_T(sp_in, t_domain);
+    tr.T_To_ST(t_domain, sp_out);
+    EXPECT_LT(pw::relative_error(sp_in, sp_out), 1e-10);
 }

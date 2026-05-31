@@ -1,15 +1,20 @@
 
 #include <cmath>
+#include <complex>
 #include <stdexcept>
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <spida/grid/besselR.h>
 #include <spida/grid/chebX.h>
+#include <spida/grid/gridR.h>
 #include <spida/grid/uniformCVT.h>
 #include <spida/grid/uniformCVX.h>
 #include <spida/grid/uniformRVT.h>
 #include <spida/grid/uniformRVX.h>
 #include <spida/helper/constants.h>
+
+using spida::dcmplx;
 
 // --- UniformGridCVX tests ---
 
@@ -208,10 +213,10 @@ TEST(UNIFORM_GRID_RVT_TEST, FREQ_RANGE_CONSTRUCTOR)
     double maxST = 1.4e16;
     spida::UniformGridRVT grid(N, minT, maxT, minST, maxST);
 
-    // Grid snaps to nearest bin, so actual min/max are within one bin-width of requested
+    // Grid snaps to nearest bin; actual min/max are within half a bin-width of requested
     double dst = 2.0 * spida::PI / (maxT - minT);
-    EXPECT_NEAR(grid.getMinST(), minST, dst);
-    EXPECT_NEAR(grid.getMaxST(), maxST, dst);
+    EXPECT_NEAR(grid.getMinST(), minST, dst / 2.0);
+    EXPECT_NEAR(grid.getMaxST(), maxST, dst / 2.0);
     EXPECT_LT(grid.getNst(), N / 2 + 1);
     EXPECT_GT(grid.getNst(), 0u);
 }
@@ -281,8 +286,11 @@ TEST(CHEB_GRID_X_TEST, EXTREMA_ENDPOINTS)
     int N = 16;
     spida::ChebExtremaGridX grid(N, -1.0, 1.0);
     const auto& x = grid.getX();
-    EXPECT_NEAR(std::abs(x.front()), 1.0, 1e-12);
-    EXPECT_NEAR(std::abs(x.back()), 1.0, 1e-12);
+    // Extrema nodes include exactly ±1; check values not just magnitudes (ordering-independent)
+    const double xmin = std::min(x.front(), x.back());
+    const double xmax = std::max(x.front(), x.back());
+    EXPECT_NEAR(xmin, -1.0, 1e-12);
+    EXPECT_NEAR(xmax, 1.0, 1e-12);
 }
 
 TEST(CHEB_GRID_X_TEST, ROOT_PROPERTIES)
@@ -305,4 +313,224 @@ TEST(CHEB_GRID_X_TEST, ROOT_INTERIOR_POINTS)
         EXPECT_GT(xi, -1.0);
         EXPECT_LT(xi, 1.0);
     }
+}
+
+// --- GridR::mirrorGrid tests ---
+
+TEST(GRID_TEST, MIRROR_GRID_DOUBLE_BASIC)
+{
+    // N=4: output must be {4,3,2,1, 1,2,3,4}
+    const unsigned nr = 4;
+    spida::BesselRootGridR grid(nr, 1.0);
+    const std::vector<double> v{1.0, 2.0, 3.0, 4.0};
+    const auto result = grid.mirrorGrid(v);
+    ASSERT_EQ(result.size(), 2 * nr);
+    EXPECT_DOUBLE_EQ(result[0], 4.0);
+    EXPECT_DOUBLE_EQ(result[1], 3.0);
+    EXPECT_DOUBLE_EQ(result[2], 2.0);
+    EXPECT_DOUBLE_EQ(result[3], 1.0);
+    EXPECT_DOUBLE_EQ(result[4], 1.0);
+    EXPECT_DOUBLE_EQ(result[5], 2.0);
+    EXPECT_DOUBLE_EQ(result[6], 3.0);
+    EXPECT_DOUBLE_EQ(result[7], 4.0);
+}
+
+TEST(GRID_TEST, MIRROR_GRID_DOUBLE_SIGN_REVERSE)
+{
+    // signReverse=true: first half negated, second half unchanged
+    const unsigned nr = 4;
+    spida::BesselRootGridR grid(nr, 1.0);
+    const std::vector<double> v{1.0, 2.0, 3.0, 4.0};
+    const auto result = grid.mirrorGrid(v, /*signReverse=*/true);
+    ASSERT_EQ(result.size(), 2 * nr);
+    EXPECT_DOUBLE_EQ(result[0], -4.0);
+    EXPECT_DOUBLE_EQ(result[1], -3.0);
+    EXPECT_DOUBLE_EQ(result[2], -2.0);
+    EXPECT_DOUBLE_EQ(result[3], -1.0);
+    EXPECT_DOUBLE_EQ(result[4],  1.0);
+    EXPECT_DOUBLE_EQ(result[5],  2.0);
+    EXPECT_DOUBLE_EQ(result[6],  3.0);
+    EXPECT_DOUBLE_EQ(result[7],  4.0);
+}
+
+TEST(GRID_TEST, MIRROR_GRID_COMPLEX_BASIC)
+{
+    // N=3: {(1,0),(2,1),(3,2)} -> {(3,2),(2,1),(1,0), (1,0),(2,1),(3,2)}
+    const unsigned nr = 3;
+    spida::BesselRootGridR grid(nr, 1.0);
+    const std::vector<dcmplx> v{{1.0, 0.0}, {2.0, 1.0}, {3.0, 2.0}};
+    const auto result = grid.mirrorGrid(v);
+    ASSERT_EQ(result.size(), 2 * nr);
+    EXPECT_EQ(result[0], dcmplx(3.0, 2.0));
+    EXPECT_EQ(result[1], dcmplx(2.0, 1.0));
+    EXPECT_EQ(result[2], dcmplx(1.0, 0.0));
+    EXPECT_EQ(result[3], dcmplx(1.0, 0.0));
+    EXPECT_EQ(result[4], dcmplx(2.0, 1.0));
+    EXPECT_EQ(result[5], dcmplx(3.0, 2.0));
+}
+
+TEST(GRID_TEST, MIRROR_GRID_COMPLEX_SIGN_REVERSE)
+{
+    // signReverse=true: first half elements negated (both real and imag), second half unchanged
+    const unsigned nr = 3;
+    spida::BesselRootGridR grid(nr, 1.0);
+    const std::vector<dcmplx> v{{1.0, 0.0}, {2.0, 1.0}, {3.0, 2.0}};
+    const auto result = grid.mirrorGrid(v, /*signReverse=*/true);
+    ASSERT_EQ(result.size(), 2 * nr);
+    EXPECT_EQ(result[0], dcmplx(-3.0, -2.0));
+    EXPECT_EQ(result[1], dcmplx(-2.0, -1.0));
+    EXPECT_EQ(result[2], dcmplx(-1.0,  0.0));
+    EXPECT_EQ(result[3], dcmplx( 1.0,  0.0));
+    EXPECT_EQ(result[4], dcmplx( 2.0,  1.0));
+    EXPECT_EQ(result[5], dcmplx( 3.0,  2.0));
+}
+
+TEST(GRID_TEST, MIRROR_GRID_INPLACE_DOUBLE_MATCHES_RETURN)
+{
+    // void overload must produce identical output to return-value overload
+    const unsigned nr = 4;
+    spida::BesselRootGridR grid(nr, 1.0);
+    const std::vector<double> v{10.0, 20.0, 30.0, 40.0};
+    const auto expected = grid.mirrorGrid(v);
+    std::vector<double> out(2 * nr);
+    grid.mirrorGrid(v, out);
+    EXPECT_EQ(out, expected);
+}
+
+TEST(GRID_TEST, MIRROR_GRID_INPLACE_COMPLEX_MATCHES_RETURN)
+{
+    // void overload must produce identical output to return-value overload
+    const unsigned nr = 3;
+    spida::BesselRootGridR grid(nr, 1.0);
+    const std::vector<dcmplx> v{{1.5, -0.5}, {2.5, 0.0}, {3.5, 1.0}};
+    const auto expected = grid.mirrorGrid(v);
+    std::vector<dcmplx> out(2 * nr);
+    grid.mirrorGrid(v, out);
+    EXPECT_EQ(out, expected);
+}
+
+// --- UniformGridCVT dcmplx freqshift tests ---
+
+TEST(UNIFORM_GRID_CVT_TEST, FREQSHIFT_COMPLEX_RETURN_MONOTONE)
+{
+    // Build a dcmplx input whose real parts equal st[] (non-monotone FFT order)
+    // and imaginary parts carry arbitrary non-zero values to exercise the dcmplx path.
+    // After freqshift, real parts must be monotonically non-decreasing.
+    unsigned N = 16;
+    spida::UniformGridCVT grid(N, -1.0, 1.0);
+    const auto& st = grid.getST();
+    std::vector<dcmplx> in(N);
+    for (unsigned i = 0; i < N; ++i)
+        in[i] = dcmplx(st[i], static_cast<double>(i));
+    const auto result = grid.freqshift(in);
+    ASSERT_EQ(result.size(), N);
+    for (unsigned i = 1; i < N; ++i)
+        EXPECT_LE(result[i - 1].real(), result[i].real() + 1e-14);
+}
+
+TEST(UNIFORM_GRID_CVT_TEST, FREQSHIFT_COMPLEX_INPLACE_MATCHES_RETURN)
+{
+    // void overload must produce element-wise identical output to return-value overload
+    unsigned N = 16;
+    spida::UniformGridCVT grid(N, -1.0, 1.0);
+    const auto& st = grid.getST();
+    std::vector<dcmplx> in(N);
+    for (unsigned i = 0; i < N; ++i)
+        in[i] = dcmplx(st[i], static_cast<double>(i) * 0.1);
+    const auto expected = grid.freqshift(in);
+    std::vector<dcmplx> out(N);
+    grid.freqshift(in, out);
+    ASSERT_EQ(out.size(), expected.size());
+    for (unsigned i = 0; i < N; ++i) {
+        EXPECT_DOUBLE_EQ(out[i].real(), expected[i].real());
+        EXPECT_DOUBLE_EQ(out[i].imag(), expected[i].imag());
+    }
+}
+
+// --- UniformGridCVX dcmplx freqshift tests ---
+
+TEST(UNIFORM_GRID_CVX_TEST, FREQSHIFT_COMPLEX_RETURN_MONOTONE)
+{
+    // Build a dcmplx input whose real parts equal sx[] and imaginary parts are non-zero.
+    // After freqshift, real parts must be monotonically non-decreasing.
+    unsigned N = 16;
+    spida::UniformGridCVX grid(N, -1.0, 1.0);
+    const auto& sx = grid.getSX();
+    std::vector<dcmplx> in(N);
+    for (unsigned i = 0; i < N; ++i)
+        in[i] = dcmplx(sx[i], static_cast<double>(i));
+    const auto result = grid.freqshift(in);
+    ASSERT_EQ(result.size(), N);
+    for (unsigned i = 1; i < N; ++i)
+        EXPECT_LE(result[i - 1].real(), result[i].real() + 1e-14);
+}
+
+TEST(UNIFORM_GRID_CVX_TEST, FREQSHIFT_COMPLEX_INPLACE_MATCHES_RETURN)
+{
+    // void overload must produce element-wise identical output to return-value overload
+    unsigned N = 16;
+    spida::UniformGridCVX grid(N, -1.0, 1.0);
+    const auto& sx = grid.getSX();
+    std::vector<dcmplx> in(N);
+    for (unsigned i = 0; i < N; ++i)
+        in[i] = dcmplx(sx[i], static_cast<double>(i) * 0.1);
+    const auto expected = grid.freqshift(in);
+    std::vector<dcmplx> out(N);
+    grid.freqshift(in, out);
+    ASSERT_EQ(out.size(), expected.size());
+    for (unsigned i = 0; i < N; ++i) {
+        EXPECT_DOUBLE_EQ(out[i].real(), expected[i].real());
+        EXPECT_DOUBLE_EQ(out[i].imag(), expected[i].imag());
+    }
+}
+
+// ============================================================
+//  P2: UniformGridRVT error paths
+// ============================================================
+
+TEST(UNIFORM_GRID_RVT_TEST, ERROR_FREQ_EXCEEDS_MAX_POSSIBLE)
+{
+    // freqToIndx throws when omeg > maxPossibleFreq() (uniformRVT.cpp:58-59)
+    spida::UniformGridRVT grid(64, -1.0, 1.0);
+    const double too_high = grid.maxPossibleFreq() + 1.0;
+    EXPECT_THROW((void) grid.freqToIndx(too_high), std::domain_error);
+}
+
+TEST(UNIFORM_GRID_RVT_TEST, ERROR_FREQ_RANGE_NEGATIVE_MIN_ST)
+{
+    // verifyFrequencyRange throws when minST < 0 (uniformRVT.cpp:86)
+    double dst = 2.0 * spida::PI / 2.0;
+    EXPECT_THROW(
+        spida::UniformGridRVT(64u, -1.0, 1.0, -dst, 3.0 * dst),
+        std::domain_error);
+}
+
+TEST(UNIFORM_GRID_RVT_TEST, ERROR_FREQ_RANGE_MIN_EXCEEDS_MAX_ST)
+{
+    // verifyFrequencyRange throws when minST >= maxST
+    double dst = 2.0 * spida::PI / 2.0;
+    EXPECT_THROW(
+        spida::UniformGridRVT(64u, -1.0, 1.0, 4.0 * dst, 2.0 * dst),
+        std::domain_error);
+}
+
+// ============================================================
+//  P2: UniformGridT base constructor guards (uniformT.cpp:13-17)
+// ============================================================
+
+TEST(UNIFORM_GRID_RVT_TEST, ERROR_NT_LESS_THAN_TWO)
+{
+    // UniformGridT throws when nt < 2 (uniformT.cpp:13)
+    EXPECT_THROW(spida::UniformGridRVT(1u, -1.0, 1.0), std::invalid_argument);
+}
+
+TEST(UNIFORM_GRID_CVT_TEST, ERROR_MIN_T_EQUALS_MAX_T)
+{
+    // UniformGridT throws when minT >= maxT (uniformT.cpp:15-17)
+    EXPECT_THROW(spida::UniformGridCVT(16u, 2.0, 2.0), std::invalid_argument);
+}
+
+TEST(UNIFORM_GRID_CVT_TEST, ERROR_MIN_T_GREATER_THAN_MAX_T)
+{
+    EXPECT_THROW(spida::UniformGridCVT(16u, 3.0, 1.0), std::invalid_argument);
 }

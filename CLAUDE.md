@@ -48,6 +48,7 @@ lcov --list coverage.filtered.info
 ```
 
 ## CMake & Build Conventions
+- `cmake_minimum_required` appears **only in the top-level `CMakeLists.txt`** (currently `VERSION 3.21`). Subdirectory `CMakeLists.txt` files must NOT declare their own `cmake_minimum_required` — the top-level declaration governs the entire build.
 - This is a C++23 project; verify C++23 enforcement when modifying CMakeLists.txt.
 - When fixing CMake install/export errors, prefer adjusting target visibility (PUBLIC/PRIVATE/INTERFACE) carefully — INTERFACE libraries and PUBLIC linkage frequently break the install export set. Verify the export set still resolves before declaring done.
 - Do NOT add target aliases that may collide with submodule-provided targets; check submodules first.

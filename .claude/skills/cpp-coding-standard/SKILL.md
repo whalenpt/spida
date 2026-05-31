@@ -1,11 +1,22 @@
 ---
 name: cpp-coding-standards
-description: C++ coding standards based on the C++ Core Guidelines (isocpp.github.io). Use when writing, reviewing, or refactoring C++ code to enforce modern, safe, and idiomatic practices.
+description: >
+  C++ coding standards from the C++ Core Guidelines (isocpp.github.io), with a modern
+  C++20/23 layer (std::expected, std::span, std::format, concepts). Use when writing,
+  reviewing, or refactoring C++ to enforce modern, safe, and idiomatic practices. For
+  test suites, sanitizers, and coverage, use the companion cpp-testing skill. Triggers:
+  "review this C++", "is this idiomatic", "modernize", "Rule of Five", "RAII",
+  ".cpp/.hpp", CMake C++ targets.
 ---
 
 # C++ Coding Standards (C++ Core Guidelines)
 
 Comprehensive coding standards for modern C++ (C++17/20/23) derived from the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines). Enforces type safety, resource safety, immutability, and clarity.
+
+> **Project conventions win.** If the project defines its own build, configure, test, or
+> coverage commands (e.g. `CLAUDE.md`, `CMakePresets.json`, a `Makefile`, a `conanfile`),
+> those are authoritative — use them verbatim. Treat the generic invocations in this skill
+> as a fallback only for projects with no such convention.
 
 ## When to Use
 
@@ -20,6 +31,7 @@ Comprehensive coding standards for modern C++ (C++17/20/23) derived from the [C+
 - Non-C++ projects
 - Legacy C codebases that cannot adopt modern C++ features
 - Embedded/bare-metal contexts where specific guidelines conflict with hardware constraints (adapt selectively)
+- Writing/fixing test suites, configuring sanitizers, or measuring coverage — use the companion `cpp-testing` skill
 
 ## Cross-Cutting Principles
 
@@ -379,6 +391,32 @@ void run() {
 }
 ```
 
+### Exceptions vs `std::expected` (C++23)
+
+Exceptions are not the only valid strategy (E.1). In regulated/defense builds exceptions
+are often disabled (`-fno-exceptions`), and hot paths can't afford throwing. Choose by the
+nature of the failure:
+
+```cpp
+// Exceptions: truly exceptional, unrecoverable, or cross-API-boundary failures (E.2)
+void connect(const Endpoint& e);  // throws NetworkError on unreachable host
+
+// std::expected: expected, recoverable, frequent — parsing, lookups, validation (C++23)
+enum class ParseError { empty, bad_format, out_of_range };
+
+/// Parse a decimal int. No allocation, no throw — safe on noexcept hot paths.
+[[nodiscard]] std::expected<int, ParseError> to_int(std::string_view s) noexcept;
+
+if (auto r = to_int(field); r) {
+    use(*r);
+} else if (r.error() == ParseError::empty) {
+    use_default();
+}
+```
+
+Don't use exceptions for control flow (E.3) — reach for `std::expected` there. Reserve
+throwing for failures the immediate caller cannot reasonably handle.
+
 ### Anti-Patterns
 
 - Throwing built-in types like `int` or string literals (E.14)
@@ -554,7 +592,7 @@ void save(const T& obj, const std::string& path);
 | **SL.con.2** | Prefer `std::vector` by default |
 | **SL.str.1** | Use `std::string` to own character sequences |
 | **SL.str.2** | Use `std::string_view` to refer to character sequences |
-| **SL.io.50** | Avoid `endl` (use `'\n'` -- `endl` forces a flush) |
+| **SL.io.50** | Prefer `std::print`/`std::println` (C++23); on iostreams use `'\n'` not `std::endl` |
 
 ```cpp
 // SL.con.1 + SL.con.2: Prefer vector/array over C arrays
@@ -566,9 +604,71 @@ std::string build_greeting(std::string_view name) {
     return "Hello, " + std::string(name) + "!";
 }
 
-// SL.io.50: Use '\n' not endl
+// SL.io.50: Prefer std::print (C++23); fall back to '\n', never endl
+std::print("result: {}\n", value);
 std::cout << "result: " << value << '\n';
 ```
+
+> If the project standardizes on a logging library (e.g. spdlog/fmt), route diagnostic and
+> log output through it. The `std::print`/`std::format` preference applies to ad-hoc,
+> non-logging program output.
+
+## Modern C++20/23
+
+Default to C++23 unless a project is pinned otherwise. These idioms supersede older
+patterns elsewhere in this document and should be the first reach for new code.
+
+### Key Idioms
+
+| Feature | Use it for |
+|---------|-----------|
+| `std::expected<T,E>` (C++23) | Recoverable errors on hot paths / `noexcept` boundaries / `-fno-exceptions` builds (see Error Handling) |
+| `std::span<T>` (C++20) | Non-owning view over contiguous data — replaces `(ptr, len)` pairs |
+| `std::format` / `std::print` (C++23) | Compile-time-checked formatting — replaces `<<` chains and `printf` |
+| `[[nodiscard]]` | Any function whose result must not be silently dropped (errors, handles, allocations) |
+| Designated initializers (C++20) | Self-documenting aggregate initialization |
+| `consteval` / `constinit` | Force compile-time evaluation / guarantee constant initialization |
+
+### `std::span`: non-owning contiguous view
+
+```cpp
+/// Mean of a contiguous range; borrows, never owns. (R.3, SL.con.2)
+[[nodiscard]] double mean(std::span<const double> xs) noexcept;
+
+std::vector<double> v{1, 2, 3};
+std::array<double, 3> a{1, 2, 3};
+mean(v);          // both bind without copies
+mean(a);
+```
+
+### `std::print` / `std::format`
+
+```cpp
+// C++23: type-safe, no stream-state surprises, no endl-vs-'\n' tradeoff
+std::print("result: {} ({:.2f}%)\n", count, pct);
+```
+
+### `[[nodiscard]]`
+
+```cpp
+// Apply to factory/error/handle returns so results can't be silently dropped
+[[nodiscard]] std::expected<Config, ConfigError> load_config(const std::string& path);
+```
+
+### Designated initializers
+
+```cpp
+// C++20: self-documenting aggregate init
+struct Window { int width; int height; bool fullscreen; };
+const Window w{.width = 1920, .height = 1080, .fullscreen = true};
+```
+
+### Anti-Patterns
+
+- `(pointer, length)` parameter pairs where `std::span` would express the contract (use `std::span`)
+- Exceptions for expected/recoverable failures where `std::expected` fits better (E.3)
+- Manual `<<` chains for non-trivial formatting (use `std::format`/`std::print`)
+- Dropping a meaningful return value silently (annotate the source with `[[nodiscard]]`)
 
 ## Enumerations (Enum.*)
 
@@ -698,6 +798,48 @@ std::vector<std::unique_ptr<Point>> indirect_points; // BAD: pointer chasing
 - Choosing "clever" low-level code over clear abstractions (Per.4, Per.5)
 - Ignoring data layout and cache behavior (Per.19)
 
+## Verification & Tooling
+
+"Done" means clean under the full gate, not just compiling. **Run the project's own
+commands when it defines them** (`cmake --preset …`, `ctest --preset …`, a `Makefile`
+target); the invocations below are the generic fallback.
+
+### Warnings-as-errors
+
+Set warning flags where they survive a clean reconfigure — in the toolchain/Conan profile
+or per target — not as an ad-hoc `-DCMAKE_CXX_FLAGS` override, which a preset-driven build
+will discard or fight.
+
+```cmake
+# Per target (portable, survives reconfigure)
+target_compile_options(my_lib PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Wconversion -Werror>)
+```
+
+```bash
+# Preset-driven project (preferred): build/test go through presets
+cmake --preset <configure-preset>
+cmake --build --preset <build-preset> --parallel
+ctest --preset <test-preset> --output-on-failure
+
+# Generic fallback only when there is no preset/Makefile convention:
+cmake -S . -B build -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Wconversion -Werror"
+cmake --build build -j
+```
+
+### Static analysis + format
+
+```bash
+# Point clang-tidy at the REAL build dir holding compile_commands.json
+# (e.g. build/Release for a preset project), not a hardcoded "build".
+clang-tidy -p build/Release $(git diff --name-only --diff-filter=ACM -- '*.cpp')
+clang-format --dry-run --Werror $(git ls-files '*.cpp' '*.hpp' '*.h')
+```
+
+Sanitizers, coverage thresholds, and GoogleTest/CTest setup live in the companion
+`cpp-testing` skill. Prefer sanitizers over Valgrind when both are available; keep Valgrind
+as the fallback for restricted targets.
+
 ## Quick Reference Checklist
 
 Before marking C++ work complete:
@@ -718,5 +860,12 @@ Before marking C++ work complete:
 - [ ] Headers have include guards and are self-contained (SF.8, SF.11)
 - [ ] Locks use RAII (`scoped_lock`/`lock_guard`) (CP.20)
 - [ ] Exceptions are custom types, thrown by value, caught by reference (E.14, E.15)
-- [ ] `'\n'` instead of `std::endl` (SL.io.50)
+- [ ] `std::expected` (not exceptions) for expected/recoverable failures on hot paths
+- [ ] `[[nodiscard]]` on results that must not be dropped (errors, handles, allocations)
+- [ ] `std::span` instead of `(pointer, length)` parameter pairs (SL.con, R.3)
+- [ ] `std::print`/`std::format` instead of `<<` chains where formatting is non-trivial (or the project logger)
+- [ ] `'\n'` instead of `std::endl` when on iostreams (SL.io.50)
 - [ ] No magic numbers (ES.45)
+- [ ] Built and tested via the project's presets/targets (not ad-hoc `cmake -B`/`--build`)
+- [ ] Builds clean under warnings-as-errors and ASan/UBSan
+- [ ] `clang-format`/`clang-tidy` clean on changed files

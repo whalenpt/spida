@@ -1,5 +1,6 @@
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -151,7 +152,7 @@ TEST(SPLINE_INTERP_TEST, SMOOTH_FUNCTION_ACCURACY)
     // Spline on f(x) = sin(x) should be accurate.
     unsigned N = 20;
     double minx = 0.0;
-    double maxx = 3.14159265358979;
+    double maxx = std::numbers::pi;
     std::vector<double> x(N), y(N);
     for (unsigned i = 0; i < N; i++) {
         x[i] = minx + i * (maxx - minx) / (N - 1);
@@ -176,7 +177,7 @@ TEST(SPLINE_INTERP_TEST, SINGLE_POINT_EVAL)
     spida::SplineInterp interp(x, y);
     EXPECT_NEAR(interp.eval(0.0), 0.0, 1e-10);
     EXPECT_NEAR(interp.eval(9.0), 81.0, 1e-10);
-    EXPECT_NEAR(interp.eval(4.5), 4.5 * 4.5, 1e-3);
+    EXPECT_NEAR(interp.eval(4.5), 4.5 * 4.5, 1e-10);
 }
 
 TEST(SPLINE_INTERP_TEST, IN_PLACE_VECTOR_EVAL)
@@ -197,11 +198,153 @@ TEST(SPLINE_INTERP_TEST, IN_PLACE_VECTOR_EVAL)
     EXPECT_NEAR(yi[2], 4.0, 1e-12);
 }
 
-TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_OUT_OF_RANGE)
+TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_BELOW_RANGE)
 {
     std::vector<double> x = {0.0, 1.0, 2.0, 3.0};
     std::vector<double> y = {0.0, 1.0, 2.0, 3.0};
     spida::SplineInterp interp(x, y);
     EXPECT_THROW((void) interp.eval(-0.5), pw::Exception);
+}
+
+TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_ABOVE_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0, 3.0};
+    std::vector<double> y = {0.0, 1.0, 2.0, 3.0};
+    spida::SplineInterp interp(x, y);
     EXPECT_THROW((void) interp.eval(3.5), pw::Exception);
+}
+
+// --- tridisolve guard-clause tests (P1 gap coverage) ---
+
+// c.size() < 2: superdiagonal vector has only one element (line 110-112)
+TEST(TRIDISOLVE_TEST, SIZE_ERROR_SUPERDIAG)
+{
+    std::vector<double> a = {1.0, 1.0};
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0}; // size 1, below minimum of 2
+    std::vector<double> d = {1.0, 1.0, 1.0};
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// d.size() < 3: RHS vector has only two elements (line 113-114)
+TEST(TRIDISOLVE_TEST, SIZE_ERROR_RHS_TOO_SMALL)
+{
+    std::vector<double> a = {1.0, 1.0};
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0, 1.0};
+    std::vector<double> d = {1.0, 1.0}; // size 2, below minimum of 3
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// a.size() != b.size()-1: subdiagonal is too long relative to diagonal (line 115-120)
+TEST(TRIDISOLVE_TEST, SIZE_MISMATCH_SUBDIAG_VS_DIAG)
+{
+    std::vector<double> a = {1.0, 1.0, 1.0}; // size 3, but b.size()-1 == 2
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0, 1.0};
+    std::vector<double> d = {1.0, 1.0, 1.0};
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// c.size() != b.size()-1: superdiagonal is too long relative to diagonal (line 121-126)
+TEST(TRIDISOLVE_TEST, SIZE_MISMATCH_SUPERDIAG_VS_DIAG)
+{
+    std::vector<double> a = {1.0, 1.0};
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0, 1.0, 1.0}; // size 3, but b.size()-1 == 2
+    std::vector<double> d = {1.0, 1.0, 1.0};
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// b.size() != d.size(): RHS has more elements than the diagonal (line 127-129)
+TEST(TRIDISOLVE_TEST, SIZE_MISMATCH_DIAG_VS_RHS)
+{
+    std::vector<double> a = {1.0, 1.0};
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0, 1.0};
+    std::vector<double> d = {1.0, 1.0, 1.0, 1.0}; // size 4, but b.size() == 3
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// --- checkXInterp(vector) range-check tests (P1 gap coverage) ---
+
+// LinearInterp::eval(vector): xi[0] is below x[0] (interp.cpp:14-18)
+TEST(LINEAR_INTERP_TEST, ERROR_VECTOR_XINTERP_BELOW_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 2.0};
+    spida::LinearInterp interp(x, y);
+    std::vector<double> xi = {-0.1, 1.0}; // xi[0] < x[0]
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
+}
+
+// LinearInterp::eval(vector): xi.back() is above x.back() (interp.cpp:19-23)
+TEST(LINEAR_INTERP_TEST, ERROR_VECTOR_XINTERP_ABOVE_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 2.0};
+    spida::LinearInterp interp(x, y);
+    std::vector<double> xi = {0.5, 2.1}; // xi.back() > x.back()
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
+}
+
+// SplineInterp::eval(vector): xi[0] is below x[0] (interp.cpp:14-18)
+TEST(SPLINE_INTERP_TEST, ERROR_VECTOR_XINTERP_BELOW_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 2.0};
+    spida::SplineInterp interp(x, y);
+    std::vector<double> xi = {-0.1, 1.0}; // xi[0] < x[0]
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
+}
+
+// SplineInterp::eval(vector): xi.back() is above x.back() (interp.cpp:19-23)
+TEST(SPLINE_INTERP_TEST, ERROR_VECTOR_XINTERP_ABOVE_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 2.0};
+    spida::SplineInterp interp(x, y);
+    std::vector<double> xi = {0.5, 2.1}; // xi.back() > x.back()
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
+}
+
+// ============================================================
+//  P2: SplineInterp constructor size<3 guard (interp.cpp:151-152)
+// ============================================================
+
+TEST(SPLINE_INTERP_TEST, ERROR_ONLY_TWO_POINTS_THROWS)
+{
+    // Two points passes checkData() but fails the spline minimum-size guard
+    std::vector<double> x = {0.0, 1.0};
+    std::vector<double> y = {0.0, 1.0};
+    EXPECT_THROW(spida::SplineInterp interp(x, y), pw::Exception);
+}
+
+TEST(SPLINE_INTERP_TEST, ERROR_ONE_POINT_THROWS)
+{
+    // One point fails checkData() directly
+    std::vector<double> x = {0.0};
+    std::vector<double> y = {0.0};
+    EXPECT_THROW(spida::SplineInterp interp(x, y), pw::Exception);
+}
+
+TEST(SPLINE_INTERP_TEST, ERROR_SIZE_MISMATCH_THROWS)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0};
+    EXPECT_THROW(spida::SplineInterp interp(x, y), pw::Exception);
+}
+
+TEST(SPLINE_INTERP_TEST, THREE_POINTS_MINIMUM_ACCEPTED)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 4.0};
+    EXPECT_NO_THROW(spida::SplineInterp interp(x, y));
+    spida::SplineInterp interp(x, y);
+    EXPECT_NEAR(interp.eval(1.0), 1.0, 1e-12);
 }
