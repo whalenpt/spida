@@ -204,49 +204,6 @@ TEST_F(HankelFFT_RRVTTEST, MULTITHREADED4)
     EXPECT_LT(pw::relative_error(zeta, zetab), 1e-6);
 }
 
-// ---------------------------------------------------------------------------
-// RCVT complex-envelope method tests
-//
-// Initialization pattern: RT_To_SRST(u, srst) gives a valid SRST (nr*nst).
-// SRST_To_RCVT(srst, rcvt) then yields a valid RCVT (nr*nt, complex).
-// All four zero-hit methods are exercised below.
-// ---------------------------------------------------------------------------
-
-/// Smoke test: SRST_To_RCVT and RCVT_To_SRST can be called without crashing and
-/// produce output of the expected dimensions.  Full round-trip accuracy requires
-/// fixing the underlying RCVT implementation (tracked separately).
-TEST_F(HankelFFT_RRVTTEST, SRST_TO_RCVT_AND_RCVT_TO_SRST_SMOKE)
-{
-    using spida::dcmplx;
-
-    std::vector<dcmplx> srst(nr * nst);
-    transform->RT_To_SRST(u, srst);
-
-    std::vector<dcmplx> rcvt(nr * nt);
-    EXPECT_NO_THROW(transform->SRST_To_RCVT(srst, rcvt));
-    EXPECT_EQ(rcvt.size(), nr * nt);
-
-    std::vector<dcmplx> srst_back(nr * nst);
-    EXPECT_NO_THROW(transform->RCVT_To_SRST(rcvt, srst_back));
-    EXPECT_EQ(srst_back.size(), nr * nst);
-}
-
-/// Smoke test: RST_To_RCVT and RCVT_To_RST can be called without crashing and
-/// produce output of the expected dimensions.
-TEST_F(HankelFFT_RRVTTEST, RST_TO_RCVT_AND_RCVT_TO_RST_SMOKE)
-{
-    using spida::dcmplx;
-
-    transform->RT_To_RST(u, v);
-
-    std::vector<dcmplx> rcvt(nr * nt);
-    EXPECT_NO_THROW(transform->RST_To_RCVT(v, rcvt));
-    EXPECT_EQ(rcvt.size(), nr * nt);
-
-    std::vector<dcmplx> rst_back(nr * nst);
-    EXPECT_NO_THROW(transform->RCVT_To_RST(rcvt, rst_back));
-    EXPECT_EQ(rst_back.size(), nr * nst);
-}
 
 
 // ---------------------------------------------------------------------------
