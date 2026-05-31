@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.21)
 
 project(SPIDA
     VERSION 0.1.0
