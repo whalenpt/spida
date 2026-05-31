@@ -509,3 +509,116 @@ TEST(SHAPER_TEST, GAUSSR_SHAPERV_SCALES_WITH_AMPLITUDE)
     for (size_t i = 0; i < rv1.size(); i++)
         EXPECT_NEAR(rv2[i], 3.0 * rv1[i], 1e-12);
 }
+
+// ============================================================
+//  Zero-width constructor guard tests — ShapeT
+// ============================================================
+
+TEST(SHAPE_TEST, GAUSST_ZERO_WIDTH_THROWS)
+{
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    EXPECT_THROW(spida::GaussT(grid, 1.0, 0.0), std::domain_error);
+}
+
+TEST(SHAPE_TEST, SECHT_ZERO_WIDTH_THROWS)
+{
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    EXPECT_THROW(spida::SechT(grid, 1.0, 0.0), std::domain_error);
+}
+
+TEST(SHAPE_TEST, AIRYT_ZERO_WIDTH_THROWS)
+{
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    EXPECT_THROW(spida::AiryT(grid, 1.0, 0.0, 0.1), std::domain_error);
+}
+
+TEST(SHAPE_TEST, SUPERGAUSST_ZERO_WIDTH_THROWS)
+{
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    EXPECT_THROW(spida::SuperGaussT(grid, 1.0, 0.0, 2.0), std::domain_error);
+}
+
+TEST(SHAPE_TEST, BESSELT_ZERO_WIDTH_THROWS)
+{
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    EXPECT_THROW(spida::BesselT(grid, 1.0, 0.0, 0.5), std::domain_error);
+}
+
+// ============================================================
+//  setWidth zero guard — ShapeT
+// ============================================================
+
+TEST(SHAPE_TEST, GAUSST_SETWIDTH_ZERO_THROWS)
+{
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    spida::GaussT shape(grid, 1.0, 1.0);
+    EXPECT_THROW(shape.setWidth(0.0), std::domain_error);
+}
+
+TEST(SHAPE_TEST, GAUSST_SETWIDTH_VALID_UPDATES)
+{
+    spida::UniformGridRVT grid(64, -5.0, 5.0);
+    spida::GaussT shape(grid, 1.0, 1.0);
+    shape.setWidth(2.0);
+    EXPECT_DOUBLE_EQ(shape.width(), 2.0);
+}
+
+// ============================================================
+//  Zero-width constructor guard tests — ShapeR
+// ============================================================
+
+TEST(SHAPER_TEST, GAUSSR_ZERO_WIDTH_THROWS)
+{
+    spida::BesselRootGridR grid(16, 5.0);
+    EXPECT_THROW(spida::GaussR(grid, 1.0, 0.0), std::domain_error);
+}
+
+// ============================================================
+//  setWidth zero guard — ShapeR
+// ============================================================
+
+TEST(SHAPER_TEST, GAUSSR_SETWIDTH_ZERO_THROWS)
+{
+    spida::BesselRootGridR grid(16, 5.0);
+    spida::GaussR shape(grid, 1.0, 1.0);
+    EXPECT_THROW(shape.setWidth(0.0), std::domain_error);
+}
+
+TEST(SHAPER_TEST, GAUSSR_SETWIDTH_VALID_UPDATES)
+{
+    spida::BesselRootGridR grid(16, 5.0);
+    spida::GaussR shape(grid, 1.0, 1.0);
+    shape.setWidth(2.0);
+    EXPECT_DOUBLE_EQ(shape.width(), 2.0);
+}
+
+// ============================================================
+//  Zero-width constructor guard tests — ShapeX
+// ============================================================
+
+TEST(SHAPEX_TEST, SHAPEX_ZERO_WIDTH_THROWS)
+{
+    // SinX exercises the ShapeX base-class constructor guard shared by all
+    // ShapeX concrete types (ExpX, SinX, CosX).
+    spida::UniformGridRVX grid(8, -4.0, 4.0);
+    EXPECT_THROW(spida::SinX(grid, 1.0, 0.0), std::domain_error);
+}
+
+// ============================================================
+//  setWidth zero guard — ShapeX
+// ============================================================
+
+TEST(SHAPEX_TEST, SHAPEX_SETWIDTH_ZERO_THROWS)
+{
+    spida::UniformGridRVX grid(8, -4.0, 4.0);
+    spida::SinX shape(grid, 1.0, 1.0);
+    EXPECT_THROW(shape.setWidth(0.0), std::domain_error);
+}
+
+TEST(SHAPEX_TEST, SHAPEX_SETWIDTH_VALID_UPDATES)
+{
+    spida::UniformGridRVX grid(8, -4.0, 4.0);
+    spida::SinX shape(grid, 1.0, 1.0);
+    shape.setWidth(2.0);
+    EXPECT_DOUBLE_EQ(shape.width(), 2.0);
+}

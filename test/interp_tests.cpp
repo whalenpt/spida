@@ -213,3 +213,102 @@ TEST(SPLINE_INTERP_TEST, ERROR_XINTERP_ABOVE_RANGE)
     spida::SplineInterp interp(x, y);
     EXPECT_THROW((void) interp.eval(3.5), pw::Exception);
 }
+
+// --- tridisolve guard-clause tests (P1 gap coverage) ---
+
+// c.size() < 2: superdiagonal vector has only one element (line 110-112)
+TEST(TRIDISOLVE_TEST, SIZE_ERROR_SUPERDIAG)
+{
+    std::vector<double> a = {1.0, 1.0};
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0}; // size 1, below minimum of 2
+    std::vector<double> d = {1.0, 1.0, 1.0};
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// d.size() < 3: RHS vector has only two elements (line 113-114)
+TEST(TRIDISOLVE_TEST, SIZE_ERROR_RHS_TOO_SMALL)
+{
+    std::vector<double> a = {1.0, 1.0};
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0, 1.0};
+    std::vector<double> d = {1.0, 1.0}; // size 2, below minimum of 3
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// a.size() != b.size()-1: subdiagonal is too long relative to diagonal (line 115-120)
+TEST(TRIDISOLVE_TEST, SIZE_MISMATCH_SUBDIAG_VS_DIAG)
+{
+    std::vector<double> a = {1.0, 1.0, 1.0}; // size 3, but b.size()-1 == 2
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0, 1.0};
+    std::vector<double> d = {1.0, 1.0, 1.0};
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// c.size() != b.size()-1: superdiagonal is too long relative to diagonal (line 121-126)
+TEST(TRIDISOLVE_TEST, SIZE_MISMATCH_SUPERDIAG_VS_DIAG)
+{
+    std::vector<double> a = {1.0, 1.0};
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0, 1.0, 1.0}; // size 3, but b.size()-1 == 2
+    std::vector<double> d = {1.0, 1.0, 1.0};
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// b.size() != d.size(): RHS has more elements than the diagonal (line 127-129)
+TEST(TRIDISOLVE_TEST, SIZE_MISMATCH_DIAG_VS_RHS)
+{
+    std::vector<double> a = {1.0, 1.0};
+    std::vector<double> b = {2.0, 2.0, 2.0};
+    std::vector<double> c = {1.0, 1.0};
+    std::vector<double> d = {1.0, 1.0, 1.0, 1.0}; // size 4, but b.size() == 3
+    std::vector<double> x;
+    EXPECT_THROW(spida::tridisolve(a, b, c, d, x), pw::Exception);
+}
+
+// --- checkXInterp(vector) range-check tests (P1 gap coverage) ---
+
+// LinearInterp::eval(vector): xi[0] is below x[0] (interp.cpp:14-18)
+TEST(LINEAR_INTERP_TEST, ERROR_VECTOR_XINTERP_BELOW_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 2.0};
+    spida::LinearInterp interp(x, y);
+    std::vector<double> xi = {-0.1, 1.0}; // xi[0] < x[0]
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
+}
+
+// LinearInterp::eval(vector): xi.back() is above x.back() (interp.cpp:19-23)
+TEST(LINEAR_INTERP_TEST, ERROR_VECTOR_XINTERP_ABOVE_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 2.0};
+    spida::LinearInterp interp(x, y);
+    std::vector<double> xi = {0.5, 2.1}; // xi.back() > x.back()
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
+}
+
+// SplineInterp::eval(vector): xi[0] is below x[0] (interp.cpp:14-18)
+TEST(SPLINE_INTERP_TEST, ERROR_VECTOR_XINTERP_BELOW_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 2.0};
+    spida::SplineInterp interp(x, y);
+    std::vector<double> xi = {-0.1, 1.0}; // xi[0] < x[0]
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
+}
+
+// SplineInterp::eval(vector): xi.back() is above x.back() (interp.cpp:19-23)
+TEST(SPLINE_INTERP_TEST, ERROR_VECTOR_XINTERP_ABOVE_RANGE)
+{
+    std::vector<double> x = {0.0, 1.0, 2.0};
+    std::vector<double> y = {0.0, 1.0, 2.0};
+    spida::SplineInterp interp(x, y);
+    std::vector<double> xi = {0.5, 2.1}; // xi.back() > x.back()
+    EXPECT_THROW((void) interp.eval(xi), pw::Exception);
+}

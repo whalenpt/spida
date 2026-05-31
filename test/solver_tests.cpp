@@ -632,3 +632,84 @@ TEST(SOLVER_LOG_TEST, ETD4_EVOLVE_WITH_LOG_PROGRESS)
     EXPECT_TRUE(ok);
     EXPECT_NEAR(u[0].real(), bernoulliExact(0.5), 1e-4);
 }
+
+// ============================================================
+//  Multi-threaded dispatch tests (solver.cpp:98,101 and ETDAS.cpp:310,313,379-437)
+//  These tests call setNumThreads(2) to exercise the parallel worker dispatch
+//  loops in updateCoefficients and updateStages.
+// ============================================================
+
+TEST(ETD34_TEST, BERNOULLI_ODE_MULTITHREADED)
+{
+    LinOp L;
+    NLfunc NL;
+    makeBernoulliSystem(L, NL);
+
+    spida::ETD34 solver(L, NL);
+    solver.setEpsRel(1e-7);
+    solver.setNumThreads(2);
+
+    std::vector<dcmplx> u = {0.5};
+    double tf = 1.0;
+    bool ok = solver.evolve(u, 0.0, tf, 0.1);
+
+    EXPECT_TRUE(ok);
+    EXPECT_NEAR(u[0].real(), bernoulliExact(tf), 1e-5);
+    EXPECT_NEAR(u[0].imag(), 0.0, 1e-12);
+}
+
+TEST(ETD35_TEST, BERNOULLI_ODE_MULTITHREADED)
+{
+    LinOp L;
+    NLfunc NL;
+    makeBernoulliSystem(L, NL);
+
+    spida::ETD35 solver(L, NL);
+    solver.setEpsRel(1e-8);
+    solver.setNumThreads(2);
+
+    std::vector<dcmplx> u = {0.5};
+    double tf = 1.0;
+    bool ok = solver.evolve(u, 0.0, tf, 0.1);
+
+    EXPECT_TRUE(ok);
+    EXPECT_NEAR(u[0].real(), bernoulliExact(tf), 1e-5);
+    EXPECT_NEAR(u[0].imag(), 0.0, 1e-12);
+}
+
+// ============================================================
+//  ETD35 small-mode contour-integral branch (ETDAS.cpp:198-263)
+//  The branch fires when |dt * L[i]| < modeCutoff() (default 0.01).
+//  L = {dcmplx(-1e-3)} ensures |h_init * L| = |0.1 * (-1e-3)| = 1e-4 < 0.01.
+// ============================================================
+
+/// @brief Bernoulli-style NL (u^2) with a tiny linear mode so the contour branch is taken.
+static void makeSmallModeBernoulli(LinOp& L, NLfunc& NL)
+{
+    L = {dcmplx(-1e-3)};
+    NL = [](const std::vector<dcmplx>& in, std::vector<dcmplx>& out) { out[0] = in[0] * in[0]; };
+}
+
+TEST(ETD35_TEST, SMALL_MODE_CONTOUR_BRANCH_BERNOULLI)
+{
+    // Use ETD34 at tight tolerance as the reference solution.
+    LinOp L;
+    NLfunc NL;
+    makeSmallModeBernoulli(L, NL);
+
+    spida::ETD34 ref(L, NL);
+    ref.setEpsRel(1e-9);
+    std::vector<dcmplx> uRef = {0.5};
+    bool okRef = ref.evolve(uRef, 0.0, 0.5, 0.1);
+    ASSERT_TRUE(okRef);
+
+    spida::ETD35 solver(L, NL);
+    solver.setEpsRel(1e-7);
+    std::vector<dcmplx> u = {0.5};
+    bool ok = solver.evolve(u, 0.0, 0.5, 0.1);
+
+    EXPECT_TRUE(ok);
+    EXPECT_NEAR(u[0].real(), uRef[0].real(), 1e-5);
+    EXPECT_NEAR(u[0].imag(), 0.0, 1e-12);
+}
+

@@ -1,5 +1,6 @@
 
 #include <random>
+#include <stdexcept>
 
 #include <gtest/gtest.h>
 #include <pwutils/pwmath.hpp>
@@ -307,4 +308,14 @@ TEST(FFTRVX_TEST, DERIVATIVE_GAUSS)
     spida::SpidaRVX spidaX{grid};
     spidaX.dX(in, out);
     EXPECT_LT(pw::relative_error(expect, out), 1e-6);
+}
+
+TEST(FFTCVX_TEST, ODD_N_THROWS)
+{
+    EXPECT_THROW(spida::FFTCVX(spida::UniformGridCVX{33u, -1.0, 1.0}), std::invalid_argument);
+}
+
+TEST(FFTRVX_TEST, ODD_N_THROWS)
+{
+    EXPECT_THROW(spida::FFTRVX(spida::UniformGridRVX{33u, -1.0, 1.0}), std::invalid_argument);
 }

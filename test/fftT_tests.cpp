@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <random>
+#include <stdexcept>
 
 #include <gtest/gtest.h>
 #include <pwutils/pwmath.hpp>
@@ -258,4 +259,14 @@ TEST(FFTRVT_TEST, DERIVATIVE_SIN)
     // sin(t) on [0, 2pi]: all spectral energy is in bin 1, purely imaginary
     EXPECT_NEAR(out1[1].real(), 0.0, 1e-10);
     EXPECT_NEAR(std::abs(out1[1]), spida::PI, 1e-10);
+}
+
+TEST(FFTCVT_TEST, ODD_N_THROWS)
+{
+    EXPECT_THROW(spida::FFTCVT(spida::UniformGridCVT{33u, -1.0, 1.0}), std::invalid_argument);
+}
+
+TEST(FFTRVT_TEST, ODD_N_THROWS)
+{
+    EXPECT_THROW(spida::FFTRVT(spida::UniformGridRVT{33u, -1.0, 1.0}), std::invalid_argument);
 }
