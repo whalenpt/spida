@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/whalenpt/spida:v1.4
+      options: --user root
     steps:
       - name: Checkout
         uses: actions/checkout@v4
