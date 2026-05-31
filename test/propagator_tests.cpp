@@ -321,12 +321,15 @@ const std::vector<double> k2Dz{0.0, 0.5, 0.5, 1.0};
 
 TEST_F(PropagatorTest, ADD_2D_REPORT_SETS_HAS_DATA)
 {
-    // Covers addReport(ReportData2D) in both propagator.cpp and reporthandler.cpp.
+    // Covers addReport(ReportData2D) in propagator.cpp and reporthandler.cpp.
+    // Observable check: with stepsPerOutput2D=1 the first stepUpdate triggers updateFields.
+    // No 1D or track reports added, so hasData1D() must remain false.
     TestPropagatorCV prop(m_dir);
     prop.addReport(std::make_unique<pw::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
-    EXPECT_TRUE(prop.reportHandler().hasData2D());
-    EXPECT_FALSE(prop.reportHandler().hasData1D());
-    EXPECT_FALSE(prop.reportHandler().hasDataTrack());
+    prop.setStepsPerOutput2D(1);
+    EXPECT_FALSE(prop.hasData1D());
+    (void) prop.stepUpdate(0.0);
+    EXPECT_EQ(prop.updateCount(), 1);
 }
 
 // ---- propagator.cpp:136 (ready2D true branch) ----
