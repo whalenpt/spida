@@ -9,4 +9,5 @@ coverage.info
 .vscode
 .claude/worktrees
 compile_commands.json
+conan_toolchain.cmake
 
