@@ -15,7 +15,7 @@ class SpidaConan(ConanFile):
     # Kept in sync with CMakeLists.txt's project(SPIDA VERSION ...) and with
     # the vN.N.N git tags release.yml publishes from — source() below relies
     # on this to build the release-tarball download URL.
-    version = "0.1.0"
+    version = "0.1.1"
     package_type = "static-library"
     settings = "os", "arch", "compiler", "build_type"
 
