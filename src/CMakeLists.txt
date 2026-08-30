@@ -116,6 +116,7 @@ endif()
 # -----------------------------
 if(TARGET Boost::boost)
     target_link_libraries(spida PUBLIC Boost::boost)
+    set(SPIDA_USE_SYSTEM_BOOST ON)
 else()
     message(STATUS "Using vendored Boost")
 
@@ -127,6 +128,8 @@ else()
 
     install(DIRECTORY "${LOCAL_BOOST_DIR}/boost"
             DESTINATION include)
+
+    set(SPIDA_USE_SYSTEM_BOOST OFF)
 endif()
 
 # -----------------------------
