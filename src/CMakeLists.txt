@@ -2,10 +2,10 @@
 # Source files
 # -----------------------------
 set(SRC_FILES
-    pwutils/pwmath.cpp
-    pwutils/pwstats.cpp
-    pwutils/pwstrings.cpp
-    pwutils/pwthreads.cpp
+    utils/math.cpp
+    utils/stats.cpp
+    utils/strings.cpp
+    utils/threads.cpp
     SpidaCVT.cpp
     SpidaRVT.cpp
     SpidaRCVT.cpp
@@ -116,6 +116,7 @@ endif()
 # -----------------------------
 if(TARGET Boost::boost)
     target_link_libraries(spida PUBLIC Boost::boost)
+    set(SPIDA_USE_SYSTEM_BOOST ON)
 else()
     message(STATUS "Using vendored Boost")
 
@@ -127,6 +128,8 @@ else()
 
     install(DIRECTORY "${LOCAL_BOOST_DIR}/boost"
             DESTINATION include)
+
+    set(SPIDA_USE_SYSTEM_BOOST OFF)
 endif()
 
 # -----------------------------
@@ -151,7 +154,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION include
 )
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/pwutils
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/utils
     DESTINATION include
 )
 

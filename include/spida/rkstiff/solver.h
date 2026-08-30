@@ -23,10 +23,10 @@
 #include <memory>
 #include <string>
 
-namespace pw {
+namespace detail {
 class StatCenter;
 class ThreadManager;
-} // namespace pw
+} // namespace detail
 
 //------------------------------------------------------------------------------
 
@@ -113,7 +113,7 @@ public:
     unsigned numThreads() const;
 
     /// Accesses the threadManager
-    pw::ThreadManager& threadManager();
+    detail::ThreadManager& threadManager();
 
     /// Get the current time
     double currentTime() const
@@ -140,7 +140,7 @@ public:
     void reportStats() const;
 
     /// Accessor of the StatCenter
-    pw::StatCenter& statCenter();
+    detail::StatCenter& statCenter();
 
 private:
     ///
@@ -155,11 +155,11 @@ private:
     const LinOp* m_L;
     const NLfunc* m_NL;
 
-    std::unique_ptr<pw::StatCenter> m_stat;
+    std::unique_ptr<detail::StatCenter> m_stat;
     double m_tcurrent{0.0};     /**< Current time */
     double m_dt_last{0.0};      /**< Previous step size */
     bool m_log_progress{false}; /**< Determines whether to log data from propagation */
-    std::unique_ptr<pw::ThreadManager> m_thmgt;
+    std::unique_ptr<detail::ThreadManager> m_thmgt;
 };
 
 ///  Helper class for computing step updates

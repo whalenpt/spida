@@ -8,14 +8,15 @@
  *
 ------------------------------------------------------------------------------*/
 
-// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
+// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC.
+
+#include <iomanip>
+#include <iostream>
 
 #include <spida/grid/uniformRVT.h>
 #include <spida/shape/shapeT.h>
 #include <spida/transform/fftRVT.h>
-#include <pwutils/report.hpp>
-#include <iostream>
-#include <iomanip>
+#include <utils/report.hpp>
 
 //------------------------------------------------------------------------------
 
@@ -44,8 +45,8 @@ int main()
 
     transform.T_To_ST(u,v);
 
-    pw::Report1D in_report{"T",gridT.getT(),u};
-    pw::ReportComplex1D out_report{"ST",gridT.getST(),v};
+    spida::Report1D in_report{"T", gridT.getT(), u};
+    spida::ReportComplex1D out_report{"ST", gridT.getST(), v};
 
     std::ofstream os;
     std::cout << in_report.path() << std::endl;

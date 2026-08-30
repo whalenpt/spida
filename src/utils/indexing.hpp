@@ -1,9 +1,11 @@
+#pragma once
+
 #include <cmath>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-namespace pw {
+namespace detail {
 
 // Assume vector array is sorted from lowest to highest. Check first that val is within the vector
 // range."
@@ -31,4 +33,4 @@ template <typename T> unsigned nearestIndex(const std::vector<T>& sorted_vec, T 
     return (std::abs(val - a) < std::abs(val - b) ? (target - 1) : target);
 }
 
-} // namespace pw
+} // namespace detail

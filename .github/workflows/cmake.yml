@@ -19,7 +19,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/whalenpt/spida:v1.3
+      image: ghcr.io/whalenpt/spida:v1.5
       options: --user root
     steps:
       - name: Checkout
@@ -37,6 +37,9 @@ jobs:
 
       - name: Test
         run: ctest --preset conan-release --output-on-failure
+
+      - name: Package test (conan create + test_package)
+        run: conan create . -s build_type=Release
 
       - name: Upload test logs on failure
         if: failure()
@@ -106,6 +109,9 @@ jobs:
 
       - name: Test
         run: ctest --preset conan-release --output-on-failure
+
+      - name: Package test (conan create + test_package)
+        run: conan create . --build=missing -s build_type=Release
 
       - name: Upload test logs on failure
         if: failure()

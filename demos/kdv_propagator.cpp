@@ -8,16 +8,17 @@
  *
 ------------------------------------------------------------------------------*/
 
-// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
+// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC.
 
-#include <spida/RVX.h>
+#include <fstream>
+#include <iostream>
+
 #include <spida/grid/uniformRVX.h>
 #include <spida/helper/constants.h>
 #include <spida/propagator/propagator.h>
 #include <spida/rkstiff/ETDAS.h>
-#include <pwutils/report.hpp>
-#include <fstream>
-#include <iostream>
+#include <spida/RVX.h>
+#include <utils/report.hpp>
 
 //------------------------------------------------------------------------------
 
@@ -94,11 +95,12 @@ class PropagatorKDV : public spida::PropagatorCV
         void initReport() {
             // add report for real space kDV field
             const auto& x  = m_spi.getGridX().getX();
-            auto report = std::make_unique<pw::Report1D<double,double>>("X",x,m_uphys);
+            auto report = std::make_unique<spida::Report1D<double, double>>("X", x, m_uphys);
             PropagatorCV::addReport(std::move(report));
             // add report for spectral space kDV field (the propagator)
             const auto& sx  = m_spi.getGridX().getSX();
-            auto reportsp = std::make_unique<pw::ReportComplex1D<double,double>>("SX",sx,m_usp);
+            auto reportsp =
+                std::make_unique<spida::ReportComplex1D<double, double>>("SX", sx, m_usp);
             PropagatorCV::addReport(std::move(reportsp));
         }
         spida::SpidaRVX& m_spi;

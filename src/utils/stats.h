@@ -1,4 +1,3 @@
-// pwstats.h
 #pragma once
 
 #include <chrono>
@@ -8,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace pw {
+namespace detail {
 
 using unsignedPair = std::pair<std::string, unsigned>;
 using unsignedMap = std::map<std::string, unsigned, std::less<>>;
@@ -145,4 +144,4 @@ private:
     std::string m_name;
 };
 
-} // namespace pw
+} // namespace detail

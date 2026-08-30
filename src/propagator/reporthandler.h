@@ -6,14 +6,15 @@
 #include <string_view>
 #include <vector>
 
-namespace pw {
+namespace detail {
 class StatCenter;
+} // namespace detail
+
+namespace spida {
+
 class ReportData1D;
 class ReportData2D;
 class TrackData;
-} // namespace pw
-
-namespace spida {
 
 class ReportHandler {
 public:
@@ -23,9 +24,9 @@ public:
     void report2D(const std::filesystem::path& dir_path, std::size_t rep_num);
     void reportData(const std::filesystem::path& dir_path, std::size_t rep_num);
     void reportTrack(const std::filesystem::path& dir_path, double t);
-    void addReport(std::unique_ptr<pw::ReportData1D> def);
-    void addReport(std::unique_ptr<pw::ReportData2D> def);
-    void addReport(std::unique_ptr<pw::TrackData> def);
+    void addReport(std::unique_ptr<ReportData1D> def);
+    void addReport(std::unique_ptr<ReportData2D> def);
+    void addReport(std::unique_ptr<TrackData> def);
     void setItem(std::string_view key, double val);
 
     [[nodiscard]] bool hasData1D() const
@@ -44,9 +45,9 @@ public:
     }
 
 private:
-    using vec1D = std::vector<std::unique_ptr<pw::ReportData1D>>;
-    using vec2D = std::vector<std::unique_ptr<pw::ReportData2D>>;
-    using vecTrack = std::vector<std::unique_ptr<pw::TrackData>>;
+    using vec1D = std::vector<std::unique_ptr<ReportData1D>>;
+    using vec2D = std::vector<std::unique_ptr<ReportData2D>>;
+    using vecTrack = std::vector<std::unique_ptr<TrackData>>;
 
     vec1D m_defs_1D;
     vec2D m_defs_2D;

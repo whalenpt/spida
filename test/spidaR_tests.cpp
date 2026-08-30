@@ -1,10 +1,10 @@
 #include <random>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwmath.hpp>
 #include <spida/grid/besselR.h>
 #include <spida/helper/constants.h>
 #include <spida/R.h>
+#include <utils/math.hpp>
 
 TEST(SPIDA_R_TEST, INVERSES)
 {
@@ -22,7 +22,7 @@ TEST(SPIDA_R_TEST, INVERSES)
         in[i] = distribution(generator);
     spidaR.R_To_SR(in, out);
     spidaR.SR_To_R(out, expect);
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-6);
 }
 
 TEST(SPIDA_R_TEST, INVERSES_COMPLEX)
@@ -42,7 +42,7 @@ TEST(SPIDA_R_TEST, INVERSES_COMPLEX)
         in[i] = dcmplx(distribution(generator), distribution(generator));
     spidaR.R_To_SR(in, out);
     spidaR.SR_To_R(out, expect);
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-6);
 }
 
 // H0{exp(-ar^2)}=(1/2a)*exp(-kr^2/(4a))
@@ -68,5 +68,5 @@ TEST(SPIDA_R_TEST, GAUSS)
         exact[i] = beta * exp(-pow(kr[i], 2) / (4.0 * a));
     }
     spidaR.R_To_SR(in, out);
-    EXPECT_LT(pw::relative_error(out, exact), 1e-6);
+    EXPECT_LT(detail::relative_error(out, exact), 1e-6);
 }

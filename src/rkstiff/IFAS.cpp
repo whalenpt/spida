@@ -3,8 +3,8 @@
 
 #include <cmath>
 
-#include <pwutils/pwstats.h>
-#include <pwutils/pwthreads.h>
+#include <utils/stats.h>
+#include <utils/threads.h>
 
 namespace spida {
 

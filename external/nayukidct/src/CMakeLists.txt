@@ -54,7 +54,7 @@ write_basic_package_version_file(
 
 install(EXPORT NayukiDCTTargets
 	FILE NayukiDCTTargets.cmake
-	NAMESPACE pw::
+	NAMESPACE NayukiDCT::
 	DESTINATION lib/cmake/nayukidct
 )
 configure_file(${NayukiDCT_SOURCE_DIR}/cmake/NayukiDCTConfig.cmake.in

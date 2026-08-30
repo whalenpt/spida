@@ -2,7 +2,7 @@
 
 #include <vector>
 
-namespace pw {
+namespace detail {
 
 class ThreadManager {
 public:
@@ -19,4 +19,4 @@ private:
     unsigned m_num_threads;
 };
 
-} // namespace pw
+} // namespace detail
