@@ -3,13 +3,13 @@
 
 #include <gtest/gtest.h>
 #include <nayukidct/FastDctLee.hpp>
-#include <pwutils/pwmath.hpp>
 #include <spida/chebX.h>
 #include <spida/grid/chebX.h>
 #include <spida/grid/uniformT.h>
 #include <spida/helper/constants.h>
 #include <spida/shape/shapeT.h>
 #include <spida/transform/chebX.h>
+#include <utils/math.hpp>
 
 TEST(DCT_TEST, INVERSES)
 {
@@ -27,7 +27,7 @@ TEST(DCT_TEST, INVERSES)
     tr.X_To_SX(in, out);
     tr.SX_To_X(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-6);
 }
 
 TEST(DCT_TEST, TRANSFORM_TEST)
@@ -50,7 +50,7 @@ TEST(DCT_TEST, TRANSFORM_TEST)
     for (auto& item : out2)
         item /= (N / 2.0);
 
-    EXPECT_LT(pw::relative_error(out, out2), 1e-6);
+    EXPECT_LT(detail::relative_error(out, out2), 1e-6);
 }
 
 TEST(DCT_TEST, DERIVATIVE_EXP)
@@ -67,7 +67,7 @@ TEST(DCT_TEST, DERIVATIVE_EXP)
 
     spida::SpidaChebX spidaX(grid);
     spidaX.dX(in, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-6);
+    EXPECT_LT(detail::relative_error(in, out), 1e-6);
 }
 
 TEST(DCT_TEST, NAYUKI_ROOT_DERS)
@@ -94,7 +94,7 @@ TEST(DCT_TEST, NAYUKI_ROOT_DERS)
         beta[k - 1] = beta[k + 1] + 2.0 * k * alpha[k];
 
     FastDctLee::inverseTransform(beta);
-    EXPECT_LT(pw::relative_error(in, beta), 1e-6);
+    EXPECT_LT(detail::relative_error(in, beta), 1e-6);
 }
 
 TEST(DCT_TEST, DCT_EXP_DER_TEST)
@@ -121,5 +121,5 @@ TEST(DCT_TEST, DCT_EXP_DER_TEST)
         beta[k - 1] = beta[k + 1] + 2.0 * k * alpha[k];
 
     FastDctLee::inverseTransform(beta);
-    EXPECT_LT(pw::relative_error(in, beta), 1e-6);
+    EXPECT_LT(detail::relative_error(in, beta), 1e-6);
 }

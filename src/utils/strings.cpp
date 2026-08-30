@@ -1,6 +1,6 @@
 
 
-#include "pwutils/pwstrings.h"
+#include "utils/strings.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace pw {
+namespace detail {
 
 // Check if string is whitespace
 bool isWhitespace(const std::string& str)
@@ -441,4 +441,4 @@ std::string NumberToString(int val)
     return stm.str();
 }
 
-} // namespace pw
+} // namespace detail

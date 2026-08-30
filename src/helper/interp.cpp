@@ -3,21 +3,22 @@
 #include <algorithm>
 #include <format>
 
-#include <pwutils/pwexcept.h>
+#include <utils/except.h>
 
 namespace spida {
 
 void checkXInterp(const std::vector<double>& xinterp, const std::vector<double>& xdata)
 {
     if (xinterp.empty())
-        throw pw::Exception("eval(std::vector<double> xinterp) xinterp must be a non-empty vector");
+        throw detail::Exception(
+            "eval(std::vector<double> xinterp) xinterp must be a non-empty vector");
     if (xinterp[0] < xdata[0])
-        throw pw::Exception(std::format(
+        throw detail::Exception(std::format(
             "eval(std::vector<double> xinterp) failed: xinterp[0] is less than the class "
             "m_xvec[0], increase xinterp[0] to at least {}",
             xdata[0]));
     if (xinterp.back() > xdata.back())
-        throw pw::Exception(std::format(
+        throw detail::Exception(std::format(
             "eval(std::vector<double> xinterp) failed: xinterp[size-1] is greater than the "
             "class m_xvec[m_size-1], decrease xinterp[size-1] to below or equal to {}",
             xdata.back()));
@@ -26,12 +27,12 @@ void checkXInterp(const std::vector<double>& xinterp, const std::vector<double>&
 void checkXInterp(double xinterp, const std::vector<double>& xdata)
 {
     if (xinterp < xdata[0])
-        throw pw::Exception(
+        throw detail::Exception(
             std::format("eval(double xinterp) failed: xinterp is less than the class m_xvec[0], "
                         "increase xinterp[0] to at least {}",
                         xdata[0]));
     if (xinterp > xdata.back())
-        throw pw::Exception(std::format(
+        throw detail::Exception(std::format(
             "eval(double xinterp) failed: xinterp is greater than the class m_xvec[m_size-1], "
             "decrease xinterp to below or equal to {}",
             xdata.back()));
@@ -40,9 +41,9 @@ void checkXInterp(double xinterp, const std::vector<double>& xdata)
 void checkData(const std::vector<double>& xdata, const std::vector<double>& ydata)
 {
     if (xdata.size() < 2)
-        throw pw::Exception("Interp constructor error: xvec size must be at least 2");
+        throw detail::Exception("Interp constructor error: xvec size must be at least 2");
     if (xdata.size() != ydata.size())
-        throw pw::Exception(
+        throw detail::Exception(
             "Interp constructor error: the xvec and yvec must be of the same vector size");
 }
 
@@ -104,28 +105,30 @@ void tridisolve(const std::vector<double>& a,
                 std::vector<double>& x)
 {
     if (a.size() < 2)
-        throw pw::Exception("tridisolve(a,b,c,d,x) error: subdiagonal 'a' size must be at least 2");
+        throw detail::Exception(
+            "tridisolve(a,b,c,d,x) error: subdiagonal 'a' size must be at least 2");
     if (b.size() < 3)
-        throw pw::Exception("tridisolve(a,b,c,d,x) error: diagonal 'b' size must be at least 3");
+        throw detail::Exception(
+            "tridisolve(a,b,c,d,x) error: diagonal 'b' size must be at least 3");
     if (c.size() < 2)
-        throw pw::Exception(
+        throw detail::Exception(
             "tridisolve(a,b,c,d,x) error: superdiagonal 'c' size must be at least 2");
     if (d.size() < 3)
-        throw pw::Exception("tridisolve(a,b,c,d,x) error: R.H.S. 'd' size must be at least 3");
+        throw detail::Exception("tridisolve(a,b,c,d,x) error: R.H.S. 'd' size must be at least 3");
     if (a.size() != b.size() - 1)
-        throw pw::Exception(
+        throw detail::Exception(
             std::format("tridisolve(a,b,c,d,x) error: subdiagonal 'a' size of {} must be equal to "
                         "the size of the diagonal 'b' {} minus one",
                         a.size(),
                         b.size()));
     if (c.size() != b.size() - 1)
-        throw pw::Exception(std::format(
+        throw detail::Exception(std::format(
             "tridisolve(a,b,c,d,x) error: superdiagonal 'c' size of {} must be equal to "
             "the size of the diagonal 'b' {} minus one",
             c.size(),
             b.size()));
     if (b.size() != d.size())
-        throw pw::Exception(
+        throw detail::Exception(
             "tridisolve(a,b,c,d,x) error: diagonal 'b' size must equal R.H.S. 'd' size");
     auto sz = b.size();
     x.assign(sz, 0.0);
@@ -148,7 +151,7 @@ SplineInterp::SplineInterp(const std::vector<double>& xvec, const std::vector<do
 {
     checkData(xvec, yvec);
     if (xvec.size() < 3)
-        throw pw::Exception(
+        throw detail::Exception(
             "SplineInterp constructor error: xvec size must be at least 3 for cubic spline");
     this->initializeCoefficients();
 }

@@ -7,7 +7,7 @@
 #include <cmath>
 #include <memory>
 
-#include <pwutils/pwexcept.h>
+#include <utils/except.h>
 
 namespace spida {
 

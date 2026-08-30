@@ -2,9 +2,9 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwmath.hpp>
 #include <spida/chebInterpX.h>
 #include <spida/helper/constants.h>
+#include <utils/math.hpp>
 
 // xin must cover full [minx,maxx] so the spline can evaluate at interior Chebyshev nodes.
 // xout must stay within the Chebyshev root node range (roots don't reach the endpoints).
@@ -35,7 +35,7 @@ TEST(CHEB_INTERP_TEST, DERIVATIVE_EXP)
 
     spida::ChebInterpX interp(64, minx, maxx);
     interp.dXInterp(xin, yin, xout, dyout);
-    EXPECT_LT(pw::relative_error(expect, dyout), 1e-3);
+    EXPECT_LT(detail::relative_error(expect, dyout), 1e-3);
 }
 
 TEST(CHEB_INTERP_TEST, DERIVATIVE_SIN)
@@ -66,7 +66,7 @@ TEST(CHEB_INTERP_TEST, DERIVATIVE_SIN)
 
     spida::ChebInterpX interp(64, minx, maxx);
     interp.dXInterp(xin, yin, xout, dyout);
-    EXPECT_LT(pw::relative_error(expect, dyout), 1e-3);
+    EXPECT_LT(detail::relative_error(expect, dyout), 1e-3);
 }
 
 TEST(CHEB_INTERP_TEST, POINT_DERIVATIVE_EXP)

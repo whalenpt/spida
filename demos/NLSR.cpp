@@ -8,16 +8,17 @@
  *
 ------------------------------------------------------------------------------*/
 
-// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
+// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC.
 
-#include <spida/R.h>
-#include <spida/grid/besselR.h>
-#include <spida/helper/constants.h>
-#include <spida/rkstiff/ETDAS.h>
-#include <spida/propagator/propagator.h>
-#include <pwutils/report.hpp>
 #include <complex> // std::norm -> std::norm(dcmplx(3,4)) = 25
 #include <iostream>
+
+#include <spida/grid/besselR.h>
+#include <spida/helper/constants.h>
+#include <spida/propagator/propagator.h>
+#include <spida/R.h>
+#include <spida/rkstiff/ETDAS.h>
+#include <utils/report.hpp>
 
 //------------------------------------------------------------------------------
 
@@ -102,20 +103,24 @@ class PropagatorNLSR : public spida::PropagatorCV
         // initReport is a helper function that feeds PropagatorCV information on what to report out to files
         void initReport() {
             // add report for complex physical space NLS field
-            auto report = std::make_unique<pw::ReportComplex1D<double,double>>("R",m_mirror_r,m_mirror_uphys);
+            auto report = std::make_unique<spida::ReportComplex1D<double, double>>(
+                "R", m_mirror_r, m_mirror_uphys);
             PropagatorCV::addReport(std::move(report));
 
-            // add report for power of physical space NLS field 
-            auto reportpow = std::make_unique<pw::ReportComplex1D<double,double>>("SQ_R",m_mirror_r,m_mirror_uphys);
+            // add report for power of physical space NLS field
+            auto reportpow = std::make_unique<spida::ReportComplex1D<double, double>>(
+                "SQ_R", m_mirror_r, m_mirror_uphys);
             reportpow->setPower(true);
             PropagatorCV::addReport(std::move(reportpow));
 
             // add report for spectral space NLS field (the propagator)
-            auto reportsp = std::make_unique<pw::ReportComplex1D<double,double>>("SR",m_mirror_kr,m_mirror_usp);
+            auto reportsp = std::make_unique<spida::ReportComplex1D<double, double>>(
+                "SR", m_mirror_kr, m_mirror_usp);
             PropagatorCV::addReport(std::move(reportsp));
 
             // add report for power of spectral space NLS field (the propagator)
-            auto reportsppow = std::make_unique<pw::ReportComplex1D<double,double>>("SQ_SR",m_mirror_kr,m_mirror_usp);
+            auto reportsppow = std::make_unique<spida::ReportComplex1D<double, double>>(
+                "SQ_SR", m_mirror_kr, m_mirror_usp);
             reportsppow->setPower(true);
             PropagatorCV::addReport(std::move(reportsppow));
         }

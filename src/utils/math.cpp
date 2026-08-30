@@ -1,13 +1,13 @@
-#include "pwutils/pwmath.hpp"
+#include "utils/math.hpp"
 
-#include "pwutils/pwstrings.h"
+#include "utils/strings.h"
 
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <string>
 
-namespace pw {
+namespace detail {
 
 int intceil(int x, int y)
 {
@@ -55,10 +55,10 @@ bool isIntegers(const std::vector<std::string>& row) noexcept
 
 bool isIntegers(const std::string& s) noexcept
 {
-    auto str = pw::eatWhiteSpace(s);
+    auto str = detail::eatWhiteSpace(s);
     if (str.empty())
         return false;
-    auto str_vec = pw::parseString(str, ' ');
+    auto str_vec = detail::parseString(str, ' ');
     return isIntegers(str_vec);
 }
 
@@ -86,11 +86,11 @@ bool isDoubles(const std::vector<std::string>& row) noexcept
 
 bool isDoubles(const std::string& s) noexcept
 {
-    auto str = pw::eatWhiteSpace(s);
+    auto str = detail::eatWhiteSpace(s);
     if (str.empty())
         return false;
-    auto str_vec = pw::parseString(str, ' ');
+    auto str_vec = detail::parseString(str, ' ');
     return isDoubles(str_vec);
 }
 
-} // namespace pw
+} // namespace detail

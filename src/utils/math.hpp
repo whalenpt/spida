@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace pw {
+namespace detail {
 
 template <typename T> auto norm(const std::vector<std::complex<T>>& v)
 {
@@ -24,13 +24,13 @@ template <typename T> auto max_element(const std::vector<std::complex<T>>& v)
 
 template <typename T> auto max(const std::vector<std::complex<T>>& v)
 {
-    auto itmax = pw::max_element<T>(v);
+    auto itmax = detail::max_element<T>(v);
     return *itmax;
 }
 
 template <typename T> auto argmax(const std::vector<std::complex<T>>& v)
 {
-    auto itmax = pw::max_element<T>(v);
+    auto itmax = detail::max_element<T>(v);
     return std::distance(std::begin(v), itmax);
 }
 
@@ -42,13 +42,13 @@ template <typename T> auto min_element(const std::vector<std::complex<T>>& v)
 
 template <typename T> auto min(const std::vector<std::complex<T>>& v)
 {
-    auto itmin = pw::min_element<T>(v);
+    auto itmin = detail::min_element<T>(v);
     return *itmin;
 }
 
 template <typename T> auto argmin(const std::vector<std::complex<T>>& v)
 {
-    auto itmin = pw::min_element<T>(v);
+    auto itmin = detail::min_element<T>(v);
     return std::distance(std::begin(v), itmin);
 }
 
@@ -56,7 +56,7 @@ template <typename T>
 auto relative_error(const std::vector<std::complex<T>>& v1, const std::vector<std::complex<T>>& v2)
 {
     assert(v1.size() == v2.size());
-    auto v1_norm = pw::norm<T>(v1);
+    auto v1_norm = detail::norm<T>(v1);
     T sum = 0;
     for (size_t i = 0; i < v1.size(); i++)
         sum += std::norm(v1[i] - v2[i]);
@@ -95,7 +95,7 @@ template <typename T> auto argmin(const std::vector<T>& v)
 template <typename T> auto relative_error(const std::vector<T>& v1, const std::vector<T>& v2)
 {
     assert(v1.size() == v2.size());
-    auto v1_norm = pw::norm<T>(v1);
+    auto v1_norm = detail::norm<T>(v1);
     T sum = 0;
     for (size_t i = 0; i < v1.size(); i++)
         sum += pow(v1[i] - v2[i], 2);
@@ -112,4 +112,4 @@ bool isDoubles(const std::string& s) noexcept;
 int intceil(int x, int y);
 unsigned int intceil(unsigned int x, unsigned int y);
 std::size_t intceil(std::size_t x, std::size_t y);
-} // namespace pw
+} // namespace detail

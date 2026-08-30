@@ -11,9 +11,9 @@
 #include <numeric>
 #include <thread>
 
-#include <pwutils/pwexcept.h>
-#include <pwutils/pwstats.h>
-#include <pwutils/pwthreads.h>
+#include <utils/except.h>
+#include <utils/stats.h>
+#include <utils/threads.h>
 
 namespace spida {
 
@@ -34,18 +34,19 @@ unsigned SolverCV::numThreads() const
     return m_thmgt->getNumThreads();
 }
 
-pw::ThreadManager& SolverCV::threadManager()
+detail::ThreadManager& SolverCV::threadManager()
 {
     return *m_thmgt;
 }
 
-pw::StatCenter& SolverCV::statCenter()
+detail::StatCenter& SolverCV::statCenter()
 {
     return *m_stat;
 }
 
 SolverCV::SolverCV(const LinOp& L, const NLfunc& NL, bool use_refs)
-    : m_stat(std::make_unique<pw::StatCenter>()), m_thmgt(std::make_unique<pw::ThreadManager>(1))
+    : m_stat(std::make_unique<detail::StatCenter>()),
+      m_thmgt(std::make_unique<detail::ThreadManager>(1))
 {
     if (use_refs) {
         m_L = &L;
@@ -324,12 +325,12 @@ void Control::setIncrementThreshold(double val)
         std::string msg = "IncrementThreshold must be less than MAX_S = " + std::to_string(MAX_S) +
                           ". Please set the incrementThreshold of " + std::to_string(val) +
                           "to a lower value";
-        throw pw::Exception("Control::setIncrementThreshold", msg);
+        throw detail::Exception("Control::setIncrementThreshold", msg);
     }
     if (val < 1.0) {
         std::string msg = "Failed to set an incrementThreshold of " + std::to_string(val) +
                           " because this parameter must be greater than or equal to 1";
-        throw pw::Exception("Control::setIncrementThreshold", msg);
+        throw detail::Exception("Control::setIncrementThreshold", msg);
     }
     m_incrFact = val;
 }
@@ -340,12 +341,12 @@ void Control::setDecrementThreshold(double val)
         std::string msg =
             "DecrementThreshold must be greater than MIN_S = " + std::to_string(MIN_S) +
             ". Please set the decrementThreshold of " + std::to_string(val) + "to a higher value";
-        throw pw::Exception("Control::setDecrementThreshold", msg);
+        throw detail::Exception("Control::setDecrementThreshold", msg);
     }
     if (val >= 1.0) {
         std::string msg = "Failed to set a decrementThreshold of " + std::to_string(val) +
                           " because this parameter must be less than 1";
-        throw pw::Exception("Control::setDecrementThreshold", msg);
+        throw detail::Exception("Control::setDecrementThreshold", msg);
     }
     m_decrFact = val;
 }
@@ -356,7 +357,7 @@ void Control::setEpsRel(double val)
         std::string msg = "The relative error must be positive."
                           "Please check the epsRel value of " +
                           std::to_string(val);
-        throw pw::Exception("Control::setEpsRel", msg);
+        throw detail::Exception("Control::setEpsRel", msg);
     }
     m_epsRel = val;
 }

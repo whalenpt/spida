@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace pw {
+namespace detail {
 
 std::string trimString(const std::string& str, std::string delim = " \t");
 int countFirstChar(const std::string& str, std::string delim = " \t");
@@ -41,4 +41,4 @@ std::string stringUpperCase(const std::string& str);
 
 void addLineBreaks(std::string& str, int charsPerLine);
 std::ostream& columnOutput(std::ostream&, std::string, int, int, int);
-} // namespace pw
+} // namespace detail

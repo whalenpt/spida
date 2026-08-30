@@ -6,12 +6,12 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwexcept.h>
 #include <spida/helper/constants.h>
 #include <spida/propagator/propagator.h>
 #include <spida/rkstiff/ETDAS.h>
 #include <spida/rkstiff/ETDCS.h>
 #include <spida/rkstiff/IFAS.h>
+#include <utils/except.h>
 
 using spida::dcmplx;
 using spida::LinOp;
@@ -386,7 +386,7 @@ TEST(SOLVER_CONTROL_TEST, SET_INCREMENT_THRESHOLD_TOO_HIGH_THROWS)
     NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setIncrementThreshold(5.0), pw::Exception); // > MAX_S=4
+    EXPECT_THROW(solver.setIncrementThreshold(5.0), detail::Exception); // > MAX_S=4
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_INCREMENT_THRESHOLD_TOO_LOW_THROWS)
@@ -395,7 +395,7 @@ TEST(SOLVER_CONTROL_TEST, SET_INCREMENT_THRESHOLD_TOO_LOW_THROWS)
     NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setIncrementThreshold(0.5), pw::Exception); // < 1.0
+    EXPECT_THROW(solver.setIncrementThreshold(0.5), detail::Exception); // < 1.0
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_INCREMENT_THRESHOLD_VALID_NO_THROW)
@@ -413,7 +413,7 @@ TEST(SOLVER_CONTROL_TEST, SET_DECREMENT_THRESHOLD_TOO_LOW_THROWS)
     NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setDecrementThreshold(0.1), pw::Exception); // < MIN_S=0.25
+    EXPECT_THROW(solver.setDecrementThreshold(0.1), detail::Exception); // < MIN_S=0.25
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_DECREMENT_THRESHOLD_TOO_HIGH_THROWS)
@@ -422,7 +422,7 @@ TEST(SOLVER_CONTROL_TEST, SET_DECREMENT_THRESHOLD_TOO_HIGH_THROWS)
     NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setDecrementThreshold(1.0), pw::Exception); // >= 1.0
+    EXPECT_THROW(solver.setDecrementThreshold(1.0), detail::Exception); // >= 1.0
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_DECREMENT_THRESHOLD_VALID_NO_THROW)
@@ -440,7 +440,7 @@ TEST(SOLVER_CONTROL_TEST, SET_EPS_REL_NEGATIVE_THROWS)
     NLfunc NL;
     makeBernoulliSystem(L, NL);
     spida::ETD34 solver(L, NL);
-    EXPECT_THROW(solver.setEpsRel(-1e-6), pw::Exception);
+    EXPECT_THROW(solver.setEpsRel(-1e-6), detail::Exception);
 }
 
 TEST(SOLVER_CONTROL_TEST, SET_EPS_REL_ZERO_NO_THROW)

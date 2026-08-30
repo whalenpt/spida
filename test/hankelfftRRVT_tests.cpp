@@ -5,13 +5,13 @@
 #include <random>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwmath.hpp>
 #include <spida/grid/besselR.h>
 #include <spida/grid/uniformRVT.h>
 #include <spida/helper/constants.h>
 #include <spida/shape/shapeR.h>
 #include <spida/shape/shapeT.h>
 #include <spida/transform/hankelfftRRVT.h>
+#include <utils/math.hpp>
 
 class HankelFFT_RRVTTEST : public ::testing::Test {
 protected:
@@ -84,7 +84,7 @@ TEST_F(HankelFFT_RRVTTEST, INVERSES1)
     std::vector<double> ub(nr * nt);
     transform->RT_To_SRST(u, v);
     transform->SRST_To_RT(v, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 }
 
 TEST_F(HankelFFT_RRVTTEST, INVERSES2)
@@ -95,11 +95,11 @@ TEST_F(HankelFFT_RRVTTEST, INVERSES2)
 
     transform->RT_To_SRT(u, usr);
     transform->SRT_To_RT(usr, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 
     transform->RT_To_RST(u, v);
     transform->RST_To_RT(v, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 }
 
 TEST_F(HankelFFT_RRVTTEST, INVERSES3)
@@ -112,11 +112,11 @@ TEST_F(HankelFFT_RRVTTEST, INVERSES3)
     transform->RT_To_SRST(u, v);
     transform->SRST_To_RST(v, w);
     transform->RST_To_SRST(w, vb);
-    EXPECT_LT(pw::relative_error(v, vb), 1e-6);
+    EXPECT_LT(detail::relative_error(v, vb), 1e-6);
 
     transform->SRST_To_SRT(v, usr);
     transform->SRT_To_SRST(usr, vb);
-    EXPECT_LT(pw::relative_error(v, vb), 1e-6);
+    EXPECT_LT(detail::relative_error(v, vb), 1e-6);
 }
 
 TEST_F(HankelFFT_RRVTTEST, INVERSES4)
@@ -130,11 +130,11 @@ TEST_F(HankelFFT_RRVTTEST, INVERSES4)
     transform->RT_To_SRST(u, v);
     transform->RT_To_RST(u, w);
     transform->SRST_To_RST(v, wb);
-    EXPECT_LT(pw::relative_error(w, wb), 1e-6);
+    EXPECT_LT(detail::relative_error(w, wb), 1e-6);
 
     transform->RT_To_SRT(u, zeta);
     transform->SRST_To_SRT(v, zetab);
-    EXPECT_LT(pw::relative_error(zeta, zetab), 1e-6);
+    EXPECT_LT(detail::relative_error(zeta, zetab), 1e-6);
 }
 
 TEST_F(HankelFFT_RRVTTEST, MULTITHREADED1)
@@ -145,7 +145,7 @@ TEST_F(HankelFFT_RRVTTEST, MULTITHREADED1)
     std::vector<double> ub(nr * nt);
     transform_threaded->RT_To_SRST(u, v);
     transform_threaded->SRST_To_RT(v, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 }
 
 TEST_F(HankelFFT_RRVTTEST, MULTITHREADED2)
@@ -158,11 +158,11 @@ TEST_F(HankelFFT_RRVTTEST, MULTITHREADED2)
 
     transform_threaded->RT_To_SRT(u, usr);
     transform_threaded->SRT_To_RT(usr, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 
     transform_threaded->RT_To_RST(u, v);
     transform_threaded->RST_To_RT(v, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 }
 
 TEST_F(HankelFFT_RRVTTEST, MULTITHREADED3)
@@ -177,11 +177,11 @@ TEST_F(HankelFFT_RRVTTEST, MULTITHREADED3)
     transform_threaded->RT_To_SRST(u, v);
     transform_threaded->SRST_To_RST(v, w);
     transform_threaded->RST_To_SRST(w, vb);
-    EXPECT_LT(pw::relative_error(v, vb), 1e-6);
+    EXPECT_LT(detail::relative_error(v, vb), 1e-6);
 
     transform_threaded->SRST_To_SRT(v, usr);
     transform_threaded->SRT_To_SRST(usr, vb);
-    EXPECT_LT(pw::relative_error(v, vb), 1e-6);
+    EXPECT_LT(detail::relative_error(v, vb), 1e-6);
 }
 
 TEST_F(HankelFFT_RRVTTEST, MULTITHREADED4)
@@ -197,11 +197,11 @@ TEST_F(HankelFFT_RRVTTEST, MULTITHREADED4)
     transform_threaded->RT_To_SRST(u, v);
     transform_threaded->RT_To_RST(u, w);
     transform_threaded->SRST_To_RST(v, wb);
-    EXPECT_LT(pw::relative_error(w, wb), 1e-6);
+    EXPECT_LT(detail::relative_error(w, wb), 1e-6);
 
     transform_threaded->RT_To_SRT(u, zeta);
     transform_threaded->SRST_To_SRT(v, zetab);
-    EXPECT_LT(pw::relative_error(zeta, zetab), 1e-6);
+    EXPECT_LT(detail::relative_error(zeta, zetab), 1e-6);
 }
 
 
@@ -238,5 +238,5 @@ TEST_F(HankelFFT_RRVTTEST, GAUSSTGAUSSR)
                                   exp(-pow(w0, 2) * pow(kr[i], 2) / 4.0 -
                                       pow(tp, 2) * pow(omega[j] - omega0, 2) / 4.0);
 
-    EXPECT_LT(pw::relative_error(expect, out), 1.0e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1.0e-5);
 }

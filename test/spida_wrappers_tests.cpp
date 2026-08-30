@@ -4,8 +4,6 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwexcept.h>
-#include <pwutils/pwmath.hpp>
 #include <spida/CVT.h>
 #include <spida/CVX.h>
 #include <spida/grid/uniformCVT.h>
@@ -15,6 +13,8 @@
 #include <spida/helper/constants.h>
 #include <spida/RVT.h>
 #include <spida/RVX.h>
+#include <utils/except.h>
+#include <utils/math.hpp>
 
 using spida::dcmplx;
 using spida::ii;
@@ -47,7 +47,7 @@ TEST(SPIDA_CVX_TEST, TRANSFORM_ACCESSOR)
     std::vector<dcmplx> in(N, 1.0), sp(N), out(N);
     spi.getTransformX().X_To_SX(in, sp);
     spi.getTransformX().SX_To_X(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(SPIDA_CVX_TEST, X_TO_SX_AND_BACK)
@@ -64,7 +64,7 @@ TEST(SPIDA_CVX_TEST, X_TO_SX_AND_BACK)
 
     spi.X_To_SX(in, sp);
     spi.SX_To_X(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(SPIDA_CVX_TEST, X_TO_SX_GAUSS)
@@ -84,7 +84,7 @@ TEST(SPIDA_CVX_TEST, X_TO_SX_GAUSS)
         expect[i] = std::sqrt(PI / a) * std::exp(-kx[i] * kx[i] / (4.0 * a));
 
     spi.X_To_SX(in, sp);
-    EXPECT_LT(pw::relative_error(expect, sp), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, sp), 1e-5);
 }
 
 TEST(SPIDA_CVX_TEST, DX_NOOP_N0)
@@ -129,7 +129,7 @@ TEST(SPIDA_CVX_TEST, DX_FIRST_DERIVATIVE_SIN)
         expect[i] = std::cos(x[i]);
 
     spi.dX(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(SPIDA_CVX_TEST, DX_SECOND_DERIVATIVE_SIN)
@@ -147,7 +147,7 @@ TEST(SPIDA_CVX_TEST, DX_SECOND_DERIVATIVE_SIN)
         expect[i] = -std::sin(x[i]);
 
     spi.dX(in, out, 2);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(SPIDA_CVX_TEST, DSX_MATCHES_DX_SPECTRAL_STEP)
@@ -170,7 +170,7 @@ TEST(SPIDA_CVX_TEST, DSX_MATCHES_DX_SPECTRAL_STEP)
     spi.X_To_SX(cos_x, expect_sp);
 
     spi.dSX(in_sp, out_sp);
-    EXPECT_LT(pw::relative_error(expect_sp, out_sp), 1e-5);
+    EXPECT_LT(detail::relative_error(expect_sp, out_sp), 1e-5);
 }
 
 // ============================================================
@@ -201,7 +201,7 @@ TEST(SPIDA_RVX_TEST, TRANSFORM_ACCESSOR)
     std::vector<dcmplx> sp(grid.getNsx());
     spi.getTransformX().X_To_SX(in, sp);
     spi.getTransformX().SX_To_X(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(SPIDA_RVX_TEST, X_TO_SX_AND_BACK)
@@ -219,7 +219,7 @@ TEST(SPIDA_RVX_TEST, X_TO_SX_AND_BACK)
 
     spi.X_To_SX(in, sp);
     spi.SX_To_X(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(SPIDA_RVX_TEST, X_TO_SX_GAUSS)
@@ -240,7 +240,7 @@ TEST(SPIDA_RVX_TEST, X_TO_SX_GAUSS)
         expect[i] = std::sqrt(PI / a) * std::exp(-kx[i] * kx[i] / (4.0 * a));
 
     spi.X_To_SX(in, sp);
-    EXPECT_LT(pw::relative_error(expect, sp), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, sp), 1e-5);
 }
 
 TEST(SPIDA_RVX_TEST, DX_NOOP_N0)
@@ -274,7 +274,7 @@ TEST(SPIDA_RVX_TEST, DSX_TWO_BUFFER_OVERLOAD)
     spi.X_To_SX(cos_x, expect_sp);
 
     spi.dSX(in_sp, out_sp);
-    EXPECT_LT(pw::relative_error(expect_sp, out_sp), 1e-5);
+    EXPECT_LT(detail::relative_error(expect_sp, out_sp), 1e-5);
 }
 
 TEST(SPIDA_RVX_TEST, DSX_INPLACE_NOOP_N0)
@@ -307,7 +307,7 @@ TEST(SPIDA_RVX_TEST, DSX_INPLACE_MATCHES_TWO_BUFFER)
     spi.dSX(sp, out_two);
     spi.dSX(out_inplace);
 
-    EXPECT_LT(pw::relative_error(out_two, out_inplace), 1e-12);
+    EXPECT_LT(detail::relative_error(out_two, out_inplace), 1e-12);
 }
 
 // ============================================================
@@ -337,7 +337,7 @@ TEST(SPIDA_CVT_TEST, TRANSFORM_ACCESSOR)
     std::vector<dcmplx> in(N, 1.0), sp(N), out(N);
     spi.getTransformT().T_To_ST(in, sp);
     spi.getTransformT().ST_To_T(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(SPIDA_CVT_TEST, T_TO_ST_AND_BACK)
@@ -354,7 +354,7 @@ TEST(SPIDA_CVT_TEST, T_TO_ST_AND_BACK)
 
     spi.T_To_ST(in, sp);
     spi.ST_To_T(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(SPIDA_CVT_TEST, T_TO_ST_GAUSS)
@@ -374,7 +374,7 @@ TEST(SPIDA_CVT_TEST, T_TO_ST_GAUSS)
         expect[i] = std::sqrt(PI / a) * std::exp(-omega[i] * omega[i] / (4.0 * a));
 
     spi.T_To_ST(in, sp);
-    EXPECT_LT(pw::relative_error(expect, sp), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, sp), 1e-5);
 }
 
 TEST(SPIDA_CVT_TEST, DT_NOOP_N0)
@@ -418,7 +418,7 @@ TEST(SPIDA_CVT_TEST, DT_FIRST_DERIVATIVE_SIN)
         expect[i] = std::cos(t[i]);
 
     spi.dT(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(SPIDA_CVT_TEST, DT_SECOND_DERIVATIVE_SIN)
@@ -436,7 +436,7 @@ TEST(SPIDA_CVT_TEST, DT_SECOND_DERIVATIVE_SIN)
         expect[i] = -std::sin(t[i]);
 
     spi.dT(in, out, 2);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(SPIDA_CVT_TEST, DST_MATCHES_DT_SPECTRAL_STEP)
@@ -458,7 +458,7 @@ TEST(SPIDA_CVT_TEST, DST_MATCHES_DT_SPECTRAL_STEP)
     spi.T_To_ST(cos_t, expect_sp);
 
     spi.dST(in_sp, out_sp);
-    EXPECT_LT(pw::relative_error(expect_sp, out_sp), 1e-5);
+    EXPECT_LT(detail::relative_error(expect_sp, out_sp), 1e-5);
 }
 
 // ============================================================
@@ -490,7 +490,7 @@ TEST(SPIDA_RVT_TEST, TRANSFORM_ACCESSOR)
     std::vector<dcmplx> sp(grid.getNst());
     spi.getTransformT().T_To_ST(in, sp);
     spi.getTransformT().ST_To_T(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(SPIDA_RVT_TEST, T_TO_ST_AND_BACK)
@@ -508,7 +508,7 @@ TEST(SPIDA_RVT_TEST, T_TO_ST_AND_BACK)
 
     spi.T_To_ST(in, sp);
     spi.ST_To_T(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(SPIDA_RVT_TEST, CVT_TO_ST_AND_BACK)
@@ -527,7 +527,7 @@ TEST(SPIDA_RVT_TEST, CVT_TO_ST_AND_BACK)
     std::vector<dcmplx> time_domain(N), sp_out(nst);
     spi.ST_To_CVT(sp_in, time_domain);
     spi.CVT_To_ST(time_domain, sp_out);
-    EXPECT_LT(pw::relative_error(sp_in, sp_out), 1e-10);
+    EXPECT_LT(detail::relative_error(sp_in, sp_out), 1e-10);
 }
 
 TEST(SPIDA_RVT_TEST, T_TO_ST_GAUSS)
@@ -548,7 +548,7 @@ TEST(SPIDA_RVT_TEST, T_TO_ST_GAUSS)
         expect[i] = std::sqrt(PI / a) * std::exp(-omega[i] * omega[i] / (4.0 * a));
 
     spi.T_To_ST(in, sp);
-    EXPECT_LT(pw::relative_error(expect, sp), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, sp), 1e-5);
 }
 
 TEST(SPIDA_RVT_TEST, DT_NEGATIVE_N_THROWS)
@@ -558,7 +558,7 @@ TEST(SPIDA_RVT_TEST, DT_NEGATIVE_N_THROWS)
     spida::SpidaRVT spi(grid);
 
     std::vector<double> in(N, 1.0), out(N);
-    EXPECT_THROW(spi.dT(in, out, -1), pw::Exception);
+    EXPECT_THROW(spi.dT(in, out, -1), detail::Exception);
 }
 
 TEST(SPIDA_RVT_TEST, DT_FIRST_DERIVATIVE_SIN)
@@ -577,7 +577,7 @@ TEST(SPIDA_RVT_TEST, DT_FIRST_DERIVATIVE_SIN)
         expect[i] = std::cos(t[i]);
 
     spi.dT(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(SPIDA_RVT_TEST, DT_SECOND_DERIVATIVE_SIN)
@@ -595,5 +595,5 @@ TEST(SPIDA_RVT_TEST, DT_SECOND_DERIVATIVE_SIN)
         expect[i] = -std::sin(t[i]);
 
     spi.dT(in, out, 2);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }

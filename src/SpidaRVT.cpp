@@ -6,7 +6,7 @@
 #include <cmath>
 #include <memory>
 
-#include <pwutils/pwexcept.h>
+#include <utils/except.h>
 
 namespace spida {
 
@@ -60,7 +60,7 @@ void SpidaRVT::ST_To_CVT(const std::vector<dcmplx>& in, std::vector<dcmplx>& out
 void SpidaRVT::dT(const std::vector<double>& in, std::vector<double>& out, int n)
 {
     if (n < 0) {
-        throw pw::Exception("SpidaRVT::DT", "DT(in,out,n) must have n >= 0 ");
+        throw detail::Exception("SpidaRVT::DT", "DT(in,out,n) must have n >= 0 ");
     }
     m_tr->T_To_ST(in, m_vs);
     const std::vector<double>& st = m_gr->getST();

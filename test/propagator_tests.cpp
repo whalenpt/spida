@@ -8,7 +8,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include <pwutils/report.hpp>
+#include <utils/report.hpp>
 
 using dcmplx = spida::dcmplx;
 namespace fs = std::filesystem;
@@ -60,11 +60,11 @@ protected:
     fs::path m_dir;
 
     // Helper: make a 1D dat report backed by local data
-    std::unique_ptr<pw::Report1D<double, double>> make1DReport(const std::string& name,
-                                                               const std::vector<double>& x,
-                                                               const std::vector<double>& y)
+    std::unique_ptr<spida::Report1D<double, double>> make1DReport(const std::string& name,
+                                                                  const std::vector<double>& x,
+                                                                  const std::vector<double>& y)
     {
-        return std::make_unique<pw::Report1D<double, double>>(name, x, y);
+        return std::make_unique<spida::Report1D<double, double>>(name, x, y);
     }
 };
 
@@ -85,7 +85,7 @@ TEST(REPORT_HANDLER_TEST, ADD_1D_REPORT_SETS_HAS_DATA)
     spida::ReportHandler rh;
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0};
-    rh.addReport(std::make_unique<pw::Report1D<double, double>>("test", x, y));
+    rh.addReport(std::make_unique<spida::Report1D<double, double>>("test", x, y));
     EXPECT_TRUE(rh.hasData1D());
     EXPECT_FALSE(rh.hasData2D());
     EXPECT_FALSE(rh.hasDataTrack());
@@ -95,7 +95,7 @@ TEST(REPORT_HANDLER_TEST, ADD_TRACK_REPORT_SETS_HAS_DATA)
 {
     spida::ReportHandler rh;
     std::vector<double> data{1.0, 2.0, 3.0};
-    rh.addReport(std::make_unique<pw::Track<double>>("track", pw::TrackType::Max, data));
+    rh.addReport(std::make_unique<spida::Track<double>>("track", spida::TrackType::Max, data));
     EXPECT_FALSE(rh.hasData1D());
     EXPECT_TRUE(rh.hasDataTrack());
 }
@@ -262,7 +262,7 @@ TEST_F(PropagatorTest, STEP_UPDATE_SET_STEPS_PER_OUTPUT_SETS_ALL)
     std::vector<double> data{1.0, 2.0};
     TestPropagatorCV prop(m_dir);
     prop.addReport(make1DReport("u", x, y));
-    prop.addReport(std::make_unique<pw::Track<double>>("track", pw::TrackType::Max, data));
+    prop.addReport(std::make_unique<spida::Track<double>>("track", spida::TrackType::Max, data));
     prop.setStepsPerOutput(2);
 
     (void) prop.stepUpdate(0.0); // step 1 — no output
@@ -279,7 +279,7 @@ TEST_F(PropagatorTest, REPORT_1D_CREATES_FILE)
     prop.addReport(make1DReport("field", x, y));
     prop.report1D(0.0);
 
-    // pw::Report1D writes to <dir>/<name>_<repNum>.json
+    // spida::Report1D writes to <dir>/<name>_<repNum>.json
     fs::path expected = m_dir / "field_0.json";
     EXPECT_TRUE(fs::exists(expected));
 }
@@ -288,7 +288,7 @@ TEST_F(PropagatorTest, REPORT_TRACK_CREATES_FILE)
 {
     std::vector<double> data{1.0, 2.0, 3.0};
     TestPropagatorCV prop(m_dir);
-    prop.addReport(std::make_unique<pw::Track<double>>("maxtrack", pw::TrackType::Max, data));
+    prop.addReport(std::make_unique<spida::Track<double>>("maxtrack", spida::TrackType::Max, data));
     prop.reportTrack(0.0);
 
     fs::path expected = m_dir / "maxtrack.json";
@@ -325,7 +325,8 @@ TEST_F(PropagatorTest, ADD_2D_REPORT_SETS_HAS_DATA)
     // Observable check: with stepsPerOutput2D=1 the first stepUpdate triggers updateFields.
     // No 1D or track reports added, so hasData1D() must remain false.
     TestPropagatorCV prop(m_dir);
-    prop.addReport(std::make_unique<pw::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
+    prop.addReport(
+        std::make_unique<spida::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
     prop.setStepsPerOutput2D(1);
     EXPECT_FALSE(prop.hasData1D());
     (void) prop.stepUpdate(0.0);
@@ -338,7 +339,8 @@ TEST_F(PropagatorTest, STEP_UPDATE_TRIGGERS_UPDATE_FIELDS_WITH_2D_REPORT)
 {
     // stepsPerOutput2D defaults to 1; step 1 satisfies 1 % 1 == 0.
     TestPropagatorCV prop(m_dir);
-    prop.addReport(std::make_unique<pw::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
+    prop.addReport(
+        std::make_unique<spida::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
     prop.setStepsPerOutput2D(1);
 
     (void) prop.stepUpdate(0.0);
@@ -351,7 +353,8 @@ TEST_F(PropagatorTest, STEP_UPDATE_RESPECTS_STEPS_PER_OUTPUT_2D)
 {
     // stepsPerOutput2D=3: steps 1 and 2 (1%3!=0, 2%3!=0) do not fire; step 3 fires.
     TestPropagatorCV prop(m_dir);
-    prop.addReport(std::make_unique<pw::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
+    prop.addReport(
+        std::make_unique<spida::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
     prop.setStepsPerOutput2D(3);
 
     (void) prop.stepUpdate(0.0); // step 1 — no report
@@ -367,7 +370,8 @@ TEST_F(PropagatorTest, STEP_UPDATE_RETURNS_FALSE_WHEN_2D_MAX_REACHED)
 {
     // setMaxReports2D(1): after the first report2D fires, report_count2D==1 >= max==1.
     TestPropagatorCV prop(m_dir);
-    prop.addReport(std::make_unique<pw::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
+    prop.addReport(
+        std::make_unique<spida::Report2D<double, double, double>>("surf", k2Dx, k2Dy, k2Dz));
     prop.setMaxReports2D(1);
 
     bool result = prop.stepUpdate(0.0);
@@ -380,7 +384,8 @@ TEST_F(PropagatorTest, REPORT_2D_CREATES_FILE)
 {
     // Direct call to report2D(t) must produce <name>_<repnum>.json in m_dir.
     TestPropagatorCV prop(m_dir);
-    prop.addReport(std::make_unique<pw::Report2D<double, double, double>>("surf2d", k2Dx, k2Dy, k2Dz));
+    prop.addReport(
+        std::make_unique<spida::Report2D<double, double, double>>("surf2d", k2Dx, k2Dy, k2Dz));
     prop.report2D(0.0);
 
     const fs::path expected = m_dir / "surf2d_0.json";
@@ -397,8 +402,10 @@ TEST_F(PropagatorTest, REPORT_DISPATCHES_ALL_THREE_TYPES)
 
     TestPropagatorCV prop(m_dir);
     prop.addReport(make1DReport("r1d", x1d, y1d));
-    prop.addReport(std::make_unique<pw::Report2D<double, double, double>>("r2d", k2Dx, k2Dy, k2Dz));
-    prop.addReport(std::make_unique<pw::Track<double>>("rtrack", pw::TrackType::Max, trackData));
+    prop.addReport(
+        std::make_unique<spida::Report2D<double, double, double>>("r2d", k2Dx, k2Dy, k2Dz));
+    prop.addReport(
+        std::make_unique<spida::Track<double>>("rtrack", spida::TrackType::Max, trackData));
     prop.report(0.0);
 
     EXPECT_TRUE(fs::exists(m_dir / "r1d_0.json"));
@@ -428,7 +435,7 @@ TEST(REPORT_HANDLER_TEST, ADD_2D_REPORT_SETS_HAS_DATA)
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0};
     std::vector<double> z{0.0, 0.5, 0.5, 1.0};
-    rh.addReport(std::make_unique<pw::Report2D<double, double, double>>("surf", x, y, z));
+    rh.addReport(std::make_unique<spida::Report2D<double, double, double>>("surf", x, y, z));
     EXPECT_TRUE(rh.hasData2D());
     EXPECT_FALSE(rh.hasData1D());
     EXPECT_FALSE(rh.hasDataTrack());
@@ -447,7 +454,7 @@ TEST(REPORT_HANDLER_TEST, REPORT_2D_CREATES_FILE)
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0};
     std::vector<double> z{0.0, 0.5, 0.5, 1.0};
-    rh.addReport(std::make_unique<pw::Report2D<double, double, double>>("rh2d", x, y, z));
+    rh.addReport(std::make_unique<spida::Report2D<double, double, double>>("rh2d", x, y, z));
     rh.report2D(dir, 0u);
 
     const fs::path expected = dir / "rh2d_0.json";
@@ -463,7 +470,7 @@ TEST(REPORT_HANDLER_TEST, SET_ITEM_PROPAGATES_TO_2D_DEFS)
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0};
     std::vector<double> z{0.0, 0.5, 0.5, 1.0};
-    rh.addReport(std::make_unique<pw::Report2D<double, double, double>>("si2d", x, y, z));
+    rh.addReport(std::make_unique<spida::Report2D<double, double, double>>("si2d", x, y, z));
     EXPECT_NO_THROW(rh.setItem("t", 3.14));
 }
 
@@ -480,12 +487,12 @@ TEST(REPORT_HANDLER_TEST, REPORT_DATA_CALLS_BOTH_1D_AND_2D)
 
     std::vector<double> x1{0.0, 1.0};
     std::vector<double> y1{1.0, 2.0};
-    rh.addReport(std::make_unique<pw::Report1D<double, double>>("rd1d", x1, y1));
+    rh.addReport(std::make_unique<spida::Report1D<double, double>>("rd1d", x1, y1));
 
     std::vector<double> x2{0.0, 1.0};
     std::vector<double> y2{0.0, 1.0};
     std::vector<double> z2{0.0, 0.5, 0.5, 1.0};
-    rh.addReport(std::make_unique<pw::Report2D<double, double, double>>("rd2d", x2, y2, z2));
+    rh.addReport(std::make_unique<spida::Report2D<double, double, double>>("rd2d", x2, y2, z2));
 
     rh.reportData(dir, 0u);
 

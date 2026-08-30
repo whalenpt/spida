@@ -6,13 +6,13 @@
 #include <thread>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwmath.hpp>
 #include <spida/grid/besselR.h>
 #include <spida/grid/uniformCVT.h>
 #include <spida/helper/constants.h>
 #include <spida/shape/shapeR.h>
 #include <spida/shape/shapeT.h>
 #include <spida/transform/hankelfftRCVT.h>
+#include <utils/math.hpp>
 
 class HankelFFT_RCVTTEST : public ::testing::Test {
 protected:
@@ -72,7 +72,7 @@ TEST_F(HankelFFT_RCVTTEST, INVERSES)
     std::vector<dcmplx> ub(nr * nt);
     transform->RT_To_SRST(u, v);
     transform->SRST_To_RT(v, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 }
 
 // Check RT_To_SRT and SRT_To_RT transforms are inverses
@@ -84,11 +84,11 @@ TEST_F(HankelFFT_RCVTTEST, INVERSES2)
     // Check forward transform and reverse transform over R dimension
     transform->RT_To_SRT(u, usr);
     transform->SRT_To_RT(usr, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
     // Check forward transform and reverse transform over T dimension
     transform->RT_To_RST(u, v);
     transform->RST_To_RT(v, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 }
 
 // Check SRST_To_RST and RST_To_SRST transforms are inverses
@@ -104,12 +104,12 @@ TEST_F(HankelFFT_RCVTTEST, INVERSES3)
     // Check forward tranform and reverse transform over SR dimension
     transform->SRST_To_RST(v, w);
     transform->RST_To_SRST(w, vb);
-    EXPECT_LT(pw::relative_error(v, vb), 1e-6);
+    EXPECT_LT(detail::relative_error(v, vb), 1e-6);
 
     // Check forward tranform and reverse transform over ST dimension
     transform->SRST_To_SRT(v, usr);
     transform->SRT_To_SRST(usr, vb);
-    EXPECT_LT(pw::relative_error(v, vb), 1e-6);
+    EXPECT_LT(detail::relative_error(v, vb), 1e-6);
 }
 
 // Check RT_To_RST and SRST_To_RST are equal
@@ -123,14 +123,14 @@ TEST_F(HankelFFT_RCVTTEST, INVERSES4)
     // Check RT_To_RST and SRST_To_RST are equal
     transform->RT_To_RST(u, w);
     transform->SRST_To_RST(v, wb);
-    EXPECT_LT(pw::relative_error(w, wb), 1e-6);
+    EXPECT_LT(detail::relative_error(w, wb), 1e-6);
 
     // Check RT_To_SRT and SRST_To_SRT are equal
     std::vector<spida::dcmplx> zeta(nr * nt);
     std::vector<spida::dcmplx> zetab(nr * nt);
     transform->RT_To_SRT(u, zeta);
     transform->SRST_To_SRT(v, zetab);
-    EXPECT_LT(pw::relative_error(zeta, zetab), 1e-6);
+    EXPECT_LT(detail::relative_error(zeta, zetab), 1e-6);
 }
 
 // H0{exp(-a*r^2)}=(1/2a)*exp(-kr^2/(4a))
@@ -161,7 +161,7 @@ TEST_F(HankelFFT_RCVTTEST, GAUSSTGAUSSR)
         }
     }
 
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 // Test RT_To_SRST and SRST_To_RT transforms are inverses (multithread)
@@ -174,7 +174,7 @@ TEST_F(HankelFFT_RCVTTEST, MULTITHREAD1)
     // Check forward tranform and reverse transform applied in sequence is identity
     transform_threaded->RT_To_SRST(u, v);
     transform_threaded->SRST_To_RT(v, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 }
 
 // Check RT_To_SRT and SRT_To_RT transforms are inverses (multithread)
@@ -188,11 +188,11 @@ TEST_F(HankelFFT_RCVTTEST, MULTITHREAD2)
     // Check forward transform and reverse transform over R dimension
     transform_threaded->RT_To_SRT(u, usr);
     transform_threaded->SRT_To_RT(usr, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
     // Check forward transform and reverse transform over T dimension
     transform_threaded->RT_To_RST(u, v);
     transform_threaded->RST_To_RT(v, ub);
-    EXPECT_LT(pw::relative_error(u, ub), 1e-6);
+    EXPECT_LT(detail::relative_error(u, ub), 1e-6);
 }
 
 // Check SRST_To_RST and RST_To_SRST transforms are inverses (multithread)
@@ -208,10 +208,10 @@ TEST_F(HankelFFT_RCVTTEST, MULTITHREAD3)
     // Check forward tranform and reverse transform over SR dimension
     transform_threaded->SRST_To_RST(v, w);
     transform_threaded->RST_To_SRST(w, vb);
-    EXPECT_LT(pw::relative_error(v, vb), 1e-6);
+    EXPECT_LT(detail::relative_error(v, vb), 1e-6);
 
     // Check forward tranform and reverse transform over ST dimension
     transform_threaded->SRST_To_SRT(v, usr);
     transform_threaded->SRT_To_SRST(usr, vb);
-    EXPECT_LT(pw::relative_error(v, vb), 1e-6);
+    EXPECT_LT(detail::relative_error(v, vb), 1e-6);
 }

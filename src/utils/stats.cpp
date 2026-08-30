@@ -1,5 +1,5 @@
 
-#include "pwutils/pwstats.h"
+#include "utils/stats.h"
 
 #include <chrono>
 #include <cstdio>
@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace pw {
+namespace detail {
 
 StatCenter::StatCenter(const std::string& name, unsigned steps_per_log) : m_name(name)
 {
@@ -165,4 +165,4 @@ void Clocker::report(std::ostream& os) const
     }
 }
 
-} // namespace pw
+} // namespace detail
