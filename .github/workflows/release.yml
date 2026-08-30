@@ -125,9 +125,6 @@ jobs:
             echo '```'
             cat "${tarball}.sha256"
             echo '```'
-            echo
-            echo "Pin this in conanfile.py's \`_RELEASE_SHA256\` dict so"
-            echo "\`conan create\` from a bare recipe verifies it."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create GitHub Release

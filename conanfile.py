@@ -4,11 +4,6 @@ from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake
 from conan.tools.files import get
 
-# Pinned checksums for tagged release source tarballs (see source() and
-# .github/workflows/release.yml), keyed by version. Filled in after a tag is
-# actually released — release.yml prints the sha256 in its job summary.
-# get() skips verification for a version that isn't listed here yet.
-_RELEASE_SHA256 = {}
 
 class SpidaConan(ConanFile):
     name = "spida"
@@ -84,7 +79,7 @@ class SpidaConan(ConanFile):
             "https://github.com/whalenpt/spida/releases/download/"
             f"v{version}/spida-{version}-src.tar.gz"
         )
-        get(self, url, sha256=_RELEASE_SHA256.get(version), strip_root=True)
+        get(self, url, strip_root=True)
 
     def generate(self):
         tc = CMakeToolchain(self)
