@@ -51,13 +51,14 @@ class SpidaConan(ConanFile):
 
     def requirements(self):
         self.requires("spdlog/1.17.0")
+        # kissfft's public-header footprint is opaque pointers only
+        # (kiss_fft_cfg/kiss_fftr_cfg, forward-declared in transform/fftRVX.h
+        # and friends — see those headers) — no transitive_headers needed.
         self.requires("kissfft/131.1.0")
         self.requires("boost/1.90.0")
-        # header-only: its headers reach spida's own installed public headers
-        # (spida::propagator::reporthandler etc.), so consumers two hops away
-        # (e.g. test_package) need it on their CMAKE_PREFIX_PATH too — make
-        # that explicit rather than relying on nlohmann_json's own default
-        # package_type-derived transitivity, which isn't propagating it.
+        # Installed public headers use nlohmann::json by value throughout
+        # deeply templated inline code — not an opaque handle, can't be
+        # forward-declared away.
         self.requires("nlohmann_json/3.11.3", transitive_headers=True)
         # boost's Boost.Locale iconv codecvt backend pulls libiconv on every
         # non-Linux platform (glibc ships iconv(3) built in, so Linux never

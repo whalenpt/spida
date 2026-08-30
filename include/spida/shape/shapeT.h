@@ -9,8 +9,6 @@
 #include <stdexcept>
 #include <string>
 
-#include <boost/math/special_functions/bessel.hpp>
-
 namespace spida {
 
 // Interface class
