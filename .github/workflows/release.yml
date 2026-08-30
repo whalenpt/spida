@@ -8,40 +8,36 @@ name: Release
 # with no local git checkout of spida (see conanfile.py and CLAUDE.md).
 #
 # Gated on the CMake workflow (build+test+package-test on Linux/Windows/
-# macOS) actually passing for this same tag — triggered via workflow_run
-# rather than push, since that's the only way to depend on another
-# workflow's outcome across workflow files. This means a broken tag never
-# publishes a release: no ordinary `on: push: tags` trigger here.
+# macOS) actually passing for this same tag. An earlier version of this
+# workflow tried to get that via `on: workflow_run` listening for CMake's
+# completion, filtering on workflow_run.head_branch — that field is
+# documented to hold the tag name for a tag-associated run, but is
+# unreliable in practice for tag pushes and silently produced a false `if:`
+# (the whole run shows "Skipped"). Triggering on the tag push directly and
+# actively polling the Actions API for CMake's run(s) against this exact
+# commit is what actually works.
 on:
-  workflow_run:
-    workflows: ["CMake"]
-    types: [completed]
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   source-tarball:
     runs-on: ubuntu-latest
-    # workflow_run fires for every completion of the CMake workflow — pushes
-    # to main/develop and PRs included, not just tag pushes — so filter down
-    # to a successful run that was actually triggered by a vN.N.N tag.
-    # head_branch carries the tag name (not a branch) when the triggering
-    # push was a tag push.
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      startsWith(github.event.workflow_run.head_branch, 'v')
     steps:
-      - name: Checkout tagged commit
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
           submodules: recursive
 
       - name: Derive version from tag
         id: version
         run: |
-          tag="${{ github.event.workflow_run.head_branch }}"
+          tag="${GITHUB_REF_NAME}"
           version="${tag#v}"
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Tag '${tag}' doesn't look like vN.N.N — refusing to guess a version." >&2
@@ -49,6 +45,45 @@ jobs:
           fi
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for CMake CI to pass on this commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha;
+            const timeoutMs = 30 * 60 * 1000;
+            const pollMs = 15000;
+            const start = Date.now();
+            core.info(`Waiting for cmake.yml run(s) on ${sha}...`);
+            while (true) {
+              const { data } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'cmake.yml',
+                head_sha: sha,
+              });
+              const runs = data.workflow_runs;
+              if (runs.length > 0 && runs.every(r => r.status === 'completed')) {
+                const failed = runs.filter(r => r.conclusion !== 'success');
+                if (failed.length > 0) {
+                  core.setFailed(
+                    `CMake run(s) did not succeed for ${sha}: ` +
+                    failed.map(r => `#${r.run_number} (${r.id}) = ${r.conclusion}`).join(', ')
+                  );
+                } else {
+                  core.info(`All ${runs.length} CMake run(s) for ${sha} succeeded.`);
+                }
+                return;
+              }
+              if (Date.now() - start > timeoutMs) {
+                core.setFailed(`Timed out waiting for CMake to complete on ${sha}.`);
+                return;
+              }
+              core.info(runs.length === 0
+                ? 'No CMake run found for this commit yet, still waiting...'
+                : `${runs.filter(r => r.status !== 'completed').length} CMake run(s) still in progress...`);
+              await new Promise(r => setTimeout(r, pollMs));
+            }
 
       - name: Check tag matches conanfile.py / CMakeLists.txt version
         run: |
@@ -98,9 +133,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # workflow_run means github.ref here is release.yml's own trigger
-          # context (the default branch), not the tag that triggered CMake —
-          # tag_name must be explicit or this attaches to the wrong ref.
           tag_name: ${{ steps.version.outputs.tag }}
           name: spida ${{ steps.version.outputs.version }}
           generate_release_notes: true
