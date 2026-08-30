@@ -1,7 +1,7 @@
 #pragma once
 
-#include "pwutils/pwdefs.h"
-#include "pwutils/pwmath.hpp"
+#include "utils/defs.h"
+#include "utils/math.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -28,7 +28,7 @@ template <typename T> struct adl_serializer<std::complex<T>> {
 };
 } // namespace nlohmann
 
-namespace pw {
+namespace detail {
 
 // ---------- File-system helpers ----------
 
@@ -60,6 +60,31 @@ filePath(const std::filesystem::path& dir_path, const std::string& nm, const std
     return dir_path / (nm + "." + extension);
 }
 
+// ---------- JSON metadata helper ----------
+
+inline nlohmann::json buildMeta(const metadataMap& meta)
+{
+    nlohmann::json j = nlohmann::json::object();
+    for (auto const& [k, v] : meta) {
+        try {
+            std::size_t pos;
+            double d = std::stod(v, &pos);
+            if (pos == v.size())
+                j[k] = d;
+            else
+                j[k] = v;
+        }
+        catch (...) {
+            j[k] = v;
+        }
+    }
+    return j;
+}
+
+} // namespace detail
+
+namespace spida {
+
 // ---------- Base classes ----------
 
 enum class TrackType { Max, Min };
@@ -74,7 +99,7 @@ public:
     {
         if (os.is_open())
             os.close();
-        pw::createDirectory(m_dirpath, false);
+        detail::createDirectory(m_dirpath, false);
         os.open(path());
         if (!os.is_open())
             throw std::runtime_error("Failed to open data file for output stream");
@@ -86,7 +111,7 @@ public:
     {
         if (os.is_open())
             os.close();
-        pw::createDirectory(m_dirpath, false);
+        detail::createDirectory(m_dirpath, false);
         os.open(path(static_cast<int>(rep_num)));
         if (!os.is_open())
             throw std::runtime_error("Failed to open data file for output stream");
@@ -149,7 +174,7 @@ public:
 
     void setDirPath(const std::filesystem::path& dirpath)
     {
-        pw::createDirectory(dirpath, false);
+        detail::createDirectory(dirpath, false);
         m_dirpath = dirpath;
     }
 
@@ -158,7 +183,7 @@ public:
         return m_name;
     }
 
-    [[nodiscard]] const metadataMap& getMetadata() const
+    [[nodiscard]] const detail::metadataMap& getMetadata() const
     {
         return m_metadata_map;
     }
@@ -170,17 +195,17 @@ public:
 
     [[nodiscard]] std::filesystem::path path() const
     {
-        return pw::filePath(m_dirpath, m_name, m_extension);
+        return detail::filePath(m_dirpath, m_name, m_extension);
     }
 
     [[nodiscard]] std::filesystem::path path(int rep_num) const
     {
-        return pw::filePath(m_dirpath, m_name, rep_num, m_extension);
+        return detail::filePath(m_dirpath, m_name, rep_num, m_extension);
     }
 
 private:
     std::string m_name;
-    metadataMap m_metadata_map;
+    detail::metadataMap m_metadata_map;
     std::string m_extension{"json"};
     std::filesystem::path m_dirpath{"outfolder"};
     virtual void reportImplement(std::ofstream& os) const = 0;
@@ -243,27 +268,6 @@ private:
     TrackType m_ttype;
 };
 
-// ---------- JSON metadata helper ----------
-
-inline nlohmann::json buildMeta(const metadataMap& meta)
-{
-    nlohmann::json j = nlohmann::json::object();
-    for (auto const& [k, v] : meta) {
-        try {
-            std::size_t pos;
-            double d = std::stod(v, &pos);
-            if (pos == v.size())
-                j[k] = d;
-            else
-                j[k] = v;
-        }
-        catch (...) {
-            j[k] = v;
-        }
-    }
-    return j;
-}
-
 // ---------- Report1D: (x, y) real data ----------
 
 template <typename Tx, typename Ty> class Report1D : public ReportData1D {
@@ -287,7 +291,7 @@ private:
     {
         nlohmann::json j;
         j["type"] = "xy";
-        j["meta"] = buildMeta(getMetadata());
+        j["meta"] = detail::buildMeta(getMetadata());
         j["x"] = m_x;
         j["y"] = m_y;
         os << j.dump(2);
@@ -342,7 +346,7 @@ private:
             pow_y[i] = static_cast<Ty>(std::norm(m_y[i]));
         nlohmann::json j;
         j["type"] = "xy";
-        j["meta"] = buildMeta(getMetadata());
+        j["meta"] = detail::buildMeta(getMetadata());
         j["meta"]["field"] = "power";
         j["x"] = m_x;
         j["y"] = pow_y;
@@ -358,7 +362,7 @@ private:
         }
         nlohmann::json j;
         j["type"] = "xy_complex";
-        j["meta"] = buildMeta(getMetadata());
+        j["meta"] = detail::buildMeta(getMetadata());
         j["x"] = m_x;
         j["yr"] = yr;
         j["yi"] = yi;
@@ -401,8 +405,8 @@ private:
         std::size_t sx = getStrideX(), sy = getStrideY();
         std::vector<Tx> xs;
         std::vector<Ty> ys;
-        xs.reserve(pw::intceil(m_x.size(), sx));
-        ys.reserve(pw::intceil(m_y.size(), sy));
+        xs.reserve(detail::intceil(m_x.size(), sx));
+        ys.reserve(detail::intceil(m_y.size(), sy));
         for (std::size_t i = 0; i < m_x.size(); i += sx)
             xs.push_back(m_x[i]);
         for (std::size_t j = 0; j < m_y.size(); j += sy)
@@ -416,7 +420,7 @@ private:
         }
         nlohmann::json j;
         j["type"] = "xyz";
-        j["meta"] = buildMeta(getMetadata());
+        j["meta"] = detail::buildMeta(getMetadata());
         j["x"] = xs;
         j["y"] = ys;
         j["z"] = zj;
@@ -465,8 +469,8 @@ private:
 
     void buildAxes(std::size_t sx, std::size_t sy, std::vector<Tx>& xs, std::vector<Ty>& ys) const
     {
-        xs.reserve(pw::intceil(m_x.size(), sx));
-        ys.reserve(pw::intceil(m_y.size(), sy));
+        xs.reserve(detail::intceil(m_x.size(), sx));
+        ys.reserve(detail::intceil(m_y.size(), sy));
         for (std::size_t i = 0; i < m_x.size(); i += sx)
             xs.push_back(m_x[i]);
         for (std::size_t j = 0; j < m_y.size(); j += sy)
@@ -488,7 +492,7 @@ private:
         }
         nlohmann::json j;
         j["type"] = "xyz";
-        j["meta"] = buildMeta(getMetadata());
+        j["meta"] = detail::buildMeta(getMetadata());
         j["meta"]["field"] = "power";
         j["x"] = xs;
         j["y"] = ys;
@@ -517,7 +521,7 @@ private:
         }
         nlohmann::json j;
         j["type"] = "xyz_complex";
-        j["meta"] = buildMeta(getMetadata());
+        j["meta"] = detail::buildMeta(getMetadata());
         j["x"] = xs;
         j["y"] = ys;
         j["zr"] = zrj;
@@ -558,9 +562,9 @@ public:
     {
         m_t.push_back(t);
         if (getTrackType() == TrackType::Max)
-            m_vals.push_back(pw::max(m_data));
+            m_vals.push_back(detail::max(m_data));
         else
-            m_vals.push_back(pw::min(m_data));
+            m_vals.push_back(detail::min(m_data));
     }
 
 private:
@@ -572,7 +576,7 @@ private:
     {
         nlohmann::json j;
         j["type"] = "xy";
-        j["meta"] = buildMeta(getMetadata());
+        j["meta"] = detail::buildMeta(getMetadata());
         j["meta"]["track"] = (getTrackType() == TrackType::Max) ? "max" : "min";
         j["x"] = m_t;
         j["y"] = m_vals;
@@ -597,9 +601,9 @@ public:
     {
         m_t.push_back(t);
         if (getTrackType() == TrackType::Max)
-            m_vals.push_back(static_cast<T>(std::norm(pw::max(m_data))));
+            m_vals.push_back(static_cast<T>(std::norm(detail::max(m_data))));
         else
-            m_vals.push_back(static_cast<T>(std::norm(pw::min(m_data))));
+            m_vals.push_back(static_cast<T>(std::norm(detail::min(m_data))));
     }
 
 private:
@@ -611,7 +615,7 @@ private:
     {
         nlohmann::json j;
         j["type"] = "xy";
-        j["meta"] = buildMeta(getMetadata());
+        j["meta"] = detail::buildMeta(getMetadata());
         j["meta"]["track"] = (getTrackType() == TrackType::Max) ? "max_power" : "min_power";
         j["x"] = m_t;
         j["y"] = m_vals;
@@ -619,4 +623,4 @@ private:
     }
 };
 
-} // namespace pw
+} // namespace spida

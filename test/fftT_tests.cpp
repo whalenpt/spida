@@ -5,7 +5,6 @@
 #include <stdexcept>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwmath.hpp>
 #include <spida/CVT.h>
 #include <spida/grid/uniformCVT.h>
 #include <spida/grid/uniformRVT.h>
@@ -14,6 +13,7 @@
 #include <spida/shape/shapeT.h>
 #include <spida/transform/fftCVT.h>
 #include <spida/transform/fftRVT.h>
+#include <utils/math.hpp>
 
 // FFTCVT defined such that F{f(t)} = \integral_{-\inf}^{\inf}f(t)exp(i*omega*t) dt
 // Test that forward fft followed by inverse fft yields identity
@@ -34,7 +34,7 @@ TEST(FFTCVT_TEST, INVERSES)
     tr.T_To_ST(in, out);
     tr.ST_To_T(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-10);
 }
 
 // a = 1/tp^2
@@ -65,7 +65,7 @@ TEST(FFTCVT_TEST, GAUSS)
 
     spida::FFTCVT tr(grid);
     tr.T_To_ST(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(FFTCVT_TEST, COS)
@@ -106,7 +106,7 @@ TEST(FFTCVT_TEST, DERIVATIVE_SIN)
 
     spida::SpidaCVT spi{grid};
     spi.dT(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-6);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-6);
 }
 
 TEST(FFTCVT_TEST, DERIVATIVE_GAUSS)
@@ -127,7 +127,7 @@ TEST(FFTCVT_TEST, DERIVATIVE_GAUSS)
 
     spida::SpidaCVT spi{grid};
     spi.dT(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-6);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-6);
 }
 
 // FFTRVT defined such that F{f(t)} = \integral_{-\inf}^{\inf}f(t)exp(i*omega*t) dt
@@ -152,7 +152,7 @@ TEST(FFTRVT_TEST, INVERSES)
     tr.T_To_ST(in, out);
     tr.ST_To_T(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-10);
 }
 
 // FFT{exp(-(t/tp)^2)exp(-i*omega0*t}= tp*sqrt(pi)*exp(-tp^2*(omega-omega0)^2/4)
@@ -181,7 +181,7 @@ TEST(FFTRVT_TEST, GAUSST)
 
     transform.T_To_ST(y, ysp);
     transform.ST_To_T(ysp, yinv);
-    EXPECT_LT(pw::relative_error(y, yinv), 1e-6);
+    EXPECT_LT(detail::relative_error(y, yinv), 1e-6);
 
     std::vector<dcmplx> ysp_ex(grid.getNst(), 0.0);
     const std::vector<double>& omega = grid.getST();
@@ -192,7 +192,7 @@ TEST(FFTRVT_TEST, GAUSST)
         ysp_ex[j] = 0.5 * std::sqrt(I0) * tp * sqrt(PI) *
                     exp(-pow(tp, 2) * pow(omega[j] - omega0, 2) / 4.0);
 
-    EXPECT_LT(pw::relative_error(ysp, ysp_ex), 1e-5);
+    EXPECT_LT(detail::relative_error(ysp, ysp_ex), 1e-5);
 
     auto ycmplx = shape.shapeCV();
     // F{f(t)*exp(i*omega0*t)} = F{f(omega - omega0)}: expected complex-envelope spectrum
@@ -204,7 +204,7 @@ TEST(FFTRVT_TEST, GAUSST)
     // Complex-valued transform output must match the expected Gaussian spectrum
     std::vector<dcmplx> ysp_outCV(grid.getNst(), 0.0);
     transform.CVT_To_ST(ycmplx, ysp_outCV);
-    EXPECT_LT(pw::relative_error(ysp_expectedCV, ysp_outCV), 1e-5);
+    EXPECT_LT(detail::relative_error(ysp_expectedCV, ysp_outCV), 1e-5);
 }
 
 TEST(FFTRVT_TEST, COS)
@@ -251,7 +251,7 @@ TEST(FFTRVT_TEST, DERIVATIVE_SIN)
 
     spida::SpidaRVT spi(grid);
     spi.dT(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-6);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-6);
 
     std::vector<dcmplx> out1(grid.getNst());
     spida::FFTRVT tr(grid);
@@ -288,7 +288,7 @@ TEST(FFTCVT_TEST, NON_POWER_OF_2_ROUND_TRIP)
     spida::FFTCVT tr(spida::UniformGridCVT{N, -3.0, 3.0});
     tr.T_To_ST(in, sp);
     tr.ST_To_T(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 TEST(FFTRVT_TEST, NON_POWER_OF_2_ROUND_TRIP)
@@ -306,7 +306,7 @@ TEST(FFTRVT_TEST, NON_POWER_OF_2_ROUND_TRIP)
     spida::FFTRVT tr(grid);
     tr.T_To_ST(in, sp);
     tr.ST_To_T(sp, out);
-    EXPECT_LT(pw::relative_error(in, out), 1e-10);
+    EXPECT_LT(detail::relative_error(in, out), 1e-10);
 }
 
 // ============================================================
@@ -341,5 +341,5 @@ TEST(FFTRVT_TEST, BAND_LIMITED_ROUND_TRIP_WITH_MIN_FREQ)
     spida::FFTRVT tr(grid);
     tr.ST_To_T(sp_in, t_domain);
     tr.T_To_ST(t_domain, sp_out);
-    EXPECT_LT(pw::relative_error(sp_in, sp_out), 1e-10);
+    EXPECT_LT(detail::relative_error(sp_in, sp_out), 1e-10);
 }

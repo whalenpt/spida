@@ -4,24 +4,24 @@
 #include <fstream>
 #include <iostream>
 
-#include <pwutils/pwstats.h>
-#include <pwutils/report.hpp>
+#include <utils/report.hpp>
+#include <utils/stats.h>
 
 namespace spida {
 
 ReportHandler::~ReportHandler() = default;
 
-void ReportHandler::addReport(std::unique_ptr<pw::ReportData1D> def)
+void ReportHandler::addReport(std::unique_ptr<ReportData1D> def)
 {
     this->m_defs_1D.push_back(std::move(def));
 }
 
-void ReportHandler::addReport(std::unique_ptr<pw::ReportData2D> def)
+void ReportHandler::addReport(std::unique_ptr<ReportData2D> def)
 {
     this->m_defs_2D.push_back(std::move(def));
 }
 
-void ReportHandler::addReport(std::unique_ptr<pw::TrackData> def)
+void ReportHandler::addReport(std::unique_ptr<TrackData> def)
 {
     this->m_tracker_defs.push_back(std::move(def));
 }

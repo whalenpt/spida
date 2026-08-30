@@ -4,10 +4,10 @@
 #include <thread>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwmath.hpp>
 #include <spida/grid/besselR.h>
 #include <spida/helper/constants.h>
 #include <spida/transform/hankelR.h>
+#include <utils/math.hpp>
 
 // Hankel transform of a gauss
 // H0{exp(-ar^2)}=(1/2a)*exp(-kr^2/(4a))
@@ -34,7 +34,7 @@ TEST(HANKEL_TRANSFORM_TEST, GAUSS)
         exact[i] = beta * exp(-pow(kr[i], 2) / (4.0 * a));
     }
     transform.R_To_SR(in, out);
-    EXPECT_LT(pw::relative_error(out, exact), 1e-6);
+    EXPECT_LT(detail::relative_error(out, exact), 1e-6);
 }
 
 TEST(HANKEL_TRANSFORM_TEST, EXP_OVER_R)
@@ -59,7 +59,7 @@ TEST(HANKEL_TRANSFORM_TEST, EXP_OVER_R)
         exact[i] = 1.0 / sqrt(pow(a, 2) + pow(kr[i], 2));
     }
     transform.R_To_SR(in, out);
-    EXPECT_LT(pw::relative_error(exact, out), 0.2);
+    EXPECT_LT(detail::relative_error(exact, out), 0.2);
 }
 
 // H0 {sinc(a*r)} = 1.0/(a^2*sqrt(1.0-(kr/a)^2)) if kr < a
@@ -86,7 +86,7 @@ TEST(HANKEL_TRANSFORM_TEST, SINC_TEST)
         exact[i] = kr[i] < a ? 1.0 / (pow(a, 2) * sqrt(1.0 - pow(kr[i] / a, 2))) : 0.0;
 
     transform.R_To_SR(in, out);
-    EXPECT_LT(pw::relative_error(exact, out), 0.3);
+    EXPECT_LT(detail::relative_error(exact, out), 0.3);
 }
 
 // Test that forward Hankel followed by inverse Hankel yields the identity
@@ -106,7 +106,7 @@ TEST(HANKEL_TRANSFORM_TEST, INVERSES)
         in[i] = distribution(generator);
     tr.R_To_SR(in, out);
     tr.SR_To_R(out, expect);
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-6);
 }
 
 // Test Hankel matrix for orthogonality
@@ -151,7 +151,7 @@ TEST(HANKEL_TRANSFORM_TEST, INVERSES_COMPLEX)
         in[i] = dcmplx(distribution(generator), distribution(generator));
     tr.R_To_SR(in, out);
     tr.SR_To_R(out, expect);
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-6);
 }
 
 TEST(HANKEL_TRANSFORMB_TEST, INVERSES)
@@ -170,7 +170,7 @@ TEST(HANKEL_TRANSFORMB_TEST, INVERSES)
         in[i] = distribution(generator);
     tr.R_To_SR(in, out);
     tr.SR_To_R(out, expect);
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-6);
 }
 
 TEST(HANKEL_TRANSFORMB_TEST, INVERSES_COMPLEX)
@@ -194,5 +194,5 @@ TEST(HANKEL_TRANSFORMB_TEST, INVERSES_COMPLEX)
         in[i] = dcmplx(distribution(generator), distribution(generator));
     tr.R_To_SR(in, out);
     tr.SR_To_R(out, expect);
-    EXPECT_LT(pw::relative_error(in, expect), 1e-6);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-6);
 }

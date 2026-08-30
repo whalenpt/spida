@@ -3,7 +3,7 @@
 #include <exception>
 #include <string>
 
-namespace pw {
+namespace detail {
 
 class Exception : public std::exception {
 public:
@@ -23,4 +23,4 @@ private:
     std::string msg;
 };
 
-} // namespace pw
+} // namespace detail

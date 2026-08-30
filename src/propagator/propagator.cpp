@@ -7,8 +7,8 @@
 #include <format>
 #include <stdexcept>
 
-#include <pwutils/pwstats.h>
-#include <pwutils/report.hpp>
+#include <utils/report.hpp>
+#include <utils/stats.h>
 
 namespace spida {
 
@@ -28,17 +28,17 @@ bool BasePropagator::hasData1D() const
     return this->m_report_handler->hasData1D();
 }
 
-void BasePropagator::addReport(std::unique_ptr<pw::ReportData1D> def)
+void BasePropagator::addReport(std::unique_ptr<ReportData1D> def)
 {
     this->m_report_handler->addReport(std::move(def));
 }
 
-void BasePropagator::addReport(std::unique_ptr<pw::ReportData2D> def)
+void BasePropagator::addReport(std::unique_ptr<ReportData2D> def)
 {
     this->m_report_handler->addReport(std::move(def));
 }
 
-void BasePropagator::addReport(std::unique_ptr<pw::TrackData> def)
+void BasePropagator::addReport(std::unique_ptr<TrackData> def)
 {
     this->m_report_handler->addReport(std::move(def));
 }
@@ -46,7 +46,7 @@ void BasePropagator::addReport(std::unique_ptr<pw::TrackData> def)
 BasePropagator::BasePropagator(const std::filesystem::path& dir_path)
     : m_report_handler(std::make_unique<ReportHandler>()),
       m_dir_path(dir_path),
-      m_stat(std::make_unique<pw::StatCenter>())
+      m_stat(std::make_unique<detail::StatCenter>())
 {
     this->m_stat->setHeader("REPORT STATS");
     this->m_stat->addTracker("t", 0.0);

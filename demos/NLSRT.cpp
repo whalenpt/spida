@@ -8,18 +8,19 @@
  *
 ------------------------------------------------------------------------------*/
 
-// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC. 
+// HEADERS, INCLUDES, GLOBAL VARS/DECLARATIONS, ETC.
 
 #include <algorithm>
-#include <iostream>
 #include <complex> // std::norm -> std::norm(dcmplx(3,4)) = 25
-#include <spida/RCVT.h>
+#include <iostream>
+
 #include <spida/grid/besselR.h>
 #include <spida/grid/uniformCVT.h>
 #include <spida/helper/constants.h>
-#include <spida/rkstiff/ETDAS.h>
 #include <spida/propagator/propagator.h>
-#include <pwutils/report.hpp>
+#include <spida/RCVT.h>
+#include <spida/rkstiff/ETDAS.h>
+#include <utils/report.hpp>
 
 //------------------------------------------------------------------------------
 
@@ -115,8 +116,8 @@ class Propagator : public spida::PropagatorCV
         // initReport is a helper function that feeds PropagatorCV information on what to report out to files
         void initReport() {
             // add report for complex physical space NLS field
-            auto report = std::make_unique<pw::ReportComplex2D<\
-                     double,double,double>>("RT",m_mirror_r,m_spi.getT(),m_mirror_uphys);
+            auto report = std::make_unique<spida::ReportComplex2D<double, double, double>>(
+                "RT", m_mirror_r, m_spi.getT(), m_mirror_uphys);
             report->setItem("xlabel","r");
             report->setItem("ylabel","t");
             report->setItem("zlabel","A");
@@ -124,9 +125,9 @@ class Propagator : public spida::PropagatorCV
             report->setStrideY(8);
             PropagatorCV::addReport(std::move(report));
 
-            // add report for power of physical space NLS field 
-            auto reportpow = std::make_unique<pw::ReportComplex2D<\
-                             double,double,double>>("SQ_RT",m_mirror_r,m_spi.getT(),m_mirror_uphys);
+            // add report for power of physical space NLS field
+            auto reportpow = std::make_unique<spida::ReportComplex2D<double, double, double>>(
+                "SQ_RT", m_mirror_r, m_spi.getT(), m_mirror_uphys);
             reportpow->setPower(true);
             reportpow->setItem("xlabel","r");
             reportpow->setItem("ylabel","t");
@@ -136,8 +137,8 @@ class Propagator : public spida::PropagatorCV
             PropagatorCV::addReport(std::move(reportpow));
 
             // add report for spectral space NLS field (the propagator)
-            auto reportsp = std::make_unique<pw::ReportComplex2D<\
-                        double,double,double>>("SR",m_spi.getSR(),m_spi.getST(),m_usp);
+            auto reportsp = std::make_unique<spida::ReportComplex2D<double, double, double>>(
+                "SR", m_spi.getSR(), m_spi.getST(), m_usp);
             reportsp->setItem("xlabel","kr");
             reportsp->setItem("ylabel","omega");
             reportsp->setItem("zlabel","A");

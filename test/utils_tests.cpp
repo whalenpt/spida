@@ -1,6 +1,6 @@
-/// @file pwutils_tests.cpp
-/// @brief GoogleTest suite for the pwutils library: pwmath, pwstrings, report,
-///        pwstats, pwconstants/pwdefs.
+/// @file utils_tests.cpp
+/// @brief GoogleTest suite for the utils library: math, strings, report,
+///        stats, constants/defs.
 
 #include <cmath>
 #include <complex>
@@ -13,398 +13,398 @@
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
-#include <pwutils/pwconstants.h>
-#include <pwutils/pwdefs.h>
-#include <pwutils/pwexcept.h>
-#include <pwutils/pwmath.hpp>
-#include <pwutils/pwindexing.hpp>
-#include <pwutils/pwstats.h>
-#include <pwutils/pwstrings.h>
-#include <pwutils/pwthreads.h>
-#include <pwutils/report.hpp>
+#include <utils/constants.h>
+#include <utils/defs.h>
+#include <utils/except.h>
+#include <utils/indexing.hpp>
+#include <utils/math.hpp>
+#include <utils/report.hpp>
+#include <utils/stats.h>
+#include <utils/strings.h>
+#include <utils/threads.h>
 
 namespace fs = std::filesystem;
-using dcmplx = pw::dcmplx;
+using dcmplx = detail::dcmplx;
 
 // ============================================================
-//  PWCONSTANTS / PWDEFS
+//  CONSTANTS / DEFS
 // ============================================================
 
-TEST(PWCONSTANTS_TEST, PI_NEAR_STANDARD_VALUE)
+TEST(CONSTANTS_TEST, PI_NEAR_STANDARD_VALUE)
 {
-    EXPECT_NEAR(pw::PI, std::numbers::pi, 1e-15);
+    EXPECT_NEAR(detail::PI, std::numbers::pi, 1e-15);
 }
 
-TEST(PWCONSTANTS_TEST, IMAGINARY_UNIT_SQUARED_IS_MINUS_ONE)
+TEST(CONSTANTS_TEST, IMAGINARY_UNIT_SQUARED_IS_MINUS_ONE)
 {
-    dcmplx result = pw::ii * pw::ii;
+    dcmplx result = detail::ii * detail::ii;
     EXPECT_NEAR(result.real(), -1.0, 1e-15);
     EXPECT_NEAR(result.imag(), 0.0, 1e-15);
 }
 
-TEST(PWCONSTANTS_TEST, AXIS_LABEL_STRINGS)
+TEST(CONSTANTS_TEST, AXIS_LABEL_STRINGS)
 {
-    EXPECT_STREQ(pw::XLABEL, "x");
-    EXPECT_STREQ(pw::YLABEL, "y");
-    EXPECT_STREQ(pw::ZLABEL, "z");
+    EXPECT_STREQ(detail::XLABEL, "x");
+    EXPECT_STREQ(detail::YLABEL, "y");
+    EXPECT_STREQ(detail::ZLABEL, "z");
 }
 
 // ============================================================
-//  PWMATH — integer helpers
+//  MATH — integer helpers
 // ============================================================
 
-TEST(PWMATH_INTCEIL_TEST, EXACT_DIVISION_INT)
+TEST(MATH_INTCEIL_TEST, EXACT_DIVISION_INT)
 {
-    EXPECT_EQ(pw::intceil(6, 3), 2);
-    EXPECT_EQ(pw::intceil(9, 3), 3);
-    EXPECT_EQ(pw::intceil(1, 1), 1);
+    EXPECT_EQ(detail::intceil(6, 3), 2);
+    EXPECT_EQ(detail::intceil(9, 3), 3);
+    EXPECT_EQ(detail::intceil(1, 1), 1);
 }
 
-TEST(PWMATH_INTCEIL_TEST, INEXACT_DIVISION_INT)
+TEST(MATH_INTCEIL_TEST, INEXACT_DIVISION_INT)
 {
-    EXPECT_EQ(pw::intceil(7, 3), 3);
-    EXPECT_EQ(pw::intceil(1, 2), 1);
-    EXPECT_EQ(pw::intceil(8, 3), 3);
+    EXPECT_EQ(detail::intceil(7, 3), 3);
+    EXPECT_EQ(detail::intceil(1, 2), 1);
+    EXPECT_EQ(detail::intceil(8, 3), 3);
 }
 
-TEST(PWMATH_INTCEIL_TEST, EXACT_DIVISION_UNSIGNED)
+TEST(MATH_INTCEIL_TEST, EXACT_DIVISION_UNSIGNED)
 {
-    EXPECT_EQ(pw::intceil(6u, 3u), 2u);
-    EXPECT_EQ(pw::intceil(4u, 2u), 2u);
+    EXPECT_EQ(detail::intceil(6u, 3u), 2u);
+    EXPECT_EQ(detail::intceil(4u, 2u), 2u);
 }
 
-TEST(PWMATH_INTCEIL_TEST, INEXACT_DIVISION_UNSIGNED)
+TEST(MATH_INTCEIL_TEST, INEXACT_DIVISION_UNSIGNED)
 {
-    EXPECT_EQ(pw::intceil(7u, 3u), 3u);
-    EXPECT_EQ(pw::intceil(1u, 4u), 1u);
+    EXPECT_EQ(detail::intceil(7u, 3u), 3u);
+    EXPECT_EQ(detail::intceil(1u, 4u), 1u);
 }
 
-TEST(PWMATH_INTCEIL_TEST, EXACT_DIVISION_SIZE_T)
+TEST(MATH_INTCEIL_TEST, EXACT_DIVISION_SIZE_T)
 {
-    EXPECT_EQ(pw::intceil(std::size_t{10}, std::size_t{5}), std::size_t{2});
+    EXPECT_EQ(detail::intceil(std::size_t{10}, std::size_t{5}), std::size_t{2});
 }
 
-TEST(PWMATH_INTCEIL_TEST, INEXACT_DIVISION_SIZE_T)
+TEST(MATH_INTCEIL_TEST, INEXACT_DIVISION_SIZE_T)
 {
-    EXPECT_EQ(pw::intceil(std::size_t{11}, std::size_t{5}), std::size_t{3});
-    EXPECT_EQ(pw::intceil(std::size_t{1}, std::size_t{5}), std::size_t{1});
+    EXPECT_EQ(detail::intceil(std::size_t{11}, std::size_t{5}), std::size_t{3});
+    EXPECT_EQ(detail::intceil(std::size_t{1}, std::size_t{5}), std::size_t{1});
 }
 
-TEST(PWMATH_FACTORIAL_TEST, ZERO_AND_ONE)
+TEST(MATH_FACTORIAL_TEST, ZERO_AND_ONE)
 {
-    EXPECT_EQ(pw::factorial(0), 1);
-    EXPECT_EQ(pw::factorial(1), 1);
+    EXPECT_EQ(detail::factorial(0), 1);
+    EXPECT_EQ(detail::factorial(1), 1);
 }
 
-TEST(PWMATH_FACTORIAL_TEST, SMALL_VALUES)
+TEST(MATH_FACTORIAL_TEST, SMALL_VALUES)
 {
-    EXPECT_EQ(pw::factorial(2), 2);
-    EXPECT_EQ(pw::factorial(3), 6);
-    EXPECT_EQ(pw::factorial(4), 24);
-    EXPECT_EQ(pw::factorial(5), 120);
-}
-
-// ============================================================
-//  PWMATH — type-check string helpers
-// ============================================================
-
-TEST(PWMATH_ISINTEGER_TEST, VALID_INTEGERS)
-{
-    EXPECT_TRUE(pw::isInteger("0"));
-    EXPECT_TRUE(pw::isInteger("42"));
-    EXPECT_TRUE(pw::isInteger("-7"));
-    EXPECT_TRUE(pw::isInteger("100"));
-}
-
-TEST(PWMATH_ISINTEGER_TEST, INVALID_INPUTS)
-{
-    EXPECT_FALSE(pw::isInteger("3.14"));
-    EXPECT_FALSE(pw::isInteger("abc"));
-    EXPECT_FALSE(pw::isInteger(""));
-    EXPECT_FALSE(pw::isInteger("1e3"));
-    EXPECT_FALSE(pw::isInteger("12abc"));
-}
-
-TEST(PWMATH_ISDOUBLE_TEST, VALID_DOUBLES)
-{
-    EXPECT_TRUE(pw::isDouble("3.14"));
-    EXPECT_TRUE(pw::isDouble("1e-3"));
-    EXPECT_TRUE(pw::isDouble("0.0"));
-    EXPECT_TRUE(pw::isDouble("-2.5"));
-    EXPECT_TRUE(pw::isDouble("42")); // integers are valid doubles
-}
-
-TEST(PWMATH_ISDOUBLE_TEST, INVALID_INPUTS)
-{
-    EXPECT_FALSE(pw::isDouble("abc"));
-    EXPECT_FALSE(pw::isDouble(""));
-    EXPECT_FALSE(pw::isDouble("1.2abc"));
-}
-
-TEST(PWMATH_ISINTEGERS_TEST, SPACE_SEPARATED_ALL_INTEGERS)
-{
-    EXPECT_TRUE(pw::isIntegers("1 2 3"));
-    EXPECT_TRUE(pw::isIntegers("0 -1 42"));
-}
-
-TEST(PWMATH_ISINTEGERS_TEST, SPACE_SEPARATED_MIXED_OR_INVALID)
-{
-    EXPECT_FALSE(pw::isIntegers("1 2.0 3"));
-    EXPECT_FALSE(pw::isIntegers(""));
-}
-
-TEST(PWMATH_ISDOUBLES_TEST, SPACE_SEPARATED_ALL_DOUBLES)
-{
-    EXPECT_TRUE(pw::isDoubles("1.0 2.5 3.14"));
-    EXPECT_TRUE(pw::isDoubles("1e3 -0.5 0"));
-}
-
-TEST(PWMATH_ISDOUBLES_TEST, SPACE_SEPARATED_INVALID)
-{
-    EXPECT_FALSE(pw::isDoubles("1.0 abc"));
-    EXPECT_FALSE(pw::isDoubles(""));
+    EXPECT_EQ(detail::factorial(2), 2);
+    EXPECT_EQ(detail::factorial(3), 6);
+    EXPECT_EQ(detail::factorial(4), 24);
+    EXPECT_EQ(detail::factorial(5), 120);
 }
 
 // ============================================================
-//  PWMATH — vector math (real)
+//  MATH — type-check string helpers
 // ============================================================
 
-TEST(PWMATH_NORM_REAL_TEST, KNOWN_L2_NORM)
+TEST(MATH_ISINTEGER_TEST, VALID_INTEGERS)
+{
+    EXPECT_TRUE(detail::isInteger("0"));
+    EXPECT_TRUE(detail::isInteger("42"));
+    EXPECT_TRUE(detail::isInteger("-7"));
+    EXPECT_TRUE(detail::isInteger("100"));
+}
+
+TEST(MATH_ISINTEGER_TEST, INVALID_INPUTS)
+{
+    EXPECT_FALSE(detail::isInteger("3.14"));
+    EXPECT_FALSE(detail::isInteger("abc"));
+    EXPECT_FALSE(detail::isInteger(""));
+    EXPECT_FALSE(detail::isInteger("1e3"));
+    EXPECT_FALSE(detail::isInteger("12abc"));
+}
+
+TEST(MATH_ISDOUBLE_TEST, VALID_DOUBLES)
+{
+    EXPECT_TRUE(detail::isDouble("3.14"));
+    EXPECT_TRUE(detail::isDouble("1e-3"));
+    EXPECT_TRUE(detail::isDouble("0.0"));
+    EXPECT_TRUE(detail::isDouble("-2.5"));
+    EXPECT_TRUE(detail::isDouble("42")); // integers are valid doubles
+}
+
+TEST(MATH_ISDOUBLE_TEST, INVALID_INPUTS)
+{
+    EXPECT_FALSE(detail::isDouble("abc"));
+    EXPECT_FALSE(detail::isDouble(""));
+    EXPECT_FALSE(detail::isDouble("1.2abc"));
+}
+
+TEST(MATH_ISINTEGERS_TEST, SPACE_SEPARATED_ALL_INTEGERS)
+{
+    EXPECT_TRUE(detail::isIntegers("1 2 3"));
+    EXPECT_TRUE(detail::isIntegers("0 -1 42"));
+}
+
+TEST(MATH_ISINTEGERS_TEST, SPACE_SEPARATED_MIXED_OR_INVALID)
+{
+    EXPECT_FALSE(detail::isIntegers("1 2.0 3"));
+    EXPECT_FALSE(detail::isIntegers(""));
+}
+
+TEST(MATH_ISDOUBLES_TEST, SPACE_SEPARATED_ALL_DOUBLES)
+{
+    EXPECT_TRUE(detail::isDoubles("1.0 2.5 3.14"));
+    EXPECT_TRUE(detail::isDoubles("1e3 -0.5 0"));
+}
+
+TEST(MATH_ISDOUBLES_TEST, SPACE_SEPARATED_INVALID)
+{
+    EXPECT_FALSE(detail::isDoubles("1.0 abc"));
+    EXPECT_FALSE(detail::isDoubles(""));
+}
+
+// ============================================================
+//  MATH — vector math (real)
+// ============================================================
+
+TEST(MATH_NORM_REAL_TEST, KNOWN_L2_NORM)
 {
     std::vector<double> v{3.0, 4.0};
-    EXPECT_NEAR(pw::norm(v), 5.0, 1e-12);
+    EXPECT_NEAR(detail::norm(v), 5.0, 1e-12);
 }
 
-TEST(PWMATH_NORM_REAL_TEST, SINGLE_ELEMENT)
+TEST(MATH_NORM_REAL_TEST, SINGLE_ELEMENT)
 {
     std::vector<double> v{7.0};
-    EXPECT_NEAR(pw::norm(v), 7.0, 1e-12);
+    EXPECT_NEAR(detail::norm(v), 7.0, 1e-12);
 }
 
-TEST(PWMATH_MAX_REAL_TEST, FINDS_MAXIMUM)
+TEST(MATH_MAX_REAL_TEST, FINDS_MAXIMUM)
 {
     std::vector<double> v{1.0, 5.0, 3.0, 2.0};
-    EXPECT_DOUBLE_EQ(pw::max(v), 5.0);
+    EXPECT_DOUBLE_EQ(detail::max(v), 5.0);
 }
 
-TEST(PWMATH_MIN_REAL_TEST, FINDS_MINIMUM)
+TEST(MATH_MIN_REAL_TEST, FINDS_MINIMUM)
 {
     std::vector<double> v{4.0, 1.0, 3.0, 2.0};
-    EXPECT_DOUBLE_EQ(pw::min(v), 1.0);
+    EXPECT_DOUBLE_EQ(detail::min(v), 1.0);
 }
 
-TEST(PWMATH_ARGMAX_REAL_TEST, RETURNS_INDEX_OF_MAXIMUM)
+TEST(MATH_ARGMAX_REAL_TEST, RETURNS_INDEX_OF_MAXIMUM)
 {
     std::vector<double> v{1.0, 5.0, 3.0, 2.0};
-    EXPECT_EQ(pw::argmax(v), 1);
+    EXPECT_EQ(detail::argmax(v), 1);
 }
 
-TEST(PWMATH_ARGMIN_REAL_TEST, RETURNS_INDEX_OF_MINIMUM)
+TEST(MATH_ARGMIN_REAL_TEST, RETURNS_INDEX_OF_MINIMUM)
 {
     std::vector<double> v{4.0, 1.0, 3.0, 2.0};
-    EXPECT_EQ(pw::argmin(v), 1);
+    EXPECT_EQ(detail::argmin(v), 1);
 }
 
-TEST(PWMATH_RELATIVE_ERROR_REAL_TEST, IDENTICAL_VECTORS_GIVE_ZERO)
+TEST(MATH_RELATIVE_ERROR_REAL_TEST, IDENTICAL_VECTORS_GIVE_ZERO)
 {
     std::vector<double> v{1.0, 2.0, 3.0};
-    EXPECT_NEAR(pw::relative_error(v, v), 0.0, 1e-15);
+    EXPECT_NEAR(detail::relative_error(v, v), 0.0, 1e-15);
 }
 
-TEST(PWMATH_RELATIVE_ERROR_REAL_TEST, DIFFERENT_VECTORS_GIVE_POSITIVE)
+TEST(MATH_RELATIVE_ERROR_REAL_TEST, DIFFERENT_VECTORS_GIVE_POSITIVE)
 {
     std::vector<double> v1{1.0, 0.0, 0.0};
     std::vector<double> v2{0.0, 1.0, 0.0};
-    EXPECT_GT(pw::relative_error(v1, v2), 0.0);
+    EXPECT_GT(detail::relative_error(v1, v2), 0.0);
 }
 
 // ============================================================
-//  PWMATH — vector math (complex)
+//  MATH — vector math (complex)
 // ============================================================
 
-TEST(PWMATH_NORM_COMPLEX_TEST, KNOWN_NORM)
+TEST(MATH_NORM_COMPLEX_TEST, KNOWN_NORM)
 {
     // norm = sqrt(|z1|^2 + |z2|^2); |3+4i|=5, |0|=0 → sqrt(25)=5
     std::vector<dcmplx> v{{3.0, 4.0}, {0.0, 0.0}};
-    EXPECT_NEAR(pw::norm(v), 5.0, 1e-12);
+    EXPECT_NEAR(detail::norm(v), 5.0, 1e-12);
 }
 
-TEST(PWMATH_MAX_COMPLEX_TEST, FINDS_ELEMENT_WITH_LARGEST_ABS)
+TEST(MATH_MAX_COMPLEX_TEST, FINDS_ELEMENT_WITH_LARGEST_ABS)
 {
     std::vector<dcmplx> v{{1.0, 0.0}, {3.0, 4.0}, {2.0, 0.0}};
-    dcmplx result = pw::max(v);
+    dcmplx result = detail::max(v);
     EXPECT_NEAR(std::abs(result), 5.0, 1e-12);
     EXPECT_NEAR(result.real(), 3.0, 1e-12);
     EXPECT_NEAR(result.imag(), 4.0, 1e-12);
 }
 
-TEST(PWMATH_MIN_COMPLEX_TEST, FINDS_ELEMENT_WITH_SMALLEST_ABS)
+TEST(MATH_MIN_COMPLEX_TEST, FINDS_ELEMENT_WITH_SMALLEST_ABS)
 {
     std::vector<dcmplx> v{{3.0, 4.0}, {1.0, 0.0}, {2.0, 0.0}};
-    dcmplx result = pw::min(v);
+    dcmplx result = detail::min(v);
     EXPECT_NEAR(std::abs(result), 1.0, 1e-12);
 }
 
-TEST(PWMATH_ARGMAX_COMPLEX_TEST, RETURNS_INDEX_OF_LARGEST_ABS)
+TEST(MATH_ARGMAX_COMPLEX_TEST, RETURNS_INDEX_OF_LARGEST_ABS)
 {
     std::vector<dcmplx> v{{1.0, 0.0}, {3.0, 4.0}, {2.0, 0.0}};
-    EXPECT_EQ(pw::argmax(v), 1);
+    EXPECT_EQ(detail::argmax(v), 1);
 }
 
-TEST(PWMATH_ARGMIN_COMPLEX_TEST, RETURNS_INDEX_OF_SMALLEST_ABS)
+TEST(MATH_ARGMIN_COMPLEX_TEST, RETURNS_INDEX_OF_SMALLEST_ABS)
 {
     std::vector<dcmplx> v{{3.0, 4.0}, {0.5, 0.0}, {2.0, 0.0}};
-    EXPECT_EQ(pw::argmin(v), 1);
+    EXPECT_EQ(detail::argmin(v), 1);
 }
 
-TEST(PWMATH_RELATIVE_ERROR_COMPLEX_TEST, IDENTICAL_VECTORS_GIVE_ZERO)
+TEST(MATH_RELATIVE_ERROR_COMPLEX_TEST, IDENTICAL_VECTORS_GIVE_ZERO)
 {
     std::vector<dcmplx> v{{1.0, 1.0}, {2.0, -1.0}};
-    EXPECT_NEAR(pw::relative_error(v, v), 0.0, 1e-15);
+    EXPECT_NEAR(detail::relative_error(v, v), 0.0, 1e-15);
 }
 
-TEST(PWMATH_RELATIVE_ERROR_COMPLEX_TEST, DIFFERENT_VECTORS_GIVE_POSITIVE)
+TEST(MATH_RELATIVE_ERROR_COMPLEX_TEST, DIFFERENT_VECTORS_GIVE_POSITIVE)
 {
     std::vector<dcmplx> v1{{1.0, 0.0}};
     std::vector<dcmplx> v2{{0.0, 1.0}};
-    EXPECT_GT(pw::relative_error(v1, v2), 0.0);
+    EXPECT_GT(detail::relative_error(v1, v2), 0.0);
 }
 
 // ============================================================
-//  PWSTRINGS
+//  STRINGS
 // ============================================================
 
-TEST(PWSTRINGS_TRIM_TEST, STRIPS_LEADING_AND_TRAILING_SPACES)
+TEST(STRINGS_TRIM_TEST, STRIPS_LEADING_AND_TRAILING_SPACES)
 {
-    EXPECT_EQ(pw::trimString("  hello  "), "hello");
-    EXPECT_EQ(pw::trimString("  "), "");
-    EXPECT_EQ(pw::trimString("no spaces"), "no spaces");
+    EXPECT_EQ(detail::trimString("  hello  "), "hello");
+    EXPECT_EQ(detail::trimString("  "), "");
+    EXPECT_EQ(detail::trimString("no spaces"), "no spaces");
 }
 
-TEST(PWSTRINGS_TRIM_TEST, STRIPS_TABS)
+TEST(STRINGS_TRIM_TEST, STRIPS_TABS)
 {
-    EXPECT_EQ(pw::trimString("\thello\t"), "hello");
+    EXPECT_EQ(detail::trimString("\thello\t"), "hello");
 }
 
-TEST(PWSTRINGS_EATWHITESPACE_TEST, COLLAPSES_INTERNAL_WHITESPACE)
+TEST(STRINGS_EATWHITESPACE_TEST, COLLAPSES_INTERNAL_WHITESPACE)
 {
-    EXPECT_EQ(pw::eatWhiteSpace("a   b   c"), "a b c");
+    EXPECT_EQ(detail::eatWhiteSpace("a   b   c"), "a b c");
 }
 
-TEST(PWSTRINGS_EATWHITESPACE_TEST, TRIMS_LEADING_TRAILING_FIRST)
+TEST(STRINGS_EATWHITESPACE_TEST, TRIMS_LEADING_TRAILING_FIRST)
 {
-    EXPECT_EQ(pw::eatWhiteSpace("  a  b  "), "a b");
+    EXPECT_EQ(detail::eatWhiteSpace("  a  b  "), "a b");
 }
 
-TEST(PWSTRINGS_PARSESTRING_TEST, SPLITS_ON_DELIMITER)
+TEST(STRINGS_PARSESTRING_TEST, SPLITS_ON_DELIMITER)
 {
-    auto parts = pw::parseString("a,b,c", ',');
+    auto parts = detail::parseString("a,b,c", ',');
     ASSERT_EQ(parts.size(), 3u);
     EXPECT_EQ(parts[0], "a");
     EXPECT_EQ(parts[1], "b");
     EXPECT_EQ(parts[2], "c");
 }
 
-TEST(PWSTRINGS_PARSESTRING_TEST, NO_DELIMITER_RETURNS_SINGLE_ELEMENT)
+TEST(STRINGS_PARSESTRING_TEST, NO_DELIMITER_RETURNS_SINGLE_ELEMENT)
 {
-    auto parts = pw::parseString("hello", ',');
+    auto parts = detail::parseString("hello", ',');
     ASSERT_EQ(parts.size(), 1u);
     EXPECT_EQ(parts[0], "hello");
 }
 
-TEST(PWSTRINGS_PARSESTRING_TEST, EMPTY_STRING_RETURNS_EMPTY_VECTOR)
+TEST(STRINGS_PARSESTRING_TEST, EMPTY_STRING_RETURNS_EMPTY_VECTOR)
 {
-    auto parts = pw::parseString("", ',');
+    auto parts = detail::parseString("", ',');
     EXPECT_TRUE(parts.empty());
 }
 
-TEST(PWSTRINGS_JOINVECTOR_TEST, JOINS_WITH_DELIMITER)
+TEST(STRINGS_JOINVECTOR_TEST, JOINS_WITH_DELIMITER)
 {
     std::vector<std::string> v{"a", "b", "c"};
-    EXPECT_EQ(pw::joinVector(v, ','), "a,b,c");
+    EXPECT_EQ(detail::joinVector(v, ','), "a,b,c");
 }
 
-TEST(PWSTRINGS_JOINVECTOR_TEST, SINGLE_ELEMENT_NO_DELIMITER)
+TEST(STRINGS_JOINVECTOR_TEST, SINGLE_ELEMENT_NO_DELIMITER)
 {
     std::vector<std::string> v{"hello"};
-    EXPECT_EQ(pw::joinVector(v, ','), "hello");
+    EXPECT_EQ(detail::joinVector(v, ','), "hello");
 }
 
-TEST(PWSTRINGS_JOINVECTOR_TEST, EMPTY_VECTOR_RETURNS_EMPTY)
+TEST(STRINGS_JOINVECTOR_TEST, EMPTY_VECTOR_RETURNS_EMPTY)
 {
     std::vector<std::string> v;
-    EXPECT_EQ(pw::joinVector(v, ','), "");
+    EXPECT_EQ(detail::joinVector(v, ','), "");
 }
 
-TEST(PWSTRINGS_ISWHITESPACE_TEST, ALL_SPACES_IS_WHITESPACE)
+TEST(STRINGS_ISWHITESPACE_TEST, ALL_SPACES_IS_WHITESPACE)
 {
-    EXPECT_TRUE(pw::isWhitespace("   "));
-    EXPECT_TRUE(pw::isWhitespace(""));
+    EXPECT_TRUE(detail::isWhitespace("   "));
+    EXPECT_TRUE(detail::isWhitespace(""));
 }
 
-TEST(PWSTRINGS_ISWHITESPACE_TEST, NON_SPACE_IS_NOT_WHITESPACE)
+TEST(STRINGS_ISWHITESPACE_TEST, NON_SPACE_IS_NOT_WHITESPACE)
 {
-    EXPECT_FALSE(pw::isWhitespace("a"));
-    EXPECT_FALSE(pw::isWhitespace("  a  "));
+    EXPECT_FALSE(detail::isWhitespace("a"));
+    EXPECT_FALSE(detail::isWhitespace("  a  "));
 }
 
-TEST(PWSTRINGS_DECOMMENT_TEST, STRIPS_FROM_HASH_TO_END)
+TEST(STRINGS_DECOMMENT_TEST, STRIPS_FROM_HASH_TO_END)
 {
-    EXPECT_EQ(pw::decommentString("hello # comment"), "hello ");
-    EXPECT_EQ(pw::decommentString("no comment"), "no comment");
-    EXPECT_EQ(pw::decommentString("# full comment"), "");
+    EXPECT_EQ(detail::decommentString("hello # comment"), "hello ");
+    EXPECT_EQ(detail::decommentString("no comment"), "no comment");
+    EXPECT_EQ(detail::decommentString("# full comment"), "");
 }
 
-TEST(PWSTRINGS_COUNTWORDS_TEST, COUNTS_SPACE_SEPARATED_WORDS)
+TEST(STRINGS_COUNTWORDS_TEST, COUNTS_SPACE_SEPARATED_WORDS)
 {
-    EXPECT_EQ(pw::countWords("one two three"), 3);
-    EXPECT_EQ(pw::countWords("word"), 1);
-    EXPECT_EQ(pw::countWords(""), 0);
-    EXPECT_EQ(pw::countWords("  spaced  "), 1);
+    EXPECT_EQ(detail::countWords("one two three"), 3);
+    EXPECT_EQ(detail::countWords("word"), 1);
+    EXPECT_EQ(detail::countWords(""), 0);
+    EXPECT_EQ(detail::countWords("  spaced  "), 1);
 }
 
-TEST(PWSTRINGS_COUNTCHARACTERS_TEST, COUNTS_OCCURRENCES)
+TEST(STRINGS_COUNTCHARACTERS_TEST, COUNTS_OCCURRENCES)
 {
-    EXPECT_EQ(pw::countCharacters("aababc", 'a'), 3);
-    EXPECT_EQ(pw::countCharacters("hello", 'z'), 0);
-    EXPECT_EQ(pw::countCharacters("", 'a'), 0);
+    EXPECT_EQ(detail::countCharacters("aababc", 'a'), 3);
+    EXPECT_EQ(detail::countCharacters("hello", 'z'), 0);
+    EXPECT_EQ(detail::countCharacters("", 'a'), 0);
 }
 
-TEST(PWSTRINGS_LOWERCASE_TEST, CONVERTS_TO_LOWER)
+TEST(STRINGS_LOWERCASE_TEST, CONVERTS_TO_LOWER)
 {
-    EXPECT_EQ(pw::stringLowerCase("Hello World"), "hello world");
-    EXPECT_EQ(pw::stringLowerCase("ABC"), "abc");
-    EXPECT_EQ(pw::stringLowerCase(""), "");
+    EXPECT_EQ(detail::stringLowerCase("Hello World"), "hello world");
+    EXPECT_EQ(detail::stringLowerCase("ABC"), "abc");
+    EXPECT_EQ(detail::stringLowerCase(""), "");
 }
 
-TEST(PWSTRINGS_UPPERCASE_TEST, CONVERTS_TO_UPPER)
+TEST(STRINGS_UPPERCASE_TEST, CONVERTS_TO_UPPER)
 {
-    EXPECT_EQ(pw::stringUpperCase("hello world"), "HELLO WORLD");
-    EXPECT_EQ(pw::stringUpperCase("abc"), "ABC");
-    EXPECT_EQ(pw::stringUpperCase(""), "");
+    EXPECT_EQ(detail::stringUpperCase("hello world"), "HELLO WORLD");
+    EXPECT_EQ(detail::stringUpperCase("abc"), "ABC");
+    EXPECT_EQ(detail::stringUpperCase(""), "");
 }
 
-TEST(PWSTRINGS_FINDSTRING_TEST, FINDS_PRESENT_SUBSTRING)
+TEST(STRINGS_FINDSTRING_TEST, FINDS_PRESENT_SUBSTRING)
 {
     // findString uses first/last char of str2 as delimiters for a prefix-match
     // approach; test with a single-char pattern contained in str
-    EXPECT_TRUE(pw::findString("hello world", "hello"));
+    EXPECT_TRUE(detail::findString("hello world", "hello"));
 }
 
-TEST(PWSTRINGS_FINDSTRING_TEST, RETURNS_FALSE_FOR_ABSENT_PATTERN)
+TEST(STRINGS_FINDSTRING_TEST, RETURNS_FALSE_FOR_ABSENT_PATTERN)
 {
-    EXPECT_FALSE(pw::findString("hello", "xyz"));
+    EXPECT_FALSE(detail::findString("hello", "xyz"));
 }
 
-TEST(PWSTRINGS_FINDSTRING_TEST, EMPTY_HAYSTACK_RETURNS_FALSE)
+TEST(STRINGS_FINDSTRING_TEST, EMPTY_HAYSTACK_RETURNS_FALSE)
 {
-    EXPECT_FALSE(pw::findString("", "abc"));
+    EXPECT_FALSE(detail::findString("", "abc"));
 }
 
-TEST(PWSTRINGS_SPLITSTRING_TEST, SPLITS_ON_FOUND_PATTERN)
+TEST(STRINGS_SPLITSTRING_TEST, SPLITS_ON_FOUND_PATTERN)
 {
     std::string first, last;
-    bool found = pw::splitString("abc(xyz)def", "(xyz)", first, last);
+    bool found = detail::splitString("abc(xyz)def", "(xyz)", first, last);
     EXPECT_TRUE(found);
     // first is everything before the pattern's first char
     EXPECT_EQ(first, "abc");
@@ -412,10 +412,10 @@ TEST(PWSTRINGS_SPLITSTRING_TEST, SPLITS_ON_FOUND_PATTERN)
     EXPECT_EQ(last, "def");
 }
 
-TEST(PWSTRINGS_SPLITSTRING_TEST, RETURNS_FALSE_WHEN_PATTERN_ABSENT)
+TEST(STRINGS_SPLITSTRING_TEST, RETURNS_FALSE_WHEN_PATTERN_ABSENT)
 {
     std::string first, last;
-    bool found = pw::splitString("hello", "(xyz)", first, last);
+    bool found = detail::splitString("hello", "(xyz)", first, last);
     EXPECT_FALSE(found);
     EXPECT_EQ(first, "hello");
     EXPECT_EQ(last, "");
@@ -428,23 +428,23 @@ TEST(PWSTRINGS_SPLITSTRING_TEST, RETURNS_FALSE_WHEN_PATTERN_ABSENT)
 TEST(REPORT_FS_TEST, FILEPATH_WITHOUT_REPNUM)
 {
     fs::path dir = fs::temp_directory_path();
-    fs::path p = pw::filePath(dir, "data", "json");
+    fs::path p = detail::filePath(dir, "data", "json");
     EXPECT_EQ(p, dir / "data.json");
 }
 
 TEST(REPORT_FS_TEST, FILEPATH_WITH_REPNUM)
 {
     fs::path dir = fs::temp_directory_path();
-    fs::path p = pw::filePath(dir, "data", 3, "json");
+    fs::path p = detail::filePath(dir, "data", 3, "json");
     EXPECT_EQ(p, dir / "data_3.json");
 }
 
 TEST(REPORT_FS_TEST, CREATE_THEN_CLEAR_DIRECTORY)
 {
     fs::path dir = fs::temp_directory_path() / "spida_create_clear_test";
-    pw::createDirectory(dir);
+    detail::createDirectory(dir);
     EXPECT_TRUE(fs::exists(dir));
-    pw::clearDirectory(dir);
+    detail::clearDirectory(dir);
     EXPECT_FALSE(fs::exists(dir));
 }
 
@@ -456,7 +456,7 @@ TEST(REPORT_FS_TEST, CREATE_DIRECTORY_NO_OVERWRITE_PRESERVES_CONTENTS)
     std::ofstream sentinel{dir / "sentinel.txt"};
     sentinel.close();
 
-    pw::createDirectory(dir, /*overwrite=*/false);
+    detail::createDirectory(dir, /*overwrite=*/false);
     EXPECT_TRUE(fs::exists(dir / "sentinel.txt"));
 
     fs::remove_all(dir);
@@ -471,7 +471,7 @@ class ReportTest : public ::testing::Test {
 protected:
     void SetUp() override
     {
-        m_dir = fs::temp_directory_path() / "spida_pwutils_test";
+        m_dir = fs::temp_directory_path() / "spida_utils_test";
         fs::create_directories(m_dir);
     }
 
@@ -495,7 +495,7 @@ TEST_F(ReportTest, REPORT_BASE_GET_NAME)
 {
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0};
-    pw::Report1D<double, double> r{"myname", x, y};
+    spida::Report1D<double, double> r{"myname", x, y};
     EXPECT_EQ(r.getName(), "myname");
 }
 
@@ -503,7 +503,7 @@ TEST_F(ReportTest, REPORT_BASE_SET_NAME)
 {
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0};
-    pw::Report1D<double, double> r{"old", x, y};
+    spida::Report1D<double, double> r{"old", x, y};
     r.setName("new");
     EXPECT_EQ(r.getName(), "new");
 }
@@ -512,7 +512,7 @@ TEST_F(ReportTest, REPORT_BASE_PATH_WITHOUT_REPNUM)
 {
     std::vector<double> x{0.0};
     std::vector<double> y{0.0};
-    pw::Report1D<double, double> r{"field", x, y};
+    spida::Report1D<double, double> r{"field", x, y};
     r.setDirPath(m_dir);
     EXPECT_EQ(r.path(), m_dir / "field.json");
 }
@@ -521,7 +521,7 @@ TEST_F(ReportTest, REPORT_BASE_PATH_WITH_REPNUM)
 {
     std::vector<double> x{0.0};
     std::vector<double> y{0.0};
-    pw::Report1D<double, double> r{"field", x, y};
+    spida::Report1D<double, double> r{"field", x, y};
     r.setDirPath(m_dir);
     EXPECT_EQ(r.path(3), m_dir / "field_3.json");
 }
@@ -530,7 +530,7 @@ TEST_F(ReportTest, REPORT1D_WRITES_XY_JSON)
 {
     std::vector<double> x{0.0, 1.0, 2.0};
     std::vector<double> y{1.0, 4.0, 9.0};
-    pw::Report1D<double, double> r{"curve", x, y};
+    spida::Report1D<double, double> r{"curve", x, y};
     r.setDirPath(m_dir);
 
     std::ofstream ofs;
@@ -548,7 +548,7 @@ TEST_F(ReportTest, REPORT1D_SETITEM_STRING_APPEARS_IN_META)
 {
     std::vector<double> x{0.0};
     std::vector<double> y{0.0};
-    pw::Report1D<double, double> r{"meta_test", x, y};
+    spida::Report1D<double, double> r{"meta_test", x, y};
     r.setDirPath(m_dir);
     r.setItem("label", std::string{"volts"});
 
@@ -563,7 +563,7 @@ TEST_F(ReportTest, REPORT1D_SETITEM_DOUBLE_APPEARS_IN_META)
 {
     std::vector<double> x{0.0};
     std::vector<double> y{0.0};
-    pw::Report1D<double, double> r{"meta_dbl", x, y};
+    spida::Report1D<double, double> r{"meta_dbl", x, y};
     r.setDirPath(m_dir);
     r.setItem("t", 1.5);
 
@@ -578,7 +578,7 @@ TEST_F(ReportTest, REPORT1D_SETITEM_INT_APPEARS_IN_META)
 {
     std::vector<double> x{0.0};
     std::vector<double> y{0.0};
-    pw::Report1D<double, double> r{"meta_int", x, y};
+    spida::Report1D<double, double> r{"meta_int", x, y};
     r.setDirPath(m_dir);
     r.setItem("step", 42);
 
@@ -593,7 +593,7 @@ TEST_F(ReportTest, REPORT1D_REMOVE_ITEM_NOT_PRESENT_IN_META)
 {
     std::vector<double> x{0.0};
     std::vector<double> y{0.0};
-    pw::Report1D<double, double> r{"meta_rm", x, y};
+    spida::Report1D<double, double> r{"meta_rm", x, y};
     r.setDirPath(m_dir);
     r.setItem("key", std::string{"value"});
     r.removeItem("key");
@@ -609,7 +609,7 @@ TEST_F(ReportTest, REPORT1D_REFLECTS_MUTATED_VECTOR)
 {
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 0.0};
-    pw::Report1D<double, double> r{"mutate", x, y};
+    spida::Report1D<double, double> r{"mutate", x, y};
     r.setDirPath(m_dir);
 
     // Mutate y after constructing the report (it stores a reference)
@@ -628,7 +628,7 @@ TEST_F(ReportTest, REPORT1D_REPNUM_CREATES_NUMBERED_FILE)
 {
     std::vector<double> x{0.0};
     std::vector<double> y{1.0};
-    pw::Report1D<double, double> r{"numbered", x, y};
+    spida::Report1D<double, double> r{"numbered", x, y};
     r.setDirPath(m_dir);
 
     std::ofstream ofs;
@@ -644,7 +644,7 @@ TEST_F(ReportTest, REPORT1D_SET_DIR_PATH_CHANGES_OUTPUT_LOCATION)
 
     std::vector<double> x{0.0};
     std::vector<double> y{1.0};
-    pw::Report1D<double, double> r{"moved", x, y};
+    spida::Report1D<double, double> r{"moved", x, y};
     r.setDirPath(sub);
 
     std::ofstream ofs;
@@ -661,7 +661,7 @@ TEST_F(ReportTest, REPORTCOMPLEX1D_DEFAULT_WRITES_XY_COMPLEX)
 {
     std::vector<double> x{0.0, 1.0};
     std::vector<dcmplx> y{{1.0, 2.0}, {3.0, -1.0}};
-    pw::ReportComplex1D<double, double> r{"cplx", x, y};
+    spida::ReportComplex1D<double, double> r{"cplx", x, y};
     r.setDirPath(m_dir);
 
     std::ofstream ofs;
@@ -679,7 +679,7 @@ TEST_F(ReportTest, REPORTCOMPLEX1D_POWER_MODE_WRITES_XY_WITH_POWER_META)
 {
     std::vector<double> x{0.0, 1.0};
     std::vector<dcmplx> y{{3.0, 4.0}, {1.0, 0.0}}; // |3+4i|^2=25, |1|^2=1
-    pw::ReportComplex1D<double, double> r{"power", x, y};
+    spida::ReportComplex1D<double, double> r{"power", x, y};
     r.setDirPath(m_dir);
     r.setPower(true);
 
@@ -697,7 +697,7 @@ TEST_F(ReportTest, REPORTCOMPLEX1D_GETPOWER_DEFAULT_FALSE)
 {
     std::vector<double> x{};
     std::vector<dcmplx> y{};
-    pw::ReportComplex1D<double, double> r{"p", x, y};
+    spida::ReportComplex1D<double, double> r{"p", x, y};
     EXPECT_FALSE(r.getPower());
 }
 
@@ -705,7 +705,7 @@ TEST_F(ReportTest, REPORTCOMPLEX1D_SET_POWER_TRUE_ROUNDTRIP)
 {
     std::vector<double> x{};
     std::vector<dcmplx> y{};
-    pw::ReportComplex1D<double, double> r{"p", x, y};
+    spida::ReportComplex1D<double, double> r{"p", x, y};
     r.setPower(true);
     EXPECT_TRUE(r.getPower());
 }
@@ -720,7 +720,7 @@ TEST_F(ReportTest, REPORT2D_WRITES_XYZ_JSON)
     std::vector<double> x{0.0, 1.0};
     std::vector<double> y{0.0, 1.0, 2.0};
     std::vector<double> z{1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
-    pw::Report2D<double, double, double> r{"surf", x, y, z};
+    spida::Report2D<double, double, double> r{"surf", x, y, z};
     r.setDirPath(m_dir);
 
     std::ofstream ofs;
@@ -741,7 +741,7 @@ TEST_F(ReportTest, REPORT2D_STRIDEX_HALVES_X_OUTPUT)
     std::vector<double> x{0.0, 1.0, 2.0, 3.0};
     std::vector<double> y{0.0, 1.0};
     std::vector<double> z(8, 1.0);
-    pw::Report2D<double, double, double> r{"stride2d", x, y, z};
+    spida::Report2D<double, double, double> r{"stride2d", x, y, z};
     r.setDirPath(m_dir);
     r.setStrideX(2);
 
@@ -759,7 +759,7 @@ TEST_F(ReportTest, REPORT2D_DEFAULT_STRIDES_ARE_ONE)
     std::vector<double> x{};
     std::vector<double> y{};
     std::vector<double> z{};
-    pw::Report2D<double, double, double> r{"s", x, y, z};
+    spida::Report2D<double, double, double> r{"s", x, y, z};
     EXPECT_EQ(r.getStrideX(), 1u);
     EXPECT_EQ(r.getStrideY(), 1u);
 }
@@ -771,7 +771,7 @@ TEST_F(ReportTest, REPORT2D_DEFAULT_STRIDES_ARE_ONE)
 TEST_F(ReportTest, TRACK_MAX_WRITES_XY_WITH_MAX_META)
 {
     std::vector<double> data{1.0, 5.0, 3.0};
-    pw::Track<double> t{"maxtrack", pw::TrackType::Max, data};
+    spida::Track<double> t{"maxtrack", spida::TrackType::Max, data};
     t.setDirPath(m_dir);
 
     t.updateTracker(0.0);
@@ -791,7 +791,7 @@ TEST_F(ReportTest, TRACK_MAX_WRITES_XY_WITH_MAX_META)
 TEST_F(ReportTest, TRACK_MIN_WRITES_XY_WITH_MIN_META)
 {
     std::vector<double> data{4.0, 1.0, 3.0};
-    pw::Track<double> t{"mintrack", pw::TrackType::Min, data};
+    spida::Track<double> t{"mintrack", spida::TrackType::Min, data};
     t.setDirPath(m_dir);
 
     t.updateTracker(0.5);
@@ -807,7 +807,7 @@ TEST_F(ReportTest, TRACK_MIN_WRITES_XY_WITH_MIN_META)
 TEST_F(ReportTest, TRACK_ACCUMULATES_TIME_STEPS)
 {
     std::vector<double> data{2.0, 7.0};
-    pw::Track<double> t{"accum", pw::TrackType::Max, data};
+    spida::Track<double> t{"accum", spida::TrackType::Max, data};
     t.setDirPath(m_dir);
 
     t.updateTracker(0.0);
@@ -829,7 +829,7 @@ TEST_F(ReportTest, TRACK_ACCUMULATES_TIME_STEPS)
 TEST_F(ReportTest, TRACKCOMPLEX_MAX_WRITES_MAX_POWER_META)
 {
     std::vector<dcmplx> data{{3.0, 4.0}, {1.0, 0.0}}; // |3+4i|=5 wins
-    pw::TrackComplex<double> tc{"cmax", pw::TrackType::Max, data};
+    spida::TrackComplex<double> tc{"cmax", spida::TrackType::Max, data};
     tc.setDirPath(m_dir);
 
     tc.updateTracker(0.0);
@@ -846,7 +846,7 @@ TEST_F(ReportTest, TRACKCOMPLEX_MAX_WRITES_MAX_POWER_META)
 TEST_F(ReportTest, TRACKCOMPLEX_MIN_WRITES_MIN_POWER_META)
 {
     std::vector<dcmplx> data{{3.0, 4.0}, {1.0, 0.0}}; // |1|=1 is min
-    pw::TrackComplex<double> tc{"cmin", pw::TrackType::Min, data};
+    spida::TrackComplex<double> tc{"cmin", spida::TrackType::Min, data};
     tc.setDirPath(m_dir);
 
     tc.updateTracker(0.0);
@@ -860,12 +860,12 @@ TEST_F(ReportTest, TRACKCOMPLEX_MIN_WRITES_MIN_POWER_META)
 }
 
 // ============================================================
-//  PWSTATS — Counter
+//  STATS — Counter
 // ============================================================
 
-TEST(PWSTATS_COUNTER_TEST, INITIAL_COUNT_IS_ZERO_BY_DEFAULT)
+TEST(STATS_COUNTER_TEST, INITIAL_COUNT_IS_ZERO_BY_DEFAULT)
 {
-    pw::Counter c;
+    detail::Counter c;
     c.addCounter("hits");
     std::ostringstream oss;
     c.report(oss);
@@ -874,18 +874,18 @@ TEST(PWSTATS_COUNTER_TEST, INITIAL_COUNT_IS_ZERO_BY_DEFAULT)
     EXPECT_NE(oss.str().find(" 0 "), std::string::npos);
 }
 
-TEST(PWSTATS_COUNTER_TEST, INITIAL_COUNT_WITH_NONZERO_START)
+TEST(STATS_COUNTER_TEST, INITIAL_COUNT_WITH_NONZERO_START)
 {
-    pw::Counter c;
+    detail::Counter c;
     c.addCounter("evts", 10u);
     std::ostringstream oss;
     c.report(oss);
     EXPECT_NE(oss.str().find("10"), std::string::npos);
 }
 
-TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_DEFAULT_AMOUNT)
+TEST(STATS_COUNTER_TEST, INCREMENT_BY_DEFAULT_AMOUNT)
 {
-    pw::Counter c;
+    detail::Counter c;
     c.addCounter("x");
     c.increment("x");
     c.increment("x");
@@ -894,9 +894,9 @@ TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_DEFAULT_AMOUNT)
     EXPECT_NE(oss.str().find(" 2 "), std::string::npos);
 }
 
-TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_CUSTOM_AMOUNT)
+TEST(STATS_COUNTER_TEST, INCREMENT_BY_CUSTOM_AMOUNT)
 {
-    pw::Counter c;
+    detail::Counter c;
     c.addCounter("x", 0);
     c.increment("x", 5u);
     std::ostringstream oss;
@@ -904,9 +904,9 @@ TEST(PWSTATS_COUNTER_TEST, INCREMENT_BY_CUSTOM_AMOUNT)
     EXPECT_NE(oss.str().find(" 5 "), std::string::npos);
 }
 
-TEST(PWSTATS_COUNTER_TEST, INCREMENT_UNKNOWN_KEY_ADDS_IT)
+TEST(STATS_COUNTER_TEST, INCREMENT_UNKNOWN_KEY_ADDS_IT)
 {
-    pw::Counter c;
+    detail::Counter c;
     c.increment("new_key", 3u);
     std::ostringstream oss;
     c.report(oss);
@@ -914,21 +914,21 @@ TEST(PWSTATS_COUNTER_TEST, INCREMENT_UNKNOWN_KEY_ADDS_IT)
 }
 
 // ============================================================
-//  PWSTATS — Tracker
+//  STATS — Tracker
 // ============================================================
 
-TEST(PWSTATS_TRACKER_TEST, ADDED_TRACKER_APPEARS_IN_REPORT)
+TEST(STATS_TRACKER_TEST, ADDED_TRACKER_APPEARS_IN_REPORT)
 {
-    pw::Tracker t;
+    detail::Tracker t;
     t.addTracker("energy", 0.0);
     std::ostringstream oss;
     t.report(oss);
     EXPECT_NE(oss.str().find("energy"), std::string::npos);
 }
 
-TEST(PWSTATS_TRACKER_TEST, UPDATE_CHANGES_STORED_VALUE)
+TEST(STATS_TRACKER_TEST, UPDATE_CHANGES_STORED_VALUE)
 {
-    pw::Tracker t;
+    detail::Tracker t;
     t.addTracker("val", 0.0);
     t.updateTracker("val", 42.0);
     std::ostringstream oss;
@@ -936,9 +936,9 @@ TEST(PWSTATS_TRACKER_TEST, UPDATE_CHANGES_STORED_VALUE)
     EXPECT_NE(oss.str().find("4.200e+01"), std::string::npos);
 }
 
-TEST(PWSTATS_TRACKER_TEST, MULTIPLE_UPDATES_KEEP_LAST_VALUE)
+TEST(STATS_TRACKER_TEST, MULTIPLE_UPDATES_KEEP_LAST_VALUE)
 {
-    pw::Tracker t;
+    detail::Tracker t;
     t.addTracker("v");
     t.updateTracker("v", 1.0);
     t.updateTracker("v", 2.0);
@@ -949,12 +949,12 @@ TEST(PWSTATS_TRACKER_TEST, MULTIPLE_UPDATES_KEEP_LAST_VALUE)
 }
 
 // ============================================================
-//  PWSTATS — Timer
+//  STATS — Timer
 // ============================================================
 
-TEST(PWSTATS_TIMER_TEST, ADDED_TIMER_APPEARS_IN_REPORT)
+TEST(STATS_TIMER_TEST, ADDED_TIMER_APPEARS_IN_REPORT)
 {
-    pw::Timer t;
+    detail::Timer t;
     t.addTimer("init");
     std::ostringstream oss;
     t.report(oss);
@@ -964,48 +964,48 @@ TEST(PWSTATS_TIMER_TEST, ADDED_TIMER_APPEARS_IN_REPORT)
 // DISABLED: Timer::endTimer has an inverted map_it != end() condition (should be ==),
 // so it always returns false for an added timer.  The test currently asserts the
 // wrong (buggy) behavior; re-enable and update the expectation once the bug is fixed.
-TEST(PWSTATS_TIMER_TEST, DISABLED_START_THEN_END_TIMER_RETURNS_FALSE_DUE_TO_LOGIC_BUG)
+TEST(STATS_TIMER_TEST, DISABLED_START_THEN_END_TIMER_RETURNS_FALSE_DUE_TO_LOGIC_BUG)
 {
     // Documents the actual (buggy) runtime behavior.
-    pw::Timer t;
+    detail::Timer t;
     t.addTimer("work");
     t.startTimer("work");
     bool result = t.endTimer("work");
     EXPECT_FALSE(result);
 }
 
-TEST(PWSTATS_TIMER_TEST, END_TIMER_ON_UNKNOWN_KEY_RETURNS_FALSE)
+TEST(STATS_TIMER_TEST, END_TIMER_ON_UNKNOWN_KEY_RETURNS_FALSE)
 {
-    pw::Timer t;
+    detail::Timer t;
     bool result = t.endTimer("nonexistent");
     EXPECT_FALSE(result);
 }
 
-TEST(PWSTATS_TIMER_TEST, START_WITHOUT_ADD_DOES_NOT_CRASH)
+TEST(STATS_TIMER_TEST, START_WITHOUT_ADD_DOES_NOT_CRASH)
 {
-    pw::Timer t;
+    detail::Timer t;
     EXPECT_NO_THROW(t.startTimer("implicit"));
 }
 
 // ============================================================
-//  PWSTATS — StatCenter
+//  STATS — StatCenter
 // ============================================================
 
-TEST(PWSTATS_STATCENTER_TEST, DEFAULT_CONSTRUCTION_NO_THROW)
+TEST(STATS_STATCENTER_TEST, DEFAULT_CONSTRUCTION_NO_THROW)
 {
-    EXPECT_NO_THROW(pw::StatCenter sc{});
+    EXPECT_NO_THROW(detail::StatCenter sc{});
 }
 
-TEST(PWSTATS_STATCENTER_TEST, ADD_AND_INCREMENT_COUNTER_NO_THROW)
+TEST(STATS_STATCENTER_TEST, ADD_AND_INCREMENT_COUNTER_NO_THROW)
 {
-    pw::StatCenter sc;
+    detail::StatCenter sc;
     EXPECT_NO_THROW(sc.addCounter("steps"));
     EXPECT_NO_THROW(sc.incrementCounter("steps"));
 }
 
-TEST(PWSTATS_STATCENTER_TEST, STAT_UPDATE_WRITES_TO_STREAM)
+TEST(STATS_STATCENTER_TEST, STAT_UPDATE_WRITES_TO_STREAM)
 {
-    pw::StatCenter sc{"TESTCENTER", 1u};
+    detail::StatCenter sc{"TESTCENTER", 1u};
     sc.addCounter("n");
     sc.incrementCounter("n");
     std::ostringstream oss;
@@ -1013,9 +1013,9 @@ TEST(PWSTATS_STATCENTER_TEST, STAT_UPDATE_WRITES_TO_STREAM)
     EXPECT_NE(oss.str().find("TESTCENTER"), std::string::npos);
 }
 
-TEST(PWSTATS_STATCENTER_TEST, STAT_UPDATE_OBEYS_FREQUENCY)
+TEST(STATS_STATCENTER_TEST, STAT_UPDATE_OBEYS_FREQUENCY)
 {
-    pw::StatCenter sc{"FREQ", 3u};
+    detail::StatCenter sc{"FREQ", 3u};
     std::ostringstream oss;
     sc.statUpdate(oss); // call 1
     sc.statUpdate(oss); // call 2
@@ -1025,15 +1025,15 @@ TEST(PWSTATS_STATCENTER_TEST, STAT_UPDATE_OBEYS_FREQUENCY)
     EXPECT_NE(oss.str().find("FREQ"), std::string::npos);
 }
 
-TEST(PWSTATS_STATCENTER_TEST, SET_LOG_FREQUENCY_ZERO_THROWS)
+TEST(STATS_STATCENTER_TEST, SET_LOG_FREQUENCY_ZERO_THROWS)
 {
-    pw::StatCenter sc;
+    detail::StatCenter sc;
     EXPECT_THROW(sc.setLogFrequency(0u), std::invalid_argument);
 }
 
-TEST(PWSTATS_STATCENTER_TEST, SET_HEADER_APPEARS_IN_REPORT)
+TEST(STATS_STATCENTER_TEST, SET_HEADER_APPEARS_IN_REPORT)
 {
-    pw::StatCenter sc;
+    detail::StatCenter sc;
     sc.setHeader("MYHEADER");
     std::ostringstream oss;
     sc.report(oss);
@@ -1041,98 +1041,98 @@ TEST(PWSTATS_STATCENTER_TEST, SET_HEADER_APPEARS_IN_REPORT)
 }
 
 // ============================================================
-//  PWINDEXING — nearestIndex
+//  INDEXING — nearestIndex
 // ============================================================
 
-TEST(PWINDEXING_TEST, EXACT_MATCH_RETURNS_CORRECT_INDEX)
+TEST(INDEXING_TEST, EXACT_MATCH_RETURNS_CORRECT_INDEX)
 {
     std::vector<double> v{0.0, 1.0, 2.0, 3.0};
-    EXPECT_EQ(pw::nearestIndex(v, 2.0), 2u);
+    EXPECT_EQ(detail::nearestIndex(v, 2.0), 2u);
 }
 
-TEST(PWINDEXING_TEST, VALUE_AT_MIN_RETURNS_ZERO)
+TEST(INDEXING_TEST, VALUE_AT_MIN_RETURNS_ZERO)
 {
     // val == sorted_vec[0] hits the it == cbegin() early-return path
     std::vector<double> v{0.0, 1.0, 2.0};
-    EXPECT_EQ(pw::nearestIndex(v, 0.0), 0u);
+    EXPECT_EQ(detail::nearestIndex(v, 0.0), 0u);
 }
 
-TEST(PWINDEXING_TEST, VALUE_AT_MAX_RETURNS_LAST_INDEX)
+TEST(INDEXING_TEST, VALUE_AT_MAX_RETURNS_LAST_INDEX)
 {
     std::vector<double> v{0.0, 1.0, 2.0};
-    EXPECT_EQ(pw::nearestIndex(v, 2.0), 2u);
+    EXPECT_EQ(detail::nearestIndex(v, 2.0), 2u);
 }
 
-TEST(PWINDEXING_TEST, VALUE_LESS_THAN_MIN_THROWS)
+TEST(INDEXING_TEST, VALUE_LESS_THAN_MIN_THROWS)
 {
     std::vector<double> v{0.0, 1.0, 2.0};
-    EXPECT_THROW(pw::nearestIndex(v, -0.5), std::out_of_range);
+    EXPECT_THROW(detail::nearestIndex(v, -0.5), std::out_of_range);
 }
 
-TEST(PWINDEXING_TEST, VALUE_GREATER_THAN_MAX_THROWS)
+TEST(INDEXING_TEST, VALUE_GREATER_THAN_MAX_THROWS)
 {
     std::vector<double> v{0.0, 1.0, 2.0};
-    EXPECT_THROW(pw::nearestIndex(v, 3.5), std::out_of_range);
+    EXPECT_THROW(detail::nearestIndex(v, 3.5), std::out_of_range);
 }
 
-TEST(PWINDEXING_TEST, NEAREST_BETWEEN_TWO_POINTS)
+TEST(INDEXING_TEST, NEAREST_BETWEEN_TWO_POINTS)
 {
     // val=1.3 is closer to index 1 (dist 0.3) than index 2 (dist 0.7)
     // val=1.7 is closer to index 2 (dist 0.3) than index 1 (dist 0.7)
     std::vector<double> v{0.0, 1.0, 2.0, 3.0};
-    EXPECT_EQ(pw::nearestIndex(v, 1.3), 1u);
-    EXPECT_EQ(pw::nearestIndex(v, 1.7), 2u);
+    EXPECT_EQ(detail::nearestIndex(v, 1.3), 1u);
+    EXPECT_EQ(detail::nearestIndex(v, 1.7), 2u);
 }
 
 // ============================================================
-//  PWTHREADS — ThreadManager
+//  THREADS — ThreadManager
 // ============================================================
 
-TEST(PWTHREADS_TEST, CONSTRUCT_ONE_THREAD)
+TEST(THREADS_TEST, CONSTRUCT_ONE_THREAD)
 {
-    pw::ThreadManager tm{1u};
+    detail::ThreadManager tm{1u};
     EXPECT_EQ(tm.getNumThreads(), 1u);
 }
 
-TEST(PWTHREADS_TEST, CONSTRUCT_FOUR_THREADS)
+TEST(THREADS_TEST, CONSTRUCT_FOUR_THREADS)
 {
-    pw::ThreadManager tm{4u};
+    detail::ThreadManager tm{4u};
     EXPECT_EQ(tm.getNumThreads(), 4u);
 }
 
-TEST(PWTHREADS_TEST, CONSTRUCT_ZERO_THROWS)
+TEST(THREADS_TEST, CONSTRUCT_ZERO_THROWS)
 {
-    EXPECT_THROW(pw::ThreadManager{0u}, pw::Exception);
+    EXPECT_THROW(detail::ThreadManager{0u}, detail::Exception);
 }
 
-TEST(PWTHREADS_TEST, SET_NUM_THREADS_UPDATES_COUNT)
+TEST(THREADS_TEST, SET_NUM_THREADS_UPDATES_COUNT)
 {
-    pw::ThreadManager tm{2u};
+    detail::ThreadManager tm{2u};
     tm.setNumThreads(8u);
     EXPECT_EQ(tm.getNumThreads(), 8u);
 }
 
-TEST(PWTHREADS_TEST, SET_NUM_THREADS_ZERO_THROWS)
+TEST(THREADS_TEST, SET_NUM_THREADS_ZERO_THROWS)
 {
-    pw::ThreadManager tm{1u};
-    EXPECT_THROW(tm.setNumThreads(0u), pw::Exception);
+    detail::ThreadManager tm{1u};
+    EXPECT_THROW(tm.setNumThreads(0u), detail::Exception);
 }
 
-TEST(PWTHREADS_TEST, GET_BOUNDS_ONE_THREAD_COVERS_WHOLE_RANGE)
+TEST(THREADS_TEST, GET_BOUNDS_ONE_THREAD_COVERS_WHOLE_RANGE)
 {
     // Single-thread path: inner loop body (i = 1..0) never executes;
     // bounds = {0, size} covers the entire range.
-    pw::ThreadManager tm{1u};
+    detail::ThreadManager tm{1u};
     const std::vector<unsigned> bounds = tm.getBounds(50u);
     ASSERT_EQ(bounds.size(), 2u);
     EXPECT_EQ(bounds.front(), 0u);
     EXPECT_EQ(bounds.back(), 50u);
 }
 
-TEST(PWTHREADS_TEST, GET_BOUNDS_FOUR_THREADS_MONOTONE)
+TEST(THREADS_TEST, GET_BOUNDS_FOUR_THREADS_MONOTONE)
 {
     // Verify front==0, back==size, and each successive bound is non-decreasing.
-    pw::ThreadManager tm{4u};
+    detail::ThreadManager tm{4u};
     const std::vector<unsigned> bounds = tm.getBounds(100u);
     ASSERT_EQ(bounds.size(), 5u);
     EXPECT_EQ(bounds.front(), 0u);

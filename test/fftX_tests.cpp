@@ -3,7 +3,6 @@
 #include <stdexcept>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwmath.hpp>
 #include <spida/CVX.h>
 #include <spida/grid/uniformCVX.h>
 #include <spida/grid/uniformRVX.h>
@@ -11,6 +10,7 @@
 #include <spida/shape/shapeX.h>
 #include <spida/transform/fftCVX.h>
 #include <spida/transform/fftRVX.h>
+#include <utils/math.hpp>
 
 // FFTCVX defined such that F{f(x)} = \integral_{-\inf}^{\inf}f(x)exp(-i*kx*x) dx
 // Test that forward fft followed by inverse fft yields identity
@@ -31,7 +31,7 @@ TEST(FFTCVX_TEST, INVERSES)
     tr.X_To_SX(in, out);
     tr.SX_To_X(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-10);
 }
 
 TEST(FFTCVX_TEST, GAUSS)
@@ -61,7 +61,7 @@ TEST(FFTCVX_TEST, GAUSS)
     spida::FFTCVX tr(grid);
     tr.X_To_SX(in, out);
 
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(FFTCVX_TEST, SECH)
@@ -91,7 +91,7 @@ TEST(FFTCVX_TEST, SECH)
     spida::FFTCVX tr(grid);
     tr.X_To_SX(in, out);
 
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(FFTCVX_TEST, COS)
@@ -132,7 +132,7 @@ TEST(FFTCVX_TEST, DERIVATIVE_SIN)
 
     spida::SpidaCVX spidaX{grid};
     spidaX.dX(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-6);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-6);
 }
 
 TEST(FFTCVX_TEST, DERIVATIVE_GAUSS)
@@ -153,7 +153,7 @@ TEST(FFTCVX_TEST, DERIVATIVE_GAUSS)
 
     spida::SpidaCVX spidaX{grid};
     spidaX.dX(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-6);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-6);
 }
 
 // FFTRVX defined such that F{f(x)} = \integral_{-\inf}^{\inf}f(x)exp(-i*kx*x) dx
@@ -177,7 +177,7 @@ TEST(FFTRVX_TEST, INVERSES)
     tr.X_To_SX(in, out);
     tr.SX_To_X(out, expect);
 
-    EXPECT_LT(pw::relative_error(in, expect), 1e-10);
+    EXPECT_LT(detail::relative_error(in, expect), 1e-10);
 }
 
 TEST(FFTRVX_TEST, GAUSS)
@@ -207,7 +207,7 @@ TEST(FFTRVX_TEST, GAUSS)
 
     spida::FFTRVX tr(grid);
     tr.X_To_SX(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(FFTRVX_TEST, SECH)
@@ -238,7 +238,7 @@ TEST(FFTRVX_TEST, SECH)
     spida::FFTRVX tr(grid);
     tr.X_To_SX(in, out);
 
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 TEST(FFTRVX_TEST, COS)
@@ -286,7 +286,7 @@ TEST(FFTRVX_TEST, DERIVATIVE_SIN)
 
     spida::SpidaRVX spidaX{grid};
     spidaX.dX(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-4);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-4);
 }
 
 TEST(FFTRVX_TEST, DERIVATIVE_GAUSS)
@@ -307,7 +307,7 @@ TEST(FFTRVX_TEST, DERIVATIVE_GAUSS)
 
     spida::SpidaRVX spidaX{grid};
     spidaX.dX(in, out);
-    EXPECT_LT(pw::relative_error(expect, out), 1e-6);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-6);
 }
 
 TEST(FFTCVX_TEST, ODD_N_THROWS)

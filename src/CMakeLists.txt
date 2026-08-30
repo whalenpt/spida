@@ -2,10 +2,10 @@
 # Source files
 # -----------------------------
 set(SRC_FILES
-    pwutils/pwmath.cpp
-    pwutils/pwstats.cpp
-    pwutils/pwstrings.cpp
-    pwutils/pwthreads.cpp
+    utils/math.cpp
+    utils/stats.cpp
+    utils/strings.cpp
+    utils/threads.cpp
     SpidaCVT.cpp
     SpidaRVT.cpp
     SpidaRCVT.cpp
@@ -151,7 +151,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION include
 )
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/pwutils
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/utils
     DESTINATION include
 )
 

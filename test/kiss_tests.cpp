@@ -9,7 +9,7 @@
 #include <random>
 
 #include <gtest/gtest.h>
-#include <pwutils/pwmath.hpp>
+#include <utils/math.hpp>
 
 constexpr auto PI = 3.141592653589793238462643383279502884197;
 using dcmplx = std::complex<double>;
@@ -361,7 +361,7 @@ TEST(KISS_TEST, GAUSS)
         out_phase_adj[i] = out[i] * exp(ii * kx[i] * xmin);
     }
 
-    EXPECT_LT(pw::relative_error(expect, out_phase_adj), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out_phase_adj), 1e-5);
 }
 
 TEST(KISS_TEST, SECH)
@@ -403,7 +403,7 @@ TEST(KISS_TEST, SECH)
         out[i] = out[i] * exp(ii * kx[i] * xmin);
     }
 
-    EXPECT_LT(pw::relative_error(expect, out), 1e-5);
+    EXPECT_LT(detail::relative_error(expect, out), 1e-5);
 }
 
 // Test exp_imag_trig_wave

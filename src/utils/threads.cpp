@@ -1,18 +1,19 @@
 
-#include "pwutils/pwthreads.h"
+#include "utils/threads.h"
 
-#include "pwutils/pwexcept.h"
+#include "utils/except.h"
 
 #include <vector>
 
-namespace pw {
+namespace detail {
 
 ThreadManager::ThreadManager(unsigned num_threads)
 {
     if (num_threads < 1) {
-        throw pw::Exception("ThreadManager constructor failure: " + std::to_string(num_threads) +
-                            " specified, at least one thread"
-                            " is needed to construct ThreadManager.");
+        throw detail::Exception(
+            "ThreadManager constructor failure: " + std::to_string(num_threads) +
+            " specified, at least one thread"
+            " is needed to construct ThreadManager.");
     }
     m_num_threads = num_threads;
 }
@@ -20,9 +21,10 @@ ThreadManager::ThreadManager(unsigned num_threads)
 void ThreadManager::setNumThreads(unsigned num_threads)
 {
     if (num_threads < 1) {
-        throw pw::Exception("ThreadManager::setNumThreads failure: " + std::to_string(num_threads) +
-                            " specified, at least one thread"
-                            " is needed to for ThreadManager to function properly.");
+        throw detail::Exception(
+            "ThreadManager::setNumThreads failure: " + std::to_string(num_threads) +
+            " specified, at least one thread"
+            " is needed to for ThreadManager to function properly.");
     }
     m_num_threads = num_threads;
 }
@@ -38,4 +40,4 @@ std::vector<unsigned> ThreadManager::getBounds(unsigned size) const
     return bounds;
 }
 
-} // namespace pw
+} // namespace detail

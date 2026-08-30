@@ -7,16 +7,16 @@
 #include <memory>
 #include <vector>
 
-namespace pw {
+namespace detail {
 class StatCenter;
-class ReportData1D;
-class ReportData2D;
-class TrackData;
-} // namespace pw
+} // namespace detail
 
 namespace spida {
 
 class ReportHandler;
+class ReportData1D;
+class ReportData2D;
+class TrackData;
 
 class BasePropagator {
 public:
@@ -51,9 +51,9 @@ public:
     void setMaxReports1D(std::size_t val);
     void setMaxReports2D(std::size_t val);
 
-    void addReport(std::unique_ptr<pw::ReportData1D> def);
-    void addReport(std::unique_ptr<pw::ReportData2D> def);
-    void addReport(std::unique_ptr<pw::TrackData> def);
+    void addReport(std::unique_ptr<ReportData1D> def);
+    void addReport(std::unique_ptr<ReportData2D> def);
+    void addReport(std::unique_ptr<TrackData> def);
 
     [[nodiscard]] const std::filesystem::path& dirPath() const
     {
@@ -93,7 +93,7 @@ private:
 
     bool m_log_progress{false};
     std::size_t m_log_freq{1};
-    std::unique_ptr<pw::StatCenter> m_stat;
+    std::unique_ptr<detail::StatCenter> m_stat;
 };
 
 class PropagatorCV : public BasePropagator {

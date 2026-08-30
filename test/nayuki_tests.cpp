@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 #include <nayukidct/FastDctLee.hpp>
-#include <pwutils/pwmath.hpp>
+#include <utils/math.hpp>
 
 constexpr auto PI = 3.141592653589793238462643383279502884197;
 

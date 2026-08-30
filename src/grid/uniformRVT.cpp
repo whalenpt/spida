@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <pwutils/pwindexing.hpp>
+#include <utils/indexing.hpp>
 
 namespace spida {
 
@@ -25,8 +25,8 @@ UniformGridRVT::UniformGridRVT(unsigned nt, double minT, double maxT, double min
 {
     this->verifyFrequencyRange(minST, maxST);
     std::vector<double> full_st = this->constructGridST(nt, minT, maxT);
-    this->m_minI = pw::nearestIndex(full_st, minST);
-    this->m_maxI = pw::nearestIndex(full_st, maxST);
+    this->m_minI = detail::nearestIndex(full_st, minST);
+    this->m_maxI = detail::nearestIndex(full_st, maxST);
     this->m_nst = this->m_maxI - this->m_minI + 1;
     this->m_st.resize(this->m_nst, 0.0);
     for (auto i = this->m_minI; i <= this->m_maxI; i++)
