@@ -6,10 +6,16 @@ name: Release
 # so it's missing external/nayukidct, which spida's build needs. This
 # tarball is what conanfile.py's source() fallback downloads for a consumer
 # with no local git checkout of spida (see conanfile.py and CLAUDE.md).
+#
+# Gated on the CMake workflow (build+test+package-test on Linux/Windows/
+# macOS) actually passing for this same tag — triggered via workflow_run
+# rather than push, since that's the only way to depend on another
+# workflow's outcome across workflow files. This means a broken tag never
+# publishes a release: no ordinary `on: push: tags` trigger here.
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["CMake"]
+    types: [completed]
 
 permissions:
   contents: write
@@ -17,16 +23,25 @@ permissions:
 jobs:
   source-tarball:
     runs-on: ubuntu-latest
+    # workflow_run fires for every completion of the CMake workflow — pushes
+    # to main/develop and PRs included, not just tag pushes — so filter down
+    # to a successful run that was actually triggered by a vN.N.N tag.
+    # head_branch carries the tag name (not a branch) when the triggering
+    # push was a tag push.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
     steps:
-      - name: Checkout
+      - name: Checkout tagged commit
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           submodules: recursive
 
       - name: Derive version from tag
         id: version
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="${{ github.event.workflow_run.head_branch }}"
           version="${tag#v}"
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Tag '${tag}' doesn't look like vN.N.N — refusing to guess a version." >&2
@@ -83,6 +98,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          # workflow_run means github.ref here is release.yml's own trigger
+          # context (the default branch), not the tag that triggered CMake —
+          # tag_name must be explicit or this attaches to the wrong ref.
+          tag_name: ${{ steps.version.outputs.tag }}
           name: spida ${{ steps.version.outputs.version }}
           generate_release_notes: true
           files: |
