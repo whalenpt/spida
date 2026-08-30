@@ -1,11 +1,20 @@
 #pragma once
 
-#include "kiss_fft.h"
-#include "kiss_fftr.h"
 #include "spida/grid/uniformRVT.h"
 #include "spida/helper/constants.h"
 
 #include <vector>
+
+// kiss_fft_cfg/kiss_fftr_cfg are kissfft's own opaque pointer typedefs
+// (struct kiss_fft_state*/kiss_fftr_state*, never defined even by
+// kissfft's own headers) — forward declared here so this public header
+// doesn't leak kissfft headers into every consumer's translation unit.
+// fftRVT.cpp includes the real kiss_fft.h/kiss_fftr.h for the definitions
+// it actually needs.
+struct kiss_fft_state;
+struct kiss_fftr_state;
+using kiss_fft_cfg = kiss_fft_state*;
+using kiss_fftr_cfg = kiss_fftr_state*;
 
 namespace spida {
 
