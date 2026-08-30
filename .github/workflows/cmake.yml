@@ -19,7 +19,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/whalenpt/spida:v1.4
+      image: ghcr.io/whalenpt/spida:v1.5
       options: --user root
     steps:
       - name: Checkout
