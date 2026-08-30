@@ -5,9 +5,9 @@ CMakeUserPresets.json
 coverage.filtered.info
 coverage.info
 
-.devcontainer
 .vscode
 .claude/worktrees
+.claude/settings.local.json
 compile_commands.json
 conan_toolchain.cmake
 
