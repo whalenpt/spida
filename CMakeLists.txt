@@ -10,7 +10,7 @@ project(SPIDA
 # -----------------------------
 option(SPIDA_TEST "Build spida tests" OFF)
 option(SPIDA_DEMOS "Build spida demos" OFF)
-option(SPIDA_WORKER_EXAMPLE "Build worker-consumption example (config-driven SimulationRun, cooperative cancel, structured progress) — see demos/worker_example.cpp" OFF)
+option(SPIDA_WORKER "Build spida-worker, the job-service worker executable (config-driven SimulationRun, cooperative cancel, structured progress+events) — see worker/" OFF)
 option(WITH_OPENBLAS "Use OpenBLAS" OFF)
 option(SPIDA_COVERAGE "Enable code coverage instrumentation" OFF)
 option(SPIDA_UPDATE_SUBMODULES "Update git submodules on configure" ON)
@@ -173,6 +173,10 @@ if(PROJECT_IS_TOP_LEVEL)
         add_subdirectory(demos)
     endif()
 
+    if(SPIDA_WORKER)
+        add_subdirectory(worker)
+    endif()
+
 endif()
 
 # -----------------------------
@@ -181,5 +185,5 @@ endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Tests: ${SPIDA_TEST}")
 message(STATUS "Demos: ${SPIDA_DEMOS}")
-message(STATUS "Worker example: ${SPIDA_WORKER_EXAMPLE}")
+message(STATUS "Worker: ${SPIDA_WORKER}")
 message(STATUS "Coverage: ${SPIDA_COVERAGE}")

@@ -4,10 +4,11 @@
 // proposal's domain.ts SimulationConfig (discriminated by ModelKind/GridKind/
 // SolverKind) — the C++-side source of truth a future spida-worker would parse
 // a request into, and demos/usage examples build grids/models/solvers from
-// today by hand. Only ModelKind::burgers and GridKind::uniform_rvx are wired
-// end to end by simulationbuilder.h so far (see its header comment); the enums
-// below are intentionally larger than that to keep the on-disk/wire shape
-// stable as more models and grids come online.
+// today by hand. burgers/kdv_rv/ks (GridKind::uniform_rvx) and nls_r
+// (GridKind::bessel_root_r) are wired end to end by simulationbuilder.h so
+// far (see its header comment); the enums below are intentionally larger
+// than that to keep the on-disk/wire shape stable as more models and grids
+// come online.
 
 #include <nlohmann/json.hpp>
 
@@ -44,15 +45,17 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SolverKind,
                                  {SolverKind::if45dp, "if45dp"},
                              })
 
-/// n/a/b are UniformGridRVX-shaped (the only kind simulationbuilder.h wires
-/// today); rMax/etc. for the other GridKinds are left for whoever wires them.
+/// n/a/b are UniformGridRVX-shaped; rMax is BesselRootGridR-shaped (only
+/// meaningful when kind == bessel_root_r — see simulationbuilder.h's
+/// nls_r case). cheb_x's own params remain left for whoever wires it next.
 struct GridConfig {
     GridKind kind{GridKind::uniform_rvx};
     unsigned n{256};
     double a{0.0};
     double b{1.0};
+    double rMax{5.0};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GridConfig, kind, n, a, b)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GridConfig, kind, n, a, b, rMax)
 
 struct SolverConfig {
     SolverKind kind{SolverKind::etd35};
@@ -61,35 +64,62 @@ struct SolverConfig {
     double tf{1.0};
     double hInit{0.01};
     bool logProgress{false};
-    unsigned logFrequency{200};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-    SolverConfig, kind, epsRel, t0, tf, hInit, logProgress, logFrequency)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SolverConfig, kind, epsRel, t0, tf, hInit, logProgress)
 
-/// The one physics parameter demos/burgers.cpp hardcodes (mu = 0.0005).
-struct BurgersParams {
-    double mu{0.0005};
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BurgersParams, mu)
-
-/// Mirrors the subset of BasePropagator's setters simulationbuilder.h wires;
-/// see include/spida/propagator/propagator.h for the full set (2D/track
-/// cadence are omitted here since the Burgers pilot only reports 1D).
+/// Mirrors BasePropagator's setters (include/spida/propagator/propagator.h)
+/// and the proposal's own domain.ts ReportingConfig field-for-field.
+/// logFrequency lives here, not on SolverConfig, matching the real worker
+/// wire contract (spida-console's apps/web sends it nested under
+/// "reporting", not "solver" — see ADR-0003).
+///
+/// stepsPerOutput2D/maxReports2D/stepsPerOutputTrack are defaulted and
+/// currently unused by simulationbuilder.h — no model wired today
+/// (burgers/kdv_rv/ks) reports 2D or track data. Kept present rather than
+/// added later specifically to freeze the wire shape now: ADR-0003 already
+/// had to realign this struct's shape once (modelParams, logFrequency's
+/// nesting) when the real worker/frontend contract turned out to differ
+/// from what was speculatively designed — adding these fields after a 2D
+/// model exists would risk the same kind of break a second time.
 struct ReportingConfig {
     unsigned stepsPerOutput1D{5};
+    unsigned stepsPerOutput2D{1};
+    unsigned stepsPerOutputTrack{1};
     unsigned maxReports1D{500};
+    unsigned maxReports2D{200};
+    unsigned logFrequency{200};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportingConfig, stepsPerOutput1D, maxReports1D)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportingConfig,
+                                                stepsPerOutput1D,
+                                                stepsPerOutput2D,
+                                                stepsPerOutputTrack,
+                                                maxReports1D,
+                                                maxReports2D,
+                                                logFrequency)
 
 struct SimulationConfig {
     std::string name{"run"};
     ModelKind model{ModelKind::burgers};
     GridConfig grid;
     SolverConfig solver;
-    BurgersParams burgersParams;
+    /// Model-specific parameters, generic rather than a per-model typed
+    /// struct — matches the real wire contract exactly (a single nested
+    /// "modelParams" object whose shape depends on "model"): {"mu": ...}
+    /// for burgers, {"solitonSpeed": ...} for kdv_rv, {} for ks. See
+    /// simulationbuilder.h's per-model construction for what each model
+    /// reads out of it, mirroring spida-worker's own
+    /// modelParams.value(key, default) pattern exactly.
+    // Direct construction, not brace-init: nlohmann::json's initializer_list
+    // constructor would treat {nlohmann::json::object()} as a one-element
+    // JSON *array* containing an empty object ([{}]), not the empty object
+    // itself ({}) — a real bug caught by SimulationRunTest.
+    // BURGERS_PILOT_RUNS_TO_COMPLETION exercising the never-overridden
+    // default (SimulationRun's cfg.modelParams.value("mu", ...) throws
+    // "cannot use value() with array" against the array form).
+    nlohmann::json modelParams = nlohmann::json::object();
     ReportingConfig reporting;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-    SimulationConfig, name, model, grid, solver, burgersParams, reporting)
+    SimulationConfig, name, model, grid, solver, modelParams, reporting)
 
 } // namespace spida::config

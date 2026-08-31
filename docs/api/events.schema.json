@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spida.dev/schemas/simulation-event.json",
+  "title": "SimulationEvent",
+  "description": "Phase 0 contract freeze for the WS /simulations/:id/stream payload and the REST GET /simulations/:id/events replay (proposal §1/§7). Not implemented yet — see docs/adr/0002-spida-console-phase2-live-feedback.md. ProgressSnapshot below mirrors spida::ProgressSnapshot field-for-field (include/spida/propagator/propagator.h); keep them in sync by hand until there's a generator.",
+  "type": "object",
+  "required": ["id", "simulationId", "at", "kind"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Monotonic per-simulation event id — the cursor GET /simulations/:id/events?since= and WS reconnect replay key off."
+    },
+    "simulationId": { "type": "string" },
+    "at": { "type": "string", "format": "date-time" },
+    "kind": {
+      "type": "string",
+      "enum": ["log", "progress", "status"]
+    },
+    "level": {
+      "type": "string",
+      "enum": ["info", "warn", "error"],
+      "description": "Only meaningful when kind == \"log\"."
+    },
+    "message": {
+      "type": "string",
+      "description": "Only meaningful when kind == \"log\"."
+    },
+    "progress": {
+      "$ref": "#/$defs/ProgressSnapshot",
+      "description": "Only meaningful when kind == \"progress\"."
+    },
+    "status": {
+      "$ref": "#/$defs/SimulationStatus",
+      "description": "Only meaningful when kind == \"status\"."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "log" } } },
+      "then": { "required": ["message"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "progress" } } },
+      "then": { "required": ["progress"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "status" } } },
+      "then": { "required": ["status"] }
+    }
+  ],
+  "$defs": {
+    "ProgressSnapshot": {
+      "type": "object",
+      "description": "Mirrors spida::ProgressSnapshot exactly, including field names (t, tf, stepsTaken, currentStepSize) — see include/spida/propagator/propagator.h.",
+      "required": ["t", "stepsTaken"],
+      "properties": {
+        "t": { "type": "number" },
+        "tf": {
+          "type": ["number", "null"],
+          "description": "Unset (null) unless the worker called setFinalTime() before running."
+        },
+        "stepsTaken": { "type": "integer", "minimum": 0 },
+        "currentStepSize": {
+          "type": ["number", "null"],
+          "description": "Unset (null) unless reported via the stepUpdate(t, dt) overload — see ADR-0001."
+        }
+      },
+      "additionalProperties": false
+    },
+    "SimulationStatus": {
+      "type": "string",
+      "enum": ["draft", "queued", "running", "cancelling", "completed", "failed", "cancelled"],
+      "description": "Proposal §9 lifecycle. See openapi.yaml's SimulationStatus for the StopReason -> status mapping this implies."
+    }
+  },
+  "examples": [
+    {
+      "id": "evt_00042",
+      "simulationId": "sim_run_to_completion",
+      "at": "2026-08-31T12:00:00Z",
+      "kind": "progress",
+      "progress": { "t": 0.0741721, "tf": 1.0, "stepsTaken": 12, "currentStepSize": 0.00802208 }
+    },
+    {
+      "id": "evt_00043",
+      "simulationId": "sim_run_to_completion",
+      "at": "2026-08-31T12:00:01Z",
+      "kind": "log",
+      "level": "warn",
+      "message": "step size clamped to remaining interval"
+    },
+    {
+      "id": "evt_00044",
+      "simulationId": "sim_run_to_completion",
+      "at": "2026-08-31T12:00:05Z",
+      "kind": "status",
+      "status": "completed"
+    }
+  ]
+}
