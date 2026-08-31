@@ -7,8 +7,16 @@
 // files SPIDA itself wrote into the output directory, and an events.ndjson
 // (one SimulationEvent per line) appended as the run progresses.
 //
-// Usage: spida-worker <config.json> <output-dir>
+// Usage: spida-worker <config.json> <output-dir> [timeout-seconds]
 //        spida-worker --describe   (prints capabilities.h's JSON, exits 0)
+//
+// timeout-seconds is an optional OPERATOR wall-clock cap (proposal's error
+// taxonomy: "timeout" — "optional operator wall-clock cap exceeded"), not
+// part of SimulationConfig itself — a deployment concern, not something the
+// submitted config carries. Enforced the same way SIGTERM-driven
+// cancellation already is: reuses requestCancel(), checked at the next
+// stepUpdate() checkpoint, not an immediate kill. Omitted or <= 0 disables
+// it entirely (no wall-clock cap, the only behavior before this).
 //
 // This is the in-tree successor to a worker originally authored and
 // numerically verified in spida-console's services/worker — see
@@ -210,13 +218,23 @@ int main(int argc, char** argv)
         std::cout << spida::config::describeCapabilities().dump(2) << "\n";
         return 0;
     }
-    if (argc != 3) {
-        std::cerr << "usage: spida-worker <config.json> <output-dir>\n"
+    if (argc != 3 && argc != 4) {
+        std::cerr << "usage: spida-worker <config.json> <output-dir> [timeout-seconds]\n"
                      "       spida-worker --describe\n";
         return 2;
     }
     const fs::path configPath = argv[1];
     const fs::path outDir = argv[2];
+    double timeoutSeconds = 0.0; // <= 0 means disabled
+    if (argc == 4) {
+        try {
+            timeoutSeconds = std::stod(argv[3]);
+        }
+        catch (const std::exception&) {
+            std::cerr << "invalid timeout-seconds: " << argv[3] << "\n";
+            return 2;
+        }
+    }
     fs::create_directories(outDir);
 
     json configJson;
@@ -266,11 +284,30 @@ int main(int argc, char** argv)
         // accepted solver step, which is much finer-grained than report
         // cadence and would otherwise multiply events.ndjson's write volume
         // several-fold for no benefit api-server currently uses.
+        //
+        // The same callback also enforces the wall-clock timeout, checked on
+        // EVERY invocation (not throttled by stepsPerOutput1D like the event
+        // forwarding below it) — a coarse report cadence shouldn't delay
+        // noticing a timeout. requestCancel() takes effect at the run's next
+        // stepUpdate() checkpoint, same as SIGTERM — see handleSigterm above.
         const auto stepsPerOutput1D = cfg.reporting.stepsPerOutput1D;
-        run.propagator().setProgressObserver([&events, stepsPerOutput1D](const spida::ProgressSnapshot& s) {
-            if (stepsPerOutput1D == 0 || s.stepsTaken % stepsPerOutput1D == 0)
-                events.progress(s);
-        });
+        const auto startTime = std::chrono::steady_clock::now();
+        bool timedOut = false;
+        run.propagator().setProgressObserver(
+            [&events, stepsPerOutput1D, timeoutSeconds, startTime, &timedOut](
+                const spida::ProgressSnapshot& s) {
+                if (timeoutSeconds > 0.0 && !timedOut) {
+                    const double elapsed =
+                        std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime)
+                            .count();
+                    if (elapsed >= timeoutSeconds) {
+                        timedOut = true;
+                        g_propagator->requestCancel();
+                    }
+                }
+                if (stepsPerOutput1D == 0 || s.stepsTaken % stepsPerOutput1D == 0)
+                    events.progress(s);
+            });
 
         // Report files are still written to outDir as before (setWriteReportFiles
         // defaults to true) — the sink only adds an in-process observation of
@@ -302,6 +339,28 @@ int main(int argc, char** argv)
             writeStatus(outDir,
                         {{"status", "failed"},
                          {"failureReason", "divergence"},
+                         {"stopReason", stopReasonToString(reason)},
+                         {"failureDetail", detail},
+                         {"finishedAt", nowIso8601()}});
+            events.log("error", detail);
+            events.status("failed");
+            return 1;
+        }
+
+        // Checked before the generic "completed" path below: timedOut is
+        // only ever set by this worker's own wall-clock check above, so
+        // it's unambiguous — a run that also happened to receive SIGTERM
+        // around the same time still reports "timeout" here, which is a
+        // defensible call either way given both were true. reason is
+        // reported alongside for the underlying mechanism (almost always
+        // CancelRequested, since that's what requestCancel() produces).
+        if (timedOut) {
+            const std::string detail =
+                "exceeded operator wall-clock time budget of " + std::to_string(timeoutSeconds) +
+                "s";
+            writeStatus(outDir,
+                        {{"status", "failed"},
+                         {"failureReason", "timeout"},
                          {"stopReason", stopReasonToString(reason)},
                          {"failureDetail", detail},
                          {"finishedAt", nowIso8601()}});

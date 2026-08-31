@@ -204,3 +204,42 @@ Verified via the project's mandated Release build+test cycle (`rm -rf
 build/` not required — no CMakeLists.txt changes; `conan install` →
 `cmake --preset conan-release -DSPIDA_TEST=ON -DSPIDA_DEMOS=ON
 -DSPIDA_WORKER=ON` → build → `ctest`), 11/11 binaries passing.
+
+## Addendum: `timeout` implemented (the error taxonomy's fourth reason)
+
+The proposal's error taxonomy (§1) has five `FailureReason`s. Before this addendum, only
+three were ever actually produced anywhere in this repo: `config_validation` (ADR-0001's Phase
+B), `runtime_exception`, `divergence`. `timeout` ("optional operator wall-clock cap exceeded")
+is now implemented too — `worker_crash` remains correctly out of scope (a crashed process
+can't write its own `status.json`; that's the future api-server detecting a dead process).
+
+**Deliberately not a `SimulationConfig` field.** The proposal frames `timeout` as an
+*operator* cap, not a user-submitted parameter — so it's an optional 3rd `spida-worker` CLI
+argument (`spida-worker config.json output-dir [timeout-seconds]`), not a new
+`SimulationConfig`/wire-contract field. This is a worker/deployment concern parallel to how
+`api-server` already supplies `SIGTERM` externally (see this ADR's own Decision §6) — the
+submitted config never carries either.
+
+**Reuses the existing cooperative-cancellation mechanism, adds nothing to the library.** The
+worker's own `setProgressObserver()` callback (already registered for `events.ndjson`
+forwarding) now also checks elapsed wall-clock time on *every* invocation (not throttled by
+`stepsPerOutput1D` the way event forwarding is — a coarse report cadence shouldn't delay
+noticing a timeout) and calls `BasePropagator::requestCancel()` the same way `handleSigterm()`
+already does. No new `spida::StopReason` value, no library change at all — the worker tracks
+its *own* `timedOut` flag locally to know *why* `requestCancel()` fired, since the library-level
+`StopReason::CancelRequested` doesn't (and shouldn't) distinguish "asked via SIGTERM" from
+"asked because the worker's own clock ran out" — that distinction only matters for choosing
+which `FailureReason` to report, a worker-level concern.
+
+**Precedence**: checked after the existing `!stepOk`/`Diverged` checks (a genuine solver
+failure or divergence is a more specific diagnosis than "also ran out of time"), before the
+generic "completed" path every other stop reason falls through to.
+
+Verified via the mandated Release build+test cycle, 11/11 binaries passing (library untouched,
+so no test changes were needed there — `worker/src/main.cpp` has no unit-test harness of its
+own; correctness here rests on the clean compile plus this addendum's own review of the
+callback/precedence logic). A real end-to-end CLI run (a long `ks` simulation against a 1s
+budget) was attempted for direct verification, matching this repo's own "verified for real, not
+just asserted" precedent, but was declined by the operator's permission settings in this
+session (as it was twice earlier, for the Phase A and Phase C worker CLI smoke tests) — flagged
+here rather than silently skipped.

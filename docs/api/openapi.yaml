@@ -434,7 +434,14 @@ components:
     FailureReason:
       type: string
       enum: [config_validation, runtime_exception, divergence, timeout, worker_crash]
-      description: Proposal §1 error taxonomy.
+      description: >
+        Proposal §1 error taxonomy. config_validation/runtime_exception/
+        divergence/timeout are all actually produced by spida-worker today
+        (timeout via an optional operator wall-clock cap passed on argv,
+        NOT part of SimulationConfig — see worker/README.md). worker_crash
+        is NOT producible by the worker itself (a crashed process can't
+        write its own status.json) — it's the future api-server detecting
+        a dead process, out of scope for this repo.
 
     ProgressSnapshot:
       type: object

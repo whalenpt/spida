@@ -205,6 +205,25 @@ way a run that finishes any other way does. See
 api-server-side consequence this has (not addressed here — api-server lives
 in spida-console).
 
+## Timeout
+
+```bash
+./build/Release/worker/spida-worker config.json /path/to/output-dir 30
+```
+
+An optional 3rd argument, `timeout-seconds`, enforces an **operator**
+wall-clock cap (proposal's error taxonomy: `timeout`) — not part of
+`config.json`/`SimulationConfig` itself, a deployment concern the caller
+supplies separately. Omitted or `<= 0` disables it (the only behavior
+before this). Enforced the same way `SIGTERM` is: reuses `requestCancel()`,
+checked at the run's next report checkpoint, not an immediate kill — a
+timed-out run still exits normally (code `1`) and writes its own
+`status.json` (`status: "failed"`, `failureReason: "timeout"`,
+`failureDetail`: how long the budget was), not killed mid-flight. Checked
+every accepted solver step (not throttled by `stepsPerOutput1D` the way
+`events.ndjson` progress forwarding is), so a coarse report cadence never
+delays noticing a timeout has been exceeded.
+
 ## Numerical verification
 
 Carried over from the original implementation (see the ADR for the git
