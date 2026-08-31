@@ -17,6 +17,7 @@
 // happens to use it, not a real per-model choice yet.
 
 #include <spida/config/simulationconfig.h>
+#include <spida/config/validation.h>
 #include <spida/grid/uniformRVX.h>
 #include <spida/models/burgers.h>
 #include <spida/models/kdv.h>
@@ -29,6 +30,7 @@
 #include <filesystem>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <variant>
 
 namespace spida::config {
@@ -73,16 +75,71 @@ public:
     /// (e.g. worker/src/main.cpp, given <output-dir> on argv) should always
     /// pass one explicitly. Passing a default-constructed empty path is
     /// equivalent to omitting the argument.
+    ///
+    /// Validates cfg via spida::config::validate() before touching the
+    /// grid/model/solver at all (see the delegating constructor below) —
+    /// this class stays a caller of validate(), not a second, possibly
+    /// drifting copy of what makes a config valid. Throws
+    /// std::invalid_argument (joining every field/message pair) if cfg is
+    /// invalid, same contract as before this split.
     explicit SimulationRun(const SimulationConfig& cfg, std::filesystem::path outDir = {})
+        : SimulationRun(cfg, std::move(outDir), requireValid(cfg))
+    {
+    }
+
+    /// Same bool contract as spida::SolverCV::evolve(): false means a step
+    /// itself failed at the solver level. Check propagator().stopReason()
+    /// either way to see whether/why the run stopped early (cancelled,
+    /// diverged, or hit its report budget — see spida::StopReason).
+    [[nodiscard]] bool run()
+    {
+        return m_solver->evolve(*m_propagator, m_cfg.solver.t0, m_cfg.solver.tf, m_cfg.solver.hInit);
+    }
+
+    [[nodiscard]] spida::BasePropagator& propagator()
+    {
+        return *m_propagator;
+    }
+
+    [[nodiscard]] const spida::BasePropagator& propagator() const
+    {
+        return *m_propagator;
+    }
+
+private:
+    // Private tag type — only requireValid() can produce one, so the
+    // three-argument constructor below can only run after validate(cfg) has
+    // already passed. Argument expressions (requireValid(cfg) here) are
+    // evaluated before the delegated-to constructor's member-initializer
+    // list runs, so this guarantees validation happens before m_grid is
+    // even constructed, not just before the constructor body starts.
+    struct Validated {};
+
+    [[nodiscard]] static Validated requireValid(const SimulationConfig& cfg)
+    {
+        auto errors = validate(cfg);
+        if (!errors.empty()) {
+            std::string msg =
+                "SimulationRun: invalid config (" + std::to_string(errors.size()) + " error(s)): ";
+            for (std::size_t i = 0; i < errors.size(); ++i) {
+                if (i != 0)
+                    msg += "; ";
+                msg += errors[i].field + ": " + errors[i].message;
+            }
+            throw std::invalid_argument(msg);
+        }
+        return {};
+    }
+
+    SimulationRun(const SimulationConfig& cfg, std::filesystem::path outDir, Validated)
         : m_cfg(cfg), m_grid(cfg.grid.n, cfg.grid.a, cfg.grid.b)
     {
         if (outDir.empty())
             outDir = std::filesystem::path("sim_" + cfg.name);
 
-        if (cfg.grid.kind != GridKind::uniform_rvx)
-            throw std::invalid_argument(
-                "SimulationRun: only GridKind::uniform_rvx is currently wired");
-
+        // model/grid.kind are already guaranteed valid by requireValid()
+        // above — the switch's default case below is unreachable in
+        // practice, kept only as a defensive fallback.
         switch (cfg.model) {
         case ModelKind::burgers: {
             const double mu = cfg.modelParams.value("mu", 0.0005);
@@ -127,26 +184,6 @@ public:
         m_propagator->setFinalTime(cfg.solver.tf);
     }
 
-    /// Same bool contract as spida::SolverCV::evolve(): false means a step
-    /// itself failed at the solver level. Check propagator().stopReason()
-    /// either way to see whether/why the run stopped early (cancelled,
-    /// diverged, or hit its report budget — see spida::StopReason).
-    [[nodiscard]] bool run()
-    {
-        return m_solver->evolve(*m_propagator, m_cfg.solver.t0, m_cfg.solver.tf, m_cfg.solver.hInit);
-    }
-
-    [[nodiscard]] spida::BasePropagator& propagator()
-    {
-        return *m_propagator;
-    }
-
-    [[nodiscard]] const spida::BasePropagator& propagator() const
-    {
-        return *m_propagator;
-    }
-
-private:
     SimulationConfig m_cfg;
     spida::UniformGridRVX m_grid;
     std::variant<std::monostate, spida::models::Burgers, spida::models::Kdv, spida::models::Ks> m_model;

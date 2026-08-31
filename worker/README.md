@@ -26,9 +26,23 @@ see below), promoted into the library itself at
   coefficient.
 
 Anything else in `config.json`'s `"model"` field is rejected with
-`status: "failed", failureReason: "config_validation"`. NLS/`kdv_cv` come
-later — `spida::config::ModelKind` already has room for them so the wire
-shape won't need to change again when they're wired.
+`status: "failed", failureReason: "config_validation"`, along with a
+structured `"validationErrors"` array (`{field, message}` per problem —
+see `include/spida/config/validation.h`) so a caller doesn't have to parse
+`"failureDetail"`'s free text to find out which field was wrong. The same
+check (`spida::config::validate()`) also rejects bad numeric input —
+negative `epsRel`, non-positive `hInit`, `tf <= t0`, zero `grid.n`,
+`grid.a >= grid.b`, zero `stepsPerOutput1D`/`maxReports1D` — before
+anything is constructed or `status: "running"` is even written. NLS/`kdv_cv`
+come later — `spida::config::ModelKind` already has room for them so the
+wire shape won't need to change again when they're wired.
+
+Run `spida-worker --describe` (no config/output-dir needed) to print which
+`ModelKind`×`GridKind` combinations and `SolverKind`s this build actually
+supports, plus each model's `modelParams` schema, as JSON — see
+`include/spida/config/capabilities.h`. Meant to let a frontend/api-server
+introspect a worker binary directly instead of hand-syncing enums against
+this README.
 
 Construction goes through `spida::config::SimulationRun`
 (`include/spida/config/simulationbuilder.h`), which also means any of the

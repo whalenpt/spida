@@ -8,6 +8,7 @@
 // (one SimulationEvent per line) appended as the run progresses.
 //
 // Usage: spida-worker <config.json> <output-dir>
+//        spida-worker --describe   (prints capabilities.h's JSON, exits 0)
 //
 // This is the in-tree successor to a worker originally authored and
 // numerically verified in spida-console's services/worker — see
@@ -22,9 +23,17 @@
 // instead of always requiring a hard SIGKILL from the caller. See
 // ADR-0003 for a real consequence this has on api-server's own exit-handling
 // logic that still needs to be picked up there (out of scope for this repo).
+//
+// config.json is now checked with spida::config::validate() before
+// SimulationRun is ever constructed, producing a structured
+// "validationErrors" array (field + message per entry) in status.json
+// instead of a single free-text exception message — see
+// docs/adr/0001-spida-console-backend-groundwork.md's Phase B addendum.
 
+#include <spida/config/capabilities.h>
 #include <spida/config/simulationbuilder.h>
 #include <spida/config/simulationconfig.h>
+#include <spida/config/validation.h>
 
 #include <nlohmann/json.hpp>
 
@@ -36,6 +45,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <string_view>
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -196,8 +206,13 @@ extern "C" void handleSigterm(int)
 
 int main(int argc, char** argv)
 {
+    if (argc == 2 && std::string_view(argv[1]) == "--describe") {
+        std::cout << spida::config::describeCapabilities().dump(2) << "\n";
+        return 0;
+    }
     if (argc != 3) {
-        std::cerr << "usage: spida-worker <config.json> <output-dir>\n";
+        std::cerr << "usage: spida-worker <config.json> <output-dir>\n"
+                     "       spida-worker --describe\n";
         return 2;
     }
     const fs::path configPath = argv[1];
@@ -218,6 +233,26 @@ int main(int argc, char** argv)
 
     try {
         const auto cfg = configJson.get<spida::config::SimulationConfig>();
+
+        // Checked before anything is constructed (or "running" is even
+        // written) so a bad config never claims to have started. Structured
+        // per-field errors, not just one free-text exception message — see
+        // this file's header comment and validation.h's own header comment
+        // for why (the proposal's own UX goal: inline field errors on the
+        // config form, no run created).
+        if (auto errors = spida::config::validate(cfg); !errors.empty()) {
+            const std::string detail =
+                "config validation failed (" + std::to_string(errors.size()) + " error(s))";
+            writeStatus(outDir,
+                        {{"status", "failed"},
+                         {"failureReason", "config_validation"},
+                         {"failureDetail", detail},
+                         {"validationErrors", errors},
+                         {"finishedAt", nowIso8601()}});
+            events.log("error", detail);
+            events.status("failed");
+            return 1;
+        }
 
         writeStatus(outDir, {{"status", "running"}, {"startedAt", nowIso8601()}});
         events.status("running");

@@ -22,6 +22,24 @@ servers:
   - url: /api/v1
 
 paths:
+  /capabilities:
+    get:
+      summary: What this deployment's spida-worker build actually supports
+      description: >
+        Not implemented — no api-server exists yet. Proposed to be backed
+        directly by `spida-worker --describe`'s JSON output (see
+        include/spida/config/capabilities.h), so ConfigurePage/ModelPicker
+        can render only what's actually wired instead of a hand-maintained
+        TS enum drifting from the real worker (see ADR-0001's Phase B
+        addendum, and ADR-0003 for the drift this already caused once).
+      operationId: getCapabilities
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Capabilities' }
+
   /configs:
     post:
       summary: Save a reusable SimulationConfig
@@ -345,10 +363,18 @@ components:
 
     ReportingConfig:
       type: object
-      description: Mirrors spida::config::ReportingConfig.
+      description: >
+        Mirrors spida::config::ReportingConfig. stepsPerOutput2D/
+        maxReports2D/stepsPerOutputTrack are defined now (defaulted) even
+        though no wired model reports 2D/track data yet — frozen ahead of
+        need to avoid a second wire-shape break (see ADR-0001's Phase B
+        addendum for why).
       properties:
         stepsPerOutput1D: { type: integer, minimum: 1, default: 5 }
+        stepsPerOutput2D: { type: integer, minimum: 1, default: 1 }
+        stepsPerOutputTrack: { type: integer, minimum: 1, default: 1 }
         maxReports1D: { type: integer, minimum: 1, default: 500 }
+        maxReports2D: { type: integer, minimum: 1, default: 200 }
         logFrequency: { type: integer, minimum: 1, default: 200 }
 
     SimulationConfig:
@@ -418,6 +444,10 @@ components:
             config: { $ref: '#/components/schemas/SimulationConfig' }
             failureReason: { $ref: '#/components/schemas/FailureReason' }
             failureDetail: { type: string }
+            validationErrors:
+              type: array
+              items: { $ref: '#/components/schemas/ValidationError' }
+              description: Present when failureReason == config_validation.
 
     SimulationEvent:
       type: object
@@ -454,9 +484,60 @@ components:
           items: { type: number }
           description: Explicit coordinates — never assumed uniform (Bessel-root/Chebyshev grids are not).
 
+    ValidationError:
+      type: object
+      description: >
+        Mirrors spida::config::ValidationError (include/spida/config/
+        validation.h) exactly. Lets a config form highlight the specific
+        field that was wrong instead of only showing one free-text message
+        — see ADR-0001's Phase B addendum.
+      required: [field, message]
+      properties:
+        field: { type: string, description: 'Dotted path into SimulationConfig, e.g. "solver.epsRel".' }
+        message: { type: string }
+
     Error:
       type: object
       required: [reason, message]
       properties:
         reason: { $ref: '#/components/schemas/FailureReason' }
         message: { type: string }
+        validationErrors:
+          type: array
+          items: { $ref: '#/components/schemas/ValidationError' }
+          description: Present when reason == config_validation.
+
+    Capabilities:
+      type: object
+      description: >
+        Mirrors spida::config::describeCapabilities() (include/spida/
+        config/capabilities.h) exactly — what a given spida-worker build
+        actually supports, sourced from `spida-worker --describe` rather
+        than hand-maintained here, so this never has to be kept in sync by
+        hand a second time (see ADR-0001's Phase B addendum for the drift
+        this is meant to prevent).
+      required: [schemaVersion, models, solvers]
+      properties:
+        schemaVersion: { type: integer }
+        models:
+          type: array
+          items:
+            type: object
+            required: [model, grids, modelParams]
+            properties:
+              model: { $ref: '#/components/schemas/ModelKind' }
+              grids:
+                type: array
+                items: { $ref: '#/components/schemas/GridKind' }
+              modelParams:
+                type: array
+                items:
+                  type: object
+                  required: [name, type]
+                  properties:
+                    name: { type: string }
+                    type: { type: string }
+                    default: {}
+        solvers:
+          type: array
+          items: { $ref: '#/components/schemas/SolverKind' }

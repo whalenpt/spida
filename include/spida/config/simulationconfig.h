@@ -64,19 +64,35 @@ struct SolverConfig {
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SolverConfig, kind, epsRel, t0, tf, hInit, logProgress)
 
-/// Mirrors the subset of BasePropagator's setters simulationbuilder.h wires;
-/// see include/spida/propagator/propagator.h for the full set (2D/track
-/// cadence are omitted here since every model wired today only reports 1D).
+/// Mirrors BasePropagator's setters (include/spida/propagator/propagator.h)
+/// and the proposal's own domain.ts ReportingConfig field-for-field.
 /// logFrequency lives here, not on SolverConfig, matching the real worker
 /// wire contract (spida-console's apps/web sends it nested under
 /// "reporting", not "solver" — see ADR-0003).
+///
+/// stepsPerOutput2D/maxReports2D/stepsPerOutputTrack are defaulted and
+/// currently unused by simulationbuilder.h — no model wired today
+/// (burgers/kdv_rv/ks) reports 2D or track data. Kept present rather than
+/// added later specifically to freeze the wire shape now: ADR-0003 already
+/// had to realign this struct's shape once (modelParams, logFrequency's
+/// nesting) when the real worker/frontend contract turned out to differ
+/// from what was speculatively designed — adding these fields after a 2D
+/// model exists would risk the same kind of break a second time.
 struct ReportingConfig {
     unsigned stepsPerOutput1D{5};
+    unsigned stepsPerOutput2D{1};
+    unsigned stepsPerOutputTrack{1};
     unsigned maxReports1D{500};
+    unsigned maxReports2D{200};
     unsigned logFrequency{200};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-    ReportingConfig, stepsPerOutput1D, maxReports1D, logFrequency)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportingConfig,
+                                                stepsPerOutput1D,
+                                                stepsPerOutput2D,
+                                                stepsPerOutputTrack,
+                                                maxReports1D,
+                                                maxReports2D,
+                                                logFrequency)
 
 struct SimulationConfig {
     std::string name{"run"};

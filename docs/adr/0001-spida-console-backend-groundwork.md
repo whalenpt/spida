@@ -92,3 +92,55 @@ in the separate `spida-console` repo per the proposal's own file structure):
   whoever extends the pilot to KdV/KS/NLS.
 - **Explicitly out of scope, on purpose:** no REST/WS/queue code was added anywhere; that
   work is [ADR-0002](0002-spida-console-phase2-live-feedback.md).
+
+## Addendum: Phase B (structured validation, capability discovery)
+
+Three follow-ups, done on the same branch as
+[ADR-0003](0003-worker-relocation-and-cooperative-cancellation.md)'s addendum, closing gaps
+identified by reading `SimulationRun`/`spida-worker` against this ADR's own stated goal —
+"inline field errors on the config form; no run is created" — which plain exceptions can't
+actually deliver:
+
+1. **`spida::config::validate()`** (`include/spida/config/validation.h`), a pure function
+   returning `std::vector<ValidationError>` (`{field, message}`, JSON-serializable). Mirrors
+   every check `SimulationRun`'s constructor and the classes it builds (`UniformGridX`,
+   `Control::setEpsRel`, `BasePropagator::validatePositive()`) already enforced via
+   exceptions — but as data, keyed by field, instead of one free-text message. `SimulationRun`
+   now calls it itself first (a private delegating constructor evaluates
+   `requireValid(cfg)` before `m_grid` is even constructed), so it stays the single source of
+   truth rather than a second, possibly-drifting opinion layered on top — still throws
+   `std::invalid_argument` on failure, same contract as before.
+
+   **A real, previously-silent bug this closes:** `Control::setEpsRel` throws
+   `detail::Exception` (`src/utils/except.h`), not `std::invalid_argument` — `spida-worker`'s
+   catch chain only mapped `std::invalid_argument`/`nlohmann::json::exception` to
+   `failureReason: "config_validation"`, so a negative `epsRel` fell through to the generic
+   `"runtime_exception"` catch instead, misclassifying a plain bad-input error as a crash.
+   `validate()` rejects it before `Control::setEpsRel` is ever reached. Covered by
+   `VALIDATE_TEST.REJECTS_NEGATIVE_EPS_REL`'s regression comment in `test/config_tests.cpp`.
+
+   `spida-worker` now calls `validate()` immediately after parsing `config.json`, before
+   writing `status: "running"` or constructing anything, and writes a structured
+   `"validationErrors"` array into `status.json` alongside the existing `"failureDetail"`
+   string (`docs/api/openapi.yaml`'s `Error`/`Simulation` schemas updated to match).
+
+2. **`spida::config::describeCapabilities()`** (`include/spida/config/capabilities.h`),
+   returning JSON: which `ModelKind`s are wired, each one's supported `GridKind`s and
+   `modelParams` schema, and the full `SolverKind` list. Wired into `spida-worker --describe`
+   (prints the JSON, exits 0, no config/output-dir required). Motivated directly by
+   ADR-0003's own account of real drift: *"the wire shape had to be realigned... rather than
+   the shape ADR-0001 had speculatively designed."* Lets a frontend/api-server introspect a
+   worker binary instead of hand-syncing enums across the repo boundary — `docs/api/
+   openapi.yaml` documents a (not-yet-implemented) `GET /capabilities` proposed to be backed
+   by exactly this. **Not generated** — kept by hand in sync with `validate()` and
+   `SimulationRun`'s own switch statements; extend it in the same commit that wires a new
+   `ModelKind`/`GridKind`.
+
+3. **`ReportingConfig`'s wire shape frozen now**, not extended later:
+   `stepsPerOutput2D`/`maxReports2D`/`stepsPerOutputTrack` added (defaulted, currently unused
+   — no wired model reports 2D/track data), matching the proposal's own `domain.ts` shape in
+   full. Done specifically to avoid a second wire-shape break of the kind ADR-0003 already
+   describes for `modelParams`/`logFrequency`'s placement.
+
+Verified via the project's mandated Release build+test cycle (`conan install` → `cmake
+--preset conan-release -DSPIDA_TEST=ON -DSPIDA_DEMOS=ON -DSPIDA_WORKER=ON` → build → `ctest`).
