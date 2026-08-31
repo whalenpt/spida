@@ -157,3 +157,50 @@ repo's. Flagged here so it isn't lost.
   three models use it); `kdv_cv`/`nls_r`/`nls_rt` remain unimplemented,
   same as ADR-0001 left them. The `api-server` consequence above is real
   and unaddressed by this repo alone.
+
+## Addendum: two gaps closed (Phase A)
+
+Two gaps in the worker as relocated above — found by reading the code
+against ADR-0001's own seams, not by anything failing — were closed on the
+same branch:
+
+1. **`ProgressSnapshot.tf` was always null.** Nothing between
+   `spida::config::SimulationRun`'s constructor and the worker ever called
+   `BasePropagator::setFinalTime()`, even though `cfg.solver.tf` is known
+   the moment a config is parsed. Every progress event's `tf` field was
+   silently `null` — `events.schema.json` and `EventLog::progress()` both
+   correctly treat it as optional, so nothing broke loudly, but a
+   `ProgressPanel`'s `t/tf` bar would have had nothing to divide by.
+   Fixed: `SimulationRun`'s constructor now calls
+   `m_propagator->setFinalTime(cfg.solver.tf)`. Covered by
+   `SimulationRunTest.PROGRESS_SNAPSHOT_TF_IS_POPULATED`
+   (`test/config_tests.cpp`).
+
+2. **The manifest was built by re-reading files the worker had just
+   written**, not by using the report sink ADR-0001 added for exactly this
+   purpose. `buildManifest()` scanned `outDir` after the run, regex-matched
+   `"<name>_<i>.json"` filenames to recover a series' name/index, and
+   re-parsed each file's `"type"` field — the same file-tailing/re-parsing
+   pattern ADR-0002 explicitly rejected for the *progress* channel ("added
+   latency, races on partial writes, and re-parsing JSON the same process
+   just serialized"). The same argument applies to the manifest and wasn't
+   carried through when this worker was written. Fixed: `worker/src/main.cpp`
+   now registers a `ManifestBuilder` via `BasePropagator::setReportSink()`,
+   accumulating each series' `kind`/`valueType`/`frameCount` in-process, at
+   the moment `report1D()`/`report2D()` call the sink — no directory scan, no
+   regex, no re-parsing. Report files are still written to disk as before
+   (`setWriteReportFiles` stays at its default `true`); only the manifest's
+   *construction* changed.
+
+   **Known limitation carried forward, now explicit in code**: the sink's
+   JSON `"type"` field (`"xy"`/`"xy_complex"`/`"xyz"`/`"xyz_complex"`)
+   cannot distinguish a `Track` series from a one-shot `Report1D` — both
+   serialize `"xy"`. Moot today (none of `burgers`/`kdv_rv`/`ks` register a
+   Track report), but the day one does, this needs either a separate sink
+   per report kind or a richer `ReportHandler::Sink` signature that says
+   which kind called it.
+
+Verified via the project's mandated Release build+test cycle (`rm -rf
+build/` not required — no CMakeLists.txt changes; `conan install` →
+`cmake --preset conan-release -DSPIDA_TEST=ON -DSPIDA_DEMOS=ON
+-DSPIDA_WORKER=ON` → build → `ctest`), 11/11 binaries passing.

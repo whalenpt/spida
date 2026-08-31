@@ -35,7 +35,6 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <regex>
 #include <string>
 
 namespace fs = std::filesystem;
@@ -126,67 +125,58 @@ private:
     std::size_t m_seq{0};
 };
 
-// ---- Manifest: summarize whatever report files SPIDA itself wrote --------
-// Unchanged from the original worker. Convention verified against
-// src/propagator/propagator.cpp and src/utils/report.hpp:
-// BasePropagator::report1D()/report2D() write a numbered "<name>_<i>.json"
-// family (a "field1d"/"field2d" series, one frame per report);
-// BasePropagator::reportTrack() overwrites a single un-numbered
-// "<name>.json" every call (a "track" series) — not distinguishable from a
-// one-shot Report1D by JSON shape alone, only by this naming convention.
-json buildManifest(const fs::path& dir)
-{
+// ---- Manifest: summarized from ReportHandler's sink, not by re-reading ---
+// the files SPIDA itself just wrote. The original worker re-parsed each
+// "<name>_<i>.json" off disk and regex-matched filenames to recover what
+// this JSON already told us the moment it was produced — exactly the
+// file-tailing/re-parsing pattern docs/adr/0002-spida-console-phase2-live-
+// feedback.md rejected for the progress channel ("added latency, races on
+// partial writes, and re-parsing JSON the same process just serialized").
+// Same argument applies here: setReportSink() (ADR-0001) delivers each
+// report's name and JSON in-process, at the moment BasePropagator::report1D
+// ()/report2D() call it, with no filesystem round-trip.
+//
+// "type" in that JSON ("xy"/"xy_complex"/"xyz"/"xyz_complex") distinguishes
+// real vs complex and 1D vs 2D unambiguously. It does NOT distinguish a
+// Track series from a one-shot Report1D — both serialize "xy". None of the
+// three models wired today (burgers/kdv_rv/ks) register a Track report (see
+// each model's own header), so that ambiguity is moot for now; it becomes
+// live the day a model adds one, at which point this needs either a
+// separate sink per report kind or a richer Sink signature that says which
+// kind called it — flagged here rather than silently assumed away.
+class ManifestBuilder {
+public:
+    void observe(std::string_view name, const json& j)
+    {
+        auto& s = m_series[std::string(name)];
+        const std::string type = j.value("type", "xy");
+        s.valueType = (type == "xy_complex" || type == "xyz_complex") ? "complex" : "real";
+        s.kind = (type == "xyz" || type == "xyz_complex") ? "field2d" : "field1d";
+        s.frameCount++;
+    }
+
+    [[nodiscard]] json build() const
+    {
+        json out = json::array();
+        for (auto const& [name, s] : m_series) {
+            out.push_back({
+                {"name", name},
+                {"kind", s.kind},
+                {"valueType", s.valueType},
+                {"frameCount", s.frameCount},
+            });
+        }
+        return out;
+    }
+
+private:
     struct Series {
         std::string kind;
         std::string valueType;
-        int maxIndex = -1;
-        bool single = false;
+        std::size_t frameCount = 0;
     };
-    std::map<std::string, Series> series;
-    static const std::regex numbered(R"(^(.+)_(\d+)\.json$)");
-
-    for (auto const& entry : fs::directory_iterator(dir)) {
-        if (!entry.is_regular_file() || entry.path().extension() != ".json")
-            continue;
-        auto fname = entry.path().filename().string();
-        if (fname == "status.json" || fname == "manifest.json" || fname == "config.json")
-            continue;
-
-        std::smatch m;
-        bool isNumbered = std::regex_match(fname, m, numbered);
-        std::string name = isNumbered ? m[1].str() : entry.path().stem().string();
-
-        std::ifstream is(entry.path());
-        json j;
-        is >> j;
-        std::string type = j.value("type", "xy");
-        std::string valueType = (type == "xy_complex" || type == "xyz_complex") ? "complex" : "real";
-        std::string kind = (type == "xyz" || type == "xyz_complex") ? "field2d" : "field1d";
-
-        auto& s = series[name];
-        s.valueType = valueType;
-        if (isNumbered) {
-            int idx = std::stoi(m[2].str());
-            s.maxIndex = std::max(s.maxIndex, idx);
-            s.kind = kind;
-        }
-        else {
-            s.single = true;
-            s.kind = "track";
-        }
-    }
-
-    json out = json::array();
-    for (auto const& [name, s] : series) {
-        out.push_back({
-            {"name", name},
-            {"kind", s.kind},
-            {"valueType", s.valueType},
-            {"frameCount", s.single ? 1 : s.maxIndex + 1},
-        });
-    }
-    return out;
-}
+    std::map<std::string, Series> m_series;
+};
 
 // ---- SIGTERM -> cooperative cancel ---------------------------------------
 // api-server sends SIGTERM to cancel a running job (see jobs.ts's
@@ -247,11 +237,17 @@ int main(int argc, char** argv)
                 events.progress(s);
         });
 
+        // Report files are still written to outDir as before (setWriteReportFiles
+        // defaults to true) — the sink only adds an in-process observation of
+        // the same data, replacing the manifest's old post-run file scan.
+        ManifestBuilder manifest;
+        run.propagator().setReportSink(
+            [&manifest](std::string_view name, const json& j) { manifest.observe(name, j); });
+
         const bool stepOk = run.run();
 
-        auto manifest = buildManifest(outDir);
         std::ofstream mf(outDir / "manifest.json");
-        mf << json{{"simulationId", outDir.filename().string()}, {"series", manifest}}.dump(2);
+        mf << json{{"simulationId", outDir.filename().string()}, {"series", manifest.build()}}.dump(2);
 
         if (!stepOk) {
             const std::string detail = "solver.evolve() returned false (a solver step failed)";

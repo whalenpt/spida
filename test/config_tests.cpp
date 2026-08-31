@@ -2,6 +2,7 @@
 #include "spida/config/simulationconfig.h"
 
 #include <filesystem>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -128,6 +129,31 @@ TEST_F(SimulationRunTest, BURGERS_PILOT_RUNS_TO_COMPLETION)
     SimulationRun run(m_cfg);
     EXPECT_TRUE(run.run());
     EXPECT_EQ(run.propagator().stopReason(), spida::StopReason::None);
+}
+
+TEST_F(SimulationRunTest, PROGRESS_SNAPSHOT_TF_IS_POPULATED)
+{
+    // SimulationRun's constructor should call setFinalTime(cfg.solver.tf)
+    // so every ProgressSnapshot a caller observes has tf set, not just t —
+    // previously left unset (see simulationbuilder.h's header comment).
+    m_cfg.name = "run_progress_tf";
+    m_cfg.grid.n = 64;
+    m_cfg.grid.a = -spida::PI;
+    m_cfg.grid.b = spida::PI;
+    m_cfg.solver.t0 = 0.0;
+    m_cfg.solver.tf = 0.05;
+    m_cfg.solver.hInit = 0.01;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    std::vector<spida::ProgressSnapshot> seen;
+    run.propagator().setProgressObserver(
+        [&seen](const spida::ProgressSnapshot& s) { seen.push_back(s); });
+
+    EXPECT_TRUE(run.run());
+    ASSERT_FALSE(seen.empty());
+    ASSERT_TRUE(seen.front().tf.has_value());
+    EXPECT_DOUBLE_EQ(*seen.front().tf, m_cfg.solver.tf);
 }
 
 TEST_F(SimulationRunTest, CANCEL_REQUESTED_BEFORE_RUN_STOPS_EARLY)

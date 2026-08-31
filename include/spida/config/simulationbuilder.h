@@ -118,6 +118,13 @@ public:
         m_propagator->setLogProgress(cfg.solver.logProgress);
         if (cfg.solver.logProgress)
             m_propagator->setLogFrequency(cfg.reporting.logFrequency);
+        // cfg.solver.tf is known up front (it's part of the submitted config,
+        // not something evolve() discovers) — set it so every
+        // ProgressSnapshot a caller observes via setProgressObserver() has
+        // tf populated, not just t. Previously left unset: nothing here ever
+        // called setFinalTime(), so every progress event's tf was null even
+        // though the value was available the whole time.
+        m_propagator->setFinalTime(cfg.solver.tf);
     }
 
     /// Same bool contract as spida::SolverCV::evolve(): false means a step
