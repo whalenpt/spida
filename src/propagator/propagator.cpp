@@ -43,6 +43,16 @@ void BasePropagator::addReport(std::unique_ptr<TrackData> def)
     this->m_report_handler->addReport(std::move(def));
 }
 
+void BasePropagator::setReportSink(std::function<void(std::string_view, const nlohmann::json&)> sink)
+{
+    this->m_report_handler->setSink(std::move(sink));
+}
+
+void BasePropagator::setWriteReportFiles(bool val)
+{
+    this->m_report_handler->setWriteFiles(val);
+}
+
 BasePropagator::BasePropagator(const std::filesystem::path& dir_path)
     : m_report_handler(std::make_unique<ReportHandler>()),
       m_dir_path(dir_path),
@@ -135,10 +145,24 @@ bool BasePropagator::maxReportReached() const
 
 bool BasePropagator::stepUpdate(double t)
 {
+    return this->stepUpdate(t, 0.0);
+}
+
+bool BasePropagator::stepUpdate(double t, double dt)
+{
     const auto step = this->m_steps_taken + 1;
     this->m_stat->updateTracker("t", t);
-    if (this->readyForReport(step))
+    if (this->readyForReport(step)) {
         this->updateFields(t);
+        if (this->checkDiverged(t)) {
+            this->m_stop_reason = StopReason::Diverged;
+            return false;
+        }
+    }
+    if (this->cancelRequested()) {
+        this->m_stop_reason = StopReason::CancelRequested;
+        return false;
+    }
     if (this->ready1D(step))
         this->report1D(t);
     if (this->ready2D(step))
@@ -147,8 +171,21 @@ bool BasePropagator::stepUpdate(double t)
         this->reportTrack(t);
     if (this->m_log_progress && !(step % this->m_log_freq))
         this->reportStats();
+    if (this->m_progress_observer) {
+        ProgressSnapshot snapshot;
+        snapshot.t = t;
+        snapshot.tf = this->m_tf;
+        snapshot.stepsTaken = step;
+        if (dt > 0.0)
+            snapshot.currentStepSize = dt;
+        this->m_progress_observer(snapshot);
+    }
     this->m_steps_taken = step;
-    return !this->maxReportReached();
+    if (this->maxReportReached()) {
+        this->m_stop_reason = StopReason::MaxReportsReached;
+        return false;
+    }
+    return true;
 }
 
 void BasePropagator::reportStats() const

@@ -234,6 +234,7 @@ bool SolverCV_AS::evolve(std::vector<dcmplx>& u, double t0, double tf, double h)
 
 bool SolverCV_AS::evolve(PropagatorCV& propagator, double t0, double tf, double h) noexcept
 {
+    propagator.setFinalTime(tf);
     propagator.report(t0);
     SolverCV::setCurrentTime(t0);
     if (h > (tf - t0))
@@ -244,7 +245,7 @@ bool SolverCV_AS::evolve(PropagatorCV& propagator, double t0, double tf, double 
     while (SolverCV::currentTime() < tf && report) {
         if (!SolverCV_AS::step(propagator.propagator(), dt, dt_next))
             return false;
-        report = propagator.stepUpdate(SolverCV::currentTime());
+        report = propagator.stepUpdate(SolverCV::currentTime(), dt);
         if (SolverCV::currentTime() + dt_next > tf)
             dt = tf - SolverCV::currentTime();
         else
@@ -287,6 +288,7 @@ void SolverCV_CS::step(std::vector<dcmplx>& in, double dt) noexcept
 
 bool SolverCV_CS::evolve(PropagatorCV& propagator, double t0, double tf, double h) noexcept
 {
+    propagator.setFinalTime(tf);
     SolverCV::setCurrentTime(t0);
     propagator.report(t0);
     bool report = true;
@@ -294,7 +296,7 @@ bool SolverCV_CS::evolve(PropagatorCV& propagator, double t0, double tf, double 
         if ((SolverCV::currentTime() + h) > tf)
             h = tf - SolverCV::currentTime();
         SolverCV_CS::step(propagator.propagator(), h);
-        report = propagator.stepUpdate(SolverCV::currentTime());
+        report = propagator.stepUpdate(SolverCV::currentTime(), h);
     }
     propagator.report(SolverCV::currentTime());
     if (SolverCV::logProgress())

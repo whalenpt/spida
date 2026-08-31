@@ -39,5 +39,13 @@ foreach(target IN LISTS DEMO_TARGETS)
     target_link_libraries(${target} PUBLIC SPIDA::spida)
 endforeach()
 
+# Opt-in: config-driven SimulationRun + cooperative cancel + structured
+# progress — see include/spida/config/, include/spida/models/, and this
+# file's header comment for scope (Burgers pilot only, so far).
+if(SPIDA_WORKER_EXAMPLE)
+    add_executable(worker_example worker_example.cpp)
+    target_link_libraries(worker_example PUBLIC SPIDA::spida)
+endif()
+
 
 
