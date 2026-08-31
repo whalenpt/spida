@@ -500,14 +500,27 @@ components:
       type: object
       required: [name, kind, valueType, frameCount, gridCoords]
       properties:
-        name: { type: string, description: 'Matches the report label, e.g. "X", "SX".' }
+        name: { type: string, description: 'Matches the report label, e.g. "X", "SX", "RT".' }
         kind: { $ref: '#/components/schemas/SeriesKind' }
         valueType: { $ref: '#/components/schemas/ValueType' }
         frameCount: { type: integer, minimum: 1 }
         gridCoords:
           type: array
           items: { type: number }
-          description: Explicit coordinates — never assumed uniform (Bessel-root/Chebyshev grids are not).
+          description: >
+            Explicit coordinates for the x axis — never assumed uniform
+            (Bessel-root/Chebyshev grids are not). For kind == "field2d"
+            this is specifically the x axis; see gridCoordsY for the
+            second axis.
+        gridCoordsY:
+          type: array
+          items: { type: number }
+          description: >
+            Explicit coordinates for the y axis. Present (and required) only
+            when kind == "field2d" — e.g. nls_rt's "RT" series has non-
+            uniform r (gridCoords) and uniform t (gridCoordsY) as its two
+            independent axes. Absent for field1d/track. See
+            docs/api/binary-frame-spec.md's "2D frames" section.
 
     ValidationError:
       type: object
