@@ -64,8 +64,13 @@ TEST(VALIDATE_TEST, DEFAULT_CONFIG_IS_VALID)
 
 TEST(VALIDATE_TEST, REJECTS_UNWIRED_MODEL_KIND_WITH_FIELD)
 {
+    // All six ModelKind enumerators are wired as of nls_rt (Phase E) --
+    // nothing legitimate is left to construct here. Exercises validate()'s
+    // defensive default: branch instead, via a value outside the
+    // enumerator set (well-defined: ModelKind's underlying type can
+    // represent it, only the switch's named cases can't match it).
     SimulationConfig cfg;
-    cfg.model = ModelKind::nls_rt; // still unwired -- needs a second grid dimension
+    cfg.model = static_cast<ModelKind>(-1);
     auto errors = validate(cfg);
     ASSERT_EQ(errors.size(), 1u);
     EXPECT_EQ(errors[0].field, "model");
@@ -219,6 +224,77 @@ TEST(VALIDATE_TEST, KDV_CV_WITH_UNIFORM_CVX_IS_VALID)
     EXPECT_TRUE(validate(cfg).empty());
 }
 
+TEST(VALIDATE_TEST, REJECTS_NLS_RT_MISSING_GRID_T)
+{
+    // grid.kind correct (bessel_root_r) but gridT.kind left at its default
+    // (uniform_rvx, meaningless for nls_rt) -- the two-grid pairing check.
+    SimulationConfig cfg;
+    cfg.model = ModelKind::nls_rt;
+    cfg.grid.kind = GridKind::bessel_root_r;
+    auto errors = validate(cfg);
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].field, "gridT.kind");
+}
+
+TEST(VALIDATE_TEST, REJECTS_NLS_RT_WITH_WRONG_GRID_KIND)
+{
+    SimulationConfig cfg;
+    cfg.model = ModelKind::nls_rt;
+    cfg.grid.kind = GridKind::uniform_rvx; // wrong -- needs bessel_root_r
+    cfg.gridT.kind = GridKind::uniform_cvt;
+    cfg.gridT.a = -6.0;
+    cfg.gridT.b = 6.0;
+    auto errors = validate(cfg);
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].field, "grid.kind");
+}
+
+TEST(VALIDATE_TEST, REJECTS_INVERTED_GRID_T_BOUNDS)
+{
+    SimulationConfig cfg;
+    cfg.model = ModelKind::nls_rt;
+    cfg.grid.kind = GridKind::bessel_root_r;
+    cfg.gridT.kind = GridKind::uniform_cvt;
+    cfg.gridT.a = 6.0;
+    cfg.gridT.b = -6.0;
+    auto errors = validate(cfg);
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].field, "gridT.b");
+}
+
+TEST(VALIDATE_TEST, NLS_RT_WITH_BOTH_GRIDS_IS_VALID)
+{
+    SimulationConfig cfg;
+    cfg.model = ModelKind::nls_rt;
+    cfg.grid.kind = GridKind::bessel_root_r;
+    cfg.grid.rMax = 4.0;
+    cfg.gridT.kind = GridKind::uniform_cvt;
+    cfg.gridT.a = -6.0;
+    cfg.gridT.b = 6.0;
+    EXPECT_TRUE(validate(cfg).empty());
+}
+
+TEST(VALIDATE_TEST, REJECTS_ZERO_STEPS_PER_OUTPUT_2D)
+{
+    // Checked unconditionally now that simulationbuilder.h calls
+    // setStepsPerOutput2D()/setMaxReports2D() for every model, not just
+    // nls_rt -- see validation.h's own comment.
+    SimulationConfig cfg;
+    cfg.reporting.stepsPerOutput2D = 0;
+    auto errors = validate(cfg);
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].field, "reporting.stepsPerOutput2D");
+}
+
+TEST(VALIDATE_TEST, REJECTS_ZERO_MAX_REPORTS_2D)
+{
+    SimulationConfig cfg;
+    cfg.reporting.maxReports2D = 0;
+    auto errors = validate(cfg);
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].field, "reporting.maxReports2D");
+}
+
 TEST(VALIDATE_TEST, REPORTS_MULTIPLE_ERRORS_AT_ONCE)
 {
     SimulationConfig cfg;
@@ -252,14 +328,15 @@ TEST(SIMULATION_RUN_CONSTRUCTOR_TEST, INVALID_CONFIG_STILL_THROWS_INVALID_ARGUME
 //  Capability discovery (Phase B)
 // ============================================================
 
-TEST(CAPABILITIES_TEST, DESCRIBES_ALL_FIVE_WIRED_MODELS)
+TEST(CAPABILITIES_TEST, DESCRIBES_ALL_SIX_WIRED_MODELS)
 {
     auto caps = spida::config::describeCapabilities();
     ASSERT_TRUE(caps.contains("models"));
     std::vector<std::string> names;
     for (auto const& m : caps.at("models"))
         names.push_back(m.at("model").get<std::string>());
-    EXPECT_EQ(names, (std::vector<std::string>{"burgers", "kdv_rv", "ks", "kdv_cv", "nls_r"}));
+    EXPECT_EQ(names,
+              (std::vector<std::string>{"burgers", "kdv_rv", "ks", "kdv_cv", "nls_r", "nls_rt"}));
 }
 
 TEST(CAPABILITIES_TEST, LISTS_ALL_FOUR_SOLVER_KINDS)
@@ -288,7 +365,10 @@ protected:
 
 TEST_F(SimulationRunTest, REJECTS_UNWIRED_MODEL_KIND)
 {
-    m_cfg.model = ModelKind::nls_rt; // still unwired -- needs a second grid dimension
+    // All six ModelKind enumerators are wired as of nls_rt (Phase E) --
+    // see VALIDATE_TEST.REJECTS_UNWIRED_MODEL_KIND_WITH_FIELD for why this
+    // now uses an out-of-range value instead of a real enumerator.
+    m_cfg.model = static_cast<ModelKind>(-1);
     EXPECT_THROW(SimulationRun run(m_cfg), std::invalid_argument);
 }
 
@@ -456,6 +536,71 @@ TEST_F(SimulationRunTest, NLS_R_POWER_IS_CONSERVED)
     const double finalPower = power(run.propagator().propagator());
 
     EXPECT_NEAR(finalPower, initialPower, 1e-4 * initialPower);
+}
+
+TEST_F(SimulationRunTest, NLS_RT_PILOT_RUNS_TO_COMPLETION)
+{
+    m_cfg.name = "run_nls_rt";
+    m_cfg.model = ModelKind::nls_rt;
+    m_cfg.grid.kind = GridKind::bessel_root_r;
+    m_cfg.grid.n = 32;
+    m_cfg.grid.rMax = 4.0;
+    m_cfg.gridT.kind = GridKind::uniform_cvt;
+    m_cfg.gridT.n = 64;
+    m_cfg.gridT.a = -6.0;
+    m_cfg.gridT.b = 6.0;
+    m_cfg.modelParams = {{"gamma", 2.0}, {"amplitude", 4.0}};
+    m_cfg.solver.epsRel = 1e-8;
+    m_cfg.solver.t0 = 0.0;
+    m_cfg.solver.tf = 0.01;
+    m_cfg.solver.hInit = 0.001;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+    m_cfg.reporting.stepsPerOutput2D = 1;
+
+    SimulationRun run(m_cfg);
+    EXPECT_TRUE(run.run());
+    EXPECT_EQ(run.propagator().stopReason(), spida::StopReason::None);
+}
+
+TEST_F(SimulationRunTest, NLS_RT_POWER_IS_CONSERVED)
+{
+    // Same conservation argument as NLS_R_POWER_IS_CONSERVED above: L(k) is
+    // purely dispersive here too (see spida/models/nls.h's NlsRt comment),
+    // so the spectral-space L2 norm should be approximately conserved,
+    // with error shrinking as tf/step size shrink. Measured empirically at
+    // these settings before picking the tolerance below: ~6.35e-4 relative
+    // deviation (tf=0.005, epsRel=1e-10) — 2e-3 leaves ~3x margin.
+    m_cfg.name = "run_nls_rt_power";
+    m_cfg.model = ModelKind::nls_rt;
+    m_cfg.grid.kind = GridKind::bessel_root_r;
+    m_cfg.grid.n = 32;
+    m_cfg.grid.rMax = 4.0;
+    m_cfg.gridT.kind = GridKind::uniform_cvt;
+    m_cfg.gridT.n = 64;
+    m_cfg.gridT.a = -6.0;
+    m_cfg.gridT.b = 6.0;
+    m_cfg.modelParams = {{"gamma", 2.0}, {"amplitude", 4.0}};
+    m_cfg.solver.epsRel = 1e-10;
+    m_cfg.solver.t0 = 0.0;
+    m_cfg.solver.tf = 0.005;
+    m_cfg.solver.hInit = 0.0005;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+    m_cfg.reporting.stepsPerOutput2D = 1;
+
+    SimulationRun run(m_cfg);
+    auto power = [](const std::vector<spida::dcmplx>& v) {
+        double p = 0.0;
+        for (auto const& c : v)
+            p += std::norm(c);
+        return p;
+    };
+    const double initialPower = power(run.propagator().propagator());
+    ASSERT_GT(initialPower, 0.0);
+
+    EXPECT_TRUE(run.run());
+    const double finalPower = power(run.propagator().propagator());
+
+    EXPECT_NEAR(finalPower, initialPower, 2e-3 * initialPower);
 }
 
 TEST_F(SimulationRunTest, REJECTS_UNWIRED_GRID_KIND)

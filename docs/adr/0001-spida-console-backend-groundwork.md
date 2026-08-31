@@ -270,3 +270,53 @@ passing, all new/updated tests passing individually.
 
 Verified via the mandated Release build+test cycle, 11/11 binaries passing, all new/updated
 tests passing individually, `spida-worker --describe` confirmed to list `kdv_cv` for real.
+
+## Addendum: Phase E (nls_rt — the actual two-grid wire-contract decision)
+
+Phase D's addendum left `nls_rt` open pending a decision on how `SimulationConfig` should
+represent a second, independent grid dimension. Decision made (by the user, presented with
+three options — a sibling `gridT` field, turning `grid` into an array, or deferring `nls_rt`
+entirely): **add `SimulationConfig.gridT: GridConfig`**, a sibling to the existing `grid`
+field, absent/default-valued for every model except `nls_rt`.
+
+1. **`GridKind::uniform_cvt` added**, same pattern as Phase D's `uniform_cvx` — not in the
+   proposal's own `domain.ts`, needed because `UniformGridCVT` (the time/frequency dimension
+   `SpidaRCVT` needs) is a distinct grid type. Its constructor is also `(n, min, max)`, so
+   `gridT` reuses the existing `GridConfig` shape — no new fields needed there either.
+
+2. **`spida::models::NlsRt`/`NlsRtPropagator`** (`include/spida/models/nls.h`, appended
+   alongside `NlsR`/`NlsRPropagator`), promoted from `demos/NLSRT.cpp`. 2D radial +
+   time/frequency cubic NLS; `L(k)` stays purely dispersive (imaginary), same structural shape
+   as `nls_r`'s, so the same verification argument applies. `gamma`/`amplitude` exposed via
+   `modelParams`, matching `nls_r`'s pattern; the demo's mirroring/downsampling (presentation-
+   only) was dropped, same choice `nls_r` made — reports the grids' own coordinates directly.
+
+3. **The first model to actually exercise `ReportingConfig.stepsPerOutput2D`/`maxReports2D`**
+   (frozen into the wire shape back in Phase B, unused until now) and the worker manifest's
+   `"field2d"` classification (built in Phase A, also unknowingly ahead of any 2D model
+   existing) — both worked without modification the moment a 2D-reporting model existed,
+   confirming Phase C's guess about `nls_rt`'s blocker (2D report framing) was wrong; the real
+   blocker was always the two-grid question this addendum resolves.
+
+   **A real landmine found and closed while wiring this**: `simulationbuilder.h` now calls
+   `setStepsPerOutput2D()`/`setMaxReports2D()` for *every* model (not just `nls_rt`), since
+   `BasePropagator::maxReportReached()` checks `m_report_count2D >= m_max_reports2D`
+   *regardless of whether any 2D report is registered* — a 1D-only model given
+   `reporting.maxReports2D: 0` would previously have stopped after zero steps the instant that
+   check started running for real. `validate()` now rejects `stepsPerOutput2D`/`maxReports2D
+   == 0` unconditionally (not gated on `cfg.model`), closing this before it could ever fire.
+
+4. **Numerical verification**: same conservation-law check as `nls_r`, same empirical-before-
+   asserted discipline. Measured ~6.35e-4 relative deviation at `tf=0.005`, `epsRel=1e-10`,
+   `grid.n=32`, `gridT.n=64` — test tolerance set to `2e-3` (~3x margin, not the ~16x/38x
+   margins Phases C/D used, because this test's settings were chosen to keep a 2D run's
+   CI wall-clock cost low rather than to chase the tightest possible measured error; the
+   margin is still real, just smaller by choice).
+
+All six `ModelKind` enumerators are wired end to end as of this addendum. `validate()`'s
+"unwired model" tests (`REJECTS_UNWIRED_MODEL_KIND`/`_WITH_FIELD`) were rewritten to use
+`static_cast<ModelKind>(-1)` instead of a real enumerator, since none remain unwired.
+
+Verified via the mandated Release build+test cycle, 11/11 binaries passing, all new/updated
+tests passing individually, `spida-worker --describe` confirmed to list `nls_rt` (with its
+`gridT` requirement) for real.

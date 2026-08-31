@@ -9,9 +9,9 @@ spida-console, and exactly what changed along the way.
 
 ## Scope
 
-Five models are implemented, promoted into the library itself at
-`include/spida/models/{burgers,kdv,ks,nls}.h`, `ETD35` by default (any of
-`spida::config::SolverKind` is honored — see below):
+All six `ModelKind` values are implemented, promoted into the library
+itself at `include/spida/models/{burgers,kdv,ks,nls}.h`, `ETD35` by
+default (any of `spida::config::SolverKind` is honored — see below):
 
 - `"model": "burgers"` — `u_t + u u_x = mu u_xx`, real-valued, uniform
   periodic grid (`"grid": {"kind": "uniform_rvx", ...}`). `modelParams.mu`
@@ -38,21 +38,28 @@ Five models are implemented, promoted into the library itself at
   ADR-0001's Phase C addendum). `modelParams.gamma` (default `2.0`) is the
   Kerr nonlinearity coefficient; `modelParams.amplitude` (default `2.0`)
   sets the initial Gaussian's peak amplitude.
+- `"model": "nls_rt"` — 2D radial + time/frequency cubic NLS,
+  `dz A = (-i kr^2 + i*0.5*omega^2) A + i gamma |A|^2 A`, **complex-valued,
+  2D**. Needs TWO grids simultaneously: `"grid": {"kind": "bessel_root_r", ...}`
+  (radial) AND `"gridT": {"kind": "uniform_cvt", "n": ..., "a": ..., "b": ...}`
+  (time/frequency) — see ADR-0001's Phase E addendum for why this needed a
+  new `SimulationConfig.gridT` field. `modelParams.gamma` (default `2.0`)
+  and `modelParams.amplitude` (default `4.0`, the initial pulse peak). The
+  first model reporting 2D data (`ReportComplex2D`, `"RT"`/`"SR"`).
 
-Requesting a wired model with the wrong `grid.kind` (e.g. `"nls_r"` with
-`"uniform_rvx"`) is rejected the same way as an entirely unwired model:
+Requesting a wired model with the wrong `grid.kind`/missing `gridT` (e.g.
+`"nls_r"` with `"uniform_rvx"`, or `"nls_rt"` without a `gridT`) is
+rejected the same way as an entirely unwired model:
 `status: "failed", failureReason: "config_validation"`, along with a
 structured `"validationErrors"` array (`{field, message}` per problem —
 see `include/spida/config/validation.h`) so a caller doesn't have to parse
 `"failureDetail"`'s free text to find out which field was wrong. The same
 check (`spida::config::validate()`) also rejects bad numeric input —
-negative `epsRel`, non-positive `hInit`, `tf <= t0`, zero `grid.n`,
-`grid.a >= grid.b` (uniform grids), non-positive `grid.rMax` (bessel_root_r),
-zero `stepsPerOutput1D`/`maxReports1D` — before anything is constructed or
-`status: "running"` is even written. `nls_rt` comes later — it needs a
-second, independent grid dimension `SimulationConfig` can't represent yet
-(see ADR-0001's Phase D addendum); `spida::config::ModelKind` already has
-room for it so the wire shape won't need to change again once it's wired.
+negative `epsRel`, non-positive `hInit`, `tf <= t0`, zero `grid.n`/`gridT.n`,
+`grid.a >= grid.b`/`gridT.a >= gridT.b` (uniform grids), non-positive
+`grid.rMax` (bessel_root_r), zero `stepsPerOutput1D`/`maxReports1D`/
+`stepsPerOutput2D`/`maxReports2D` — before anything is constructed or
+`status: "running"` is even written.
 
 Run `spida-worker --describe` (no config/output-dir needed) to print which
 `ModelKind`×`GridKind` combinations and `SolverKind`s this build actually
@@ -166,6 +173,26 @@ condition needs the domain shown (or wider) for the soliton centers
 complex (`ReportComplex1D`), unlike every other wired model's real-valued
 reports.
 
+```json
+{
+  "name": "run-6",
+  "model": "nls_rt",
+  "modelParams": { "gamma": 2.0, "amplitude": 4.0 },
+  "grid": { "kind": "bessel_root_r", "n": 80, "rMax": 4.0 },
+  "gridT": { "kind": "uniform_cvt", "n": 512, "a": -6.0, "b": 6.0 },
+  "solver": { "epsRel": 1e-8, "t0": 0.0, "tf": 0.3, "hInit": 0.01 },
+  "reporting": { "stepsPerOutput2D": 4, "maxReports2D": 100, "logFrequency": 12 }
+}
+```
+
+`nls_rt` needs BOTH `"grid": {"kind": "bessel_root_r", ...}` (radial) AND
+`"gridT": {"kind": "uniform_cvt", ...}` (time/frequency) — omitting
+`gridT`, or setting its `kind` to anything else, fails `config_validation`
+with a `"gridT.kind"` field error. Its `"RT"`/`"SR"` reports are
+`ReportComplex2D` — the first (and, today, only) model reporting 2D data;
+`reporting.stepsPerOutput2D`/`maxReports2D` (not the `...1D` fields) govern
+its cadence.
+
 ## Cancellation
 
 `SIGTERM` now triggers real cooperative cancellation
@@ -232,3 +259,9 @@ history this moved from) rather than re-run here:
   an IC/transform-level cause). See `spida/models/kdv.h`'s
   `KdvCvPropagator` header comment and `test/config_tests.cpp`'s
   `KDV_CV_STAYS_REAL_VALUED`.
+- **`nls_rt`**: same conservation argument as `nls_r` (L(k) is purely
+  dispersive here too), checked the same way — spectral-space L2 norm
+  measured at `t0` and `tf`. ~6.35e-4 relative deviation measured at
+  `tf=0.005`/`epsRel=1e-10`/`grid.n=32`/`gridT.n=64`; test tolerance set to
+  `2e-3` (~3x margin). See `spida/models/nls.h`'s `NlsRt` header comment
+  and `test/config_tests.cpp`'s `NLS_RT_POWER_IS_CONSERVED`.

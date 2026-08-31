@@ -48,6 +48,13 @@ namespace spida::config {
                nlohmann::json::array(
                    {{{"name", "gamma"}, {"type", "number"}, {"default", 2.0}},
                     {{"name", "amplitude"}, {"type", "number"}, {"default", 2.0}}})}},
+             {{"model", "nls_rt"},
+              {"grids", nlohmann::json::array({"bessel_root_r"})},
+              {"gridT", nlohmann::json::array({"uniform_cvt"})}, // needs BOTH grid and gridT
+              {"modelParams",
+               nlohmann::json::array(
+                   {{{"name", "gamma"}, {"type", "number"}, {"default", 2.0}},
+                    {{"name", "amplitude"}, {"type", "number"}, {"default", 4.0}}})}},
          })},
         {"solvers", nlohmann::json::array({"etd35", "etd34", "if34", "if45dp"})},
     };
