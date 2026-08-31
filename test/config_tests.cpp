@@ -24,19 +24,20 @@ TEST(SIMULATION_CONFIG_TEST, DEFAULT_ROUND_TRIPS_THROUGH_JSON)
     EXPECT_EQ(parsed.grid.n, cfg.grid.n);
     EXPECT_DOUBLE_EQ(parsed.solver.epsRel, cfg.solver.epsRel);
     EXPECT_EQ(parsed.solver.kind, cfg.solver.kind);
-    EXPECT_DOUBLE_EQ(parsed.burgersParams.mu, cfg.burgersParams.mu);
+    EXPECT_EQ(parsed.modelParams, cfg.modelParams);
     EXPECT_EQ(parsed.reporting.maxReports1D, cfg.reporting.maxReports1D);
+    EXPECT_EQ(parsed.reporting.logFrequency, cfg.reporting.logFrequency);
 }
 
 TEST(SIMULATION_CONFIG_TEST, PARSES_PARTIAL_JSON_WITH_DEFAULTS)
 {
     // Only override a couple of fields — everything else should fall back
     // to SimulationConfig's own defaults (NLOHMANN_DEFINE_TYPE_..._WITH_DEFAULT).
-    nlohmann::json j = {{"name", "sweep-01"}, {"burgersParams", {{"mu", 0.001}}}};
+    nlohmann::json j = {{"name", "sweep-01"}, {"modelParams", {{"mu", 0.001}}}};
     SimulationConfig cfg = j.get<SimulationConfig>();
 
     EXPECT_EQ(cfg.name, "sweep-01");
-    EXPECT_DOUBLE_EQ(cfg.burgersParams.mu, 0.001);
+    EXPECT_DOUBLE_EQ(cfg.modelParams.value("mu", -1.0), 0.001);
     EXPECT_EQ(cfg.model, ModelKind::burgers); // default
     EXPECT_EQ(cfg.grid.n, 256u);              // default
 }
@@ -68,6 +69,42 @@ TEST_F(SimulationRunTest, REJECTS_UNWIRED_MODEL_KIND)
 {
     m_cfg.model = ModelKind::kdv_cv;
     EXPECT_THROW(SimulationRun run(m_cfg), std::invalid_argument);
+}
+
+TEST_F(SimulationRunTest, KDV_RV_PILOT_RUNS_TO_COMPLETION)
+{
+    m_cfg.name = "run_kdv_rv";
+    m_cfg.model = ModelKind::kdv_rv;
+    m_cfg.modelParams = {{"solitonSpeed", 1.0}};
+    m_cfg.grid.n = 128;
+    m_cfg.grid.a = -20.0;
+    m_cfg.grid.b = 20.0;
+    m_cfg.solver.epsRel = 1e-10;
+    m_cfg.solver.t0 = 0.0;
+    m_cfg.solver.tf = 0.05;
+    m_cfg.solver.hInit = 0.01;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    EXPECT_TRUE(run.run());
+    EXPECT_EQ(run.propagator().stopReason(), spida::StopReason::None);
+}
+
+TEST_F(SimulationRunTest, KS_PILOT_RUNS_TO_COMPLETION)
+{
+    m_cfg.name = "run_ks";
+    m_cfg.model = ModelKind::ks;
+    m_cfg.grid.n = 64;
+    m_cfg.grid.a = 0.0;
+    m_cfg.grid.b = 100.530964914873; // 32*pi, the reference domain
+    m_cfg.solver.t0 = 0.0;
+    m_cfg.solver.tf = 0.5;
+    m_cfg.solver.hInit = 0.01;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    EXPECT_TRUE(run.run());
+    EXPECT_EQ(run.propagator().stopReason(), spida::StopReason::None);
 }
 
 TEST_F(SimulationRunTest, REJECTS_UNWIRED_GRID_KIND)

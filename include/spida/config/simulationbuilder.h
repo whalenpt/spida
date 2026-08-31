@@ -1,29 +1,35 @@
 #pragma once
 
 // Builds a runnable grid/model/propagator/solver quartet from a
-// spida::config::SimulationConfig — the factory a future spida-worker would
-// call after parsing a request, replacing the hand-assembly every demo/usage
-// example does today (see e.g. demos/burgers.cpp, usage/main.cpp).
+// spida::config::SimulationConfig — the factory spida-worker (worker/) calls
+// after parsing a job's config.json, replacing the hand-assembly every
+// demo/usage example still does. See docs/adr/0003-worker-relocation-and-
+// cooperative-cancellation.md for how this came to cover three real models
+// instead of just the original Burgers pilot.
 //
-// Scope: only ModelKind::burgers + GridKind::uniform_rvx are wired end to
-// end, matching the SPIDA Console architecture proposal's own recommended
-// Phase 1 pilot ("prove the loop... one model only — Burgers or KdV, closest
-// to an existing demo"). Extending to kdv/ks/nls means: add that model's
-// params struct to simulationconfig.h, add its spida::models:: type (see
-// spida/models/burgers.h for the pattern), and add a case in buildRun()
-// below — the grid/solver factories are already model-agnostic.
+// Scope: burgers, kdv_rv, and ks are wired end to end — the three models
+// spida-worker already implemented and numerically verified before this
+// factory existed (see spida/models/{burgers,kdv,ks}.h's header comments for
+// what was checked). kdv_cv/nls_r/nls_rt remain in ModelKind for wire-format
+// stability but are not implemented; the constructor throws
+// std::invalid_argument for them (config_validation, in the job-service
+// error taxonomy). Only GridKind::uniform_rvx is wired — every model here
+// happens to use it, not a real per-model choice yet.
 
 #include <spida/config/simulationconfig.h>
 #include <spida/grid/uniformRVX.h>
 #include <spida/models/burgers.h>
+#include <spida/models/kdv.h>
+#include <spida/models/ks.h>
 #include <spida/propagator/propagator.h>
 #include <spida/rkstiff/ETDAS.h>
 #include <spida/rkstiff/IFAS.h>
 #include <spida/rkstiff/solver.h>
 
+#include <filesystem>
 #include <memory>
 #include <stdexcept>
-#include <utility>
+#include <variant>
 
 namespace spida::config {
 
@@ -49,38 +55,69 @@ buildSolver(const SolverConfig& cfg, const spida::LinOp& L, const spida::NLfunc&
     }
     solver->setEpsRel(cfg.epsRel);
     solver->setLogProgress(cfg.logProgress);
-    if (cfg.logProgress)
-        solver->setLogFrequency(cfg.logFrequency);
     return solver;
 }
 
 /// Owns the grid/model/propagator/solver built from a SimulationConfig and
-/// exposes the same evolve() call demos/usage examples make by hand. Only
-/// the Burgers pilot (see file header) is wired; the constructor throws
-/// std::invalid_argument — the config_validation failure category from the
-/// SPIDA Console proposal's error taxonomy — for anything else.
+/// exposes the same evolve() call demos/usage examples make by hand. The
+/// model object's concrete type varies by ModelKind (spida::models::Burgers/
+/// Kdv/Ks each hold their own L()/NL() storage, and BurgersPropagator/etc.
+/// hold a live reference to the model's SpidaRVX transform — so the model
+/// must outlive the propagator/solver, hence the variant member rather than
+/// a temporary local).
 class SimulationRun {
 public:
-    explicit SimulationRun(const SimulationConfig& cfg)
-        : m_cfg(cfg), m_grid(cfg.grid.n, cfg.grid.a, cfg.grid.b), m_model(m_grid, cfg.burgersParams.mu)
+    /// outDir: where report files land (BasePropagator's dir_path). Defaults
+    /// to "sim_<name>" (relative to CWD) for demo/test convenience when the
+    /// caller doesn't care — a real caller managing job directories itself
+    /// (e.g. worker/src/main.cpp, given <output-dir> on argv) should always
+    /// pass one explicitly. Passing a default-constructed empty path is
+    /// equivalent to omitting the argument.
+    explicit SimulationRun(const SimulationConfig& cfg, std::filesystem::path outDir = {})
+        : m_cfg(cfg), m_grid(cfg.grid.n, cfg.grid.a, cfg.grid.b)
     {
-        if (cfg.model != ModelKind::burgers)
-            throw std::invalid_argument(
-                "SimulationRun: only ModelKind::burgers is currently wired "
-                "(see simulationbuilder.h header comment)");
+        if (outDir.empty())
+            outDir = std::filesystem::path("sim_" + cfg.name);
+
         if (cfg.grid.kind != GridKind::uniform_rvx)
             throw std::invalid_argument(
                 "SimulationRun: only GridKind::uniform_rvx is currently wired");
 
-        m_propagator = std::make_unique<spida::models::BurgersPropagator>(
-            std::filesystem::path("sim_" + cfg.name), m_model);
+        switch (cfg.model) {
+        case ModelKind::burgers: {
+            const double mu = cfg.modelParams.value("mu", 0.0005);
+            auto& model = m_model.emplace<spida::models::Burgers>(m_grid, mu);
+            m_propagator = std::make_unique<spida::models::BurgersPropagator>(outDir, model);
+            m_solver = buildSolver(cfg.solver, model.L(), model.NL());
+            break;
+        }
+        case ModelKind::kdv_rv: {
+            const double solitonSpeed = cfg.modelParams.value("solitonSpeed", 1.0);
+            auto& model = m_model.emplace<spida::models::Kdv>(m_grid);
+            m_propagator =
+                std::make_unique<spida::models::KdvPropagator>(outDir, model, solitonSpeed);
+            m_solver = buildSolver(cfg.solver, model.L(), model.NL());
+            break;
+        }
+        case ModelKind::ks: {
+            // No modelParams read here — ks's standard normalization has no
+            // free coefficient (see spida/models/ks.h's header comment).
+            auto& model = m_model.emplace<spida::models::Ks>(m_grid);
+            m_propagator = std::make_unique<spida::models::KsPropagator>(outDir, model);
+            m_solver = buildSolver(cfg.solver, model.L(), model.NL());
+            break;
+        }
+        default:
+            throw std::invalid_argument(
+                "SimulationRun: ModelKind not yet wired (only burgers/kdv_rv/ks are) — "
+                "see simulationbuilder.h's header comment");
+        }
+
         m_propagator->setStepsPerOutput1D(cfg.reporting.stepsPerOutput1D);
         m_propagator->setMaxReports1D(cfg.reporting.maxReports1D);
         m_propagator->setLogProgress(cfg.solver.logProgress);
         if (cfg.solver.logProgress)
-            m_propagator->setLogFrequency(cfg.solver.logFrequency);
-
-        m_solver = buildSolver(cfg.solver, m_model.L(), m_model.NL());
+            m_propagator->setLogFrequency(cfg.reporting.logFrequency);
     }
 
     /// Same bool contract as spida::SolverCV::evolve(): false means a step
@@ -105,8 +142,8 @@ public:
 private:
     SimulationConfig m_cfg;
     spida::UniformGridRVX m_grid;
-    spida::models::Burgers m_model;
-    std::unique_ptr<spida::models::BurgersPropagator> m_propagator;
+    std::variant<std::monostate, spida::models::Burgers, spida::models::Kdv, spida::models::Ks> m_model;
+    std::unique_ptr<spida::PropagatorCV> m_propagator;
     std::unique_ptr<spida::SolverCV_AS> m_solver;
 };
 

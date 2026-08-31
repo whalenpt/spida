@@ -2,9 +2,15 @@
 
 ## Status
 
-Proposed — not implemented. Two open decisions block a concrete task breakdown (see
-"Open questions" below); this ADR records the shape of the problem and a recommendation,
-not a committed design.
+Proposed, partially superseded — see
+[ADR-0003](0003-worker-relocation-and-cooperative-cancellation.md). Open question 1
+("where does this get built?") is answered for the worker specifically: it lives in this
+repo (`worker/`), not `spida-console`. 2a (worker-side event emission) already exists for
+real as of ADR-0003 — `events.ndjson`, backed by the real `setProgressObserver()`/
+`StopReason` instead of an estimate — because the worker that landed already had it,
+authored independently before this ADR. 2b (API server event channel/WS endpoint) and 2c
+(frontend) remain unimplemented and belong in `spida-console`, per the split ADR-0003
+settled on.
 
 ## Context
 

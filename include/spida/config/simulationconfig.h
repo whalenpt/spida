@@ -61,35 +61,46 @@ struct SolverConfig {
     double tf{1.0};
     double hInit{0.01};
     bool logProgress{false};
-    unsigned logFrequency{200};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-    SolverConfig, kind, epsRel, t0, tf, hInit, logProgress, logFrequency)
-
-/// The one physics parameter demos/burgers.cpp hardcodes (mu = 0.0005).
-struct BurgersParams {
-    double mu{0.0005};
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BurgersParams, mu)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SolverConfig, kind, epsRel, t0, tf, hInit, logProgress)
 
 /// Mirrors the subset of BasePropagator's setters simulationbuilder.h wires;
 /// see include/spida/propagator/propagator.h for the full set (2D/track
-/// cadence are omitted here since the Burgers pilot only reports 1D).
+/// cadence are omitted here since every model wired today only reports 1D).
+/// logFrequency lives here, not on SolverConfig, matching the real worker
+/// wire contract (spida-console's apps/web sends it nested under
+/// "reporting", not "solver" — see ADR-0003).
 struct ReportingConfig {
     unsigned stepsPerOutput1D{5};
     unsigned maxReports1D{500};
+    unsigned logFrequency{200};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ReportingConfig, stepsPerOutput1D, maxReports1D)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+    ReportingConfig, stepsPerOutput1D, maxReports1D, logFrequency)
 
 struct SimulationConfig {
     std::string name{"run"};
     ModelKind model{ModelKind::burgers};
     GridConfig grid;
     SolverConfig solver;
-    BurgersParams burgersParams;
+    /// Model-specific parameters, generic rather than a per-model typed
+    /// struct — matches the real wire contract exactly (a single nested
+    /// "modelParams" object whose shape depends on "model"): {"mu": ...}
+    /// for burgers, {"solitonSpeed": ...} for kdv_rv, {} for ks. See
+    /// simulationbuilder.h's per-model construction for what each model
+    /// reads out of it, mirroring spida-worker's own
+    /// modelParams.value(key, default) pattern exactly.
+    // Direct construction, not brace-init: nlohmann::json's initializer_list
+    // constructor would treat {nlohmann::json::object()} as a one-element
+    // JSON *array* containing an empty object ([{}]), not the empty object
+    // itself ({}) — a real bug caught by SimulationRunTest.
+    // BURGERS_PILOT_RUNS_TO_COMPLETION exercising the never-overridden
+    // default (SimulationRun's cfg.modelParams.value("mu", ...) throws
+    // "cannot use value() with array" against the array form).
+    nlohmann::json modelParams = nlohmann::json::object();
     ReportingConfig reporting;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-    SimulationConfig, name, model, grid, solver, burgersParams, reporting)
+    SimulationConfig, name, model, grid, solver, modelParams, reporting)
 
 } // namespace spida::config

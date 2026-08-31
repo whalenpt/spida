@@ -289,10 +289,11 @@ components:
       type: string
       enum: [burgers, kdv_cv, kdv_rv, ks, nls_r, nls_rt]
       description: >
-        Mirrors spida::config::ModelKind exactly. Only "burgers" is wired
-        end to end by SimulationRun today (see ADR-0001) — the others parse
-        and validate but a run request for them fails with
-        FailureReason "config_validation" until implemented.
+        Mirrors spida::config::ModelKind exactly. "burgers", "kdv_rv", and
+        "ks" are wired end to end by SimulationRun and spida-worker (see
+        ADR-0003) — "kdv_cv"/"nls_r"/"nls_rt" parse and validate but a run
+        request for them fails with FailureReason "config_validation" until
+        implemented.
 
     GridKind:
       type: string
@@ -322,7 +323,8 @@ components:
 
     SolverConfig:
       type: object
-      description: Mirrors spida::config::SolverConfig.
+      description: Mirrors spida::config::SolverConfig. logFrequency lives
+        on ReportingConfig, not here (see ADR-0003).
       properties:
         kind: { $ref: '#/components/schemas/SolverKind', default: etd35 }
         epsRel: { type: number, default: 1.0e-8 }
@@ -330,26 +332,24 @@ components:
         tf: { type: number, default: 1.0 }
         hInit: { type: number, default: 0.01 }
         logProgress: { type: boolean, default: false }
-        logFrequency: { type: integer, minimum: 1, default: 200 }
 
-    BurgersParams:
+    ModelParams:
       type: object
       description: >
-        Mirrors spida::config::BurgersParams — the one physics parameter
-        demos/burgers.cpp hardcodes. A future kdvParams/ksParams/etc. would
-        be added as siblings here and in SimulationConfig once that model
-        is wired, following the same pattern.
-      properties:
-        mu: { type: number, default: 0.0005 }
+        Mirrors spida::config::SimulationConfig.modelParams — a generic
+        object whose shape depends on "model", not a per-model typed schema
+        (see ADR-0003 for why this replaced an earlier BurgersParams-only
+        design). {"mu": number} for "burgers" (default 0.0005); {"solitonSpeed":
+        number} for "kdv_rv" (default 1.0); {} for "ks" (no free coefficient).
+      additionalProperties: true
 
     ReportingConfig:
       type: object
-      description: >
-        Mirrors spida::config::ReportingConfig — currently only the 1D
-        reporting cadence, matching the Burgers pilot's 1D-only reports.
+      description: Mirrors spida::config::ReportingConfig.
       properties:
         stepsPerOutput1D: { type: integer, minimum: 1, default: 5 }
         maxReports1D: { type: integer, minimum: 1, default: 500 }
+        logFrequency: { type: integer, minimum: 1, default: 200 }
 
     SimulationConfig:
       type: object
@@ -360,7 +360,7 @@ components:
         model: { $ref: '#/components/schemas/ModelKind', default: burgers }
         grid: { $ref: '#/components/schemas/GridConfig' }
         solver: { $ref: '#/components/schemas/SolverConfig' }
-        burgersParams: { $ref: '#/components/schemas/BurgersParams' }
+        modelParams: { $ref: '#/components/schemas/ModelParams' }
         reporting: { $ref: '#/components/schemas/ReportingConfig' }
         tags:
           type: array
