@@ -214,4 +214,59 @@ passing, all new/updated tests passing individually.
   worker's manifest — `docs/api/binary-frame-spec.md` already flags 2D framing as "not yet
   specified." `kdv_cv` still has no home in `GridKind` at all; wiring it means adding a new
   grid kind to both the C++ enum and the proposal's own `domain.ts`, a larger wire-contract
-  change than this addendum took on.
+  change than this addendum took on. — **`kdv_cv` addressed below (Phase D); `nls_rt`
+  remains open, for a different reason than expected.**
+
+## Addendum: Phase D (kdv_cv wired; nls_rt's real blocker identified)
+
+1. **`GridKind::uniform_cvx` added** (`include/spida/config/simulationconfig.h`) — the new grid
+   kind Phase C's "Consequences" flagged as needed. Turned out simpler than expected:
+   `UniformGridCVX`'s constructor is `(n, min, max)`, the exact same shape `GridConfig` already
+   has for `uniform_rvx`, so no new `GridConfig` field was needed, only the enum value (and,
+   like Phase C's `uniform_cvx`... i.e. `bessel_root_r`, this is NOT in the proposal's own
+   `domain.ts` `GridKind` union — a second instance of the same kind of necessary,
+   proposal-exceeding wire-contract extension noted in Phase C).
+
+2. **`spida::models::KdvCv`/`KdvCvPropagator`** (`include/spida/models/kdv.h`, appended
+   alongside `Kdv`/`KdvPropagator` rather than a new file — same equation family, not a
+   different model) — promoted from `demos/kdvCV.cpp`. The **exact same PDE** as `kdv_rv`
+   (`u_t + 6 u u_x + u_xxx = 0`), solved via `SpidaCVX`'s full complex FFT on a
+   `GridKind::uniform_cvx` grid instead of `SpidaRVX`'s real-optimized half-spectrum one on
+   `uniform_rvx`. Fixed 5-soliton initial condition matching the demo exactly, no
+   `modelParams` (same precedent as `Ks`) — the model's purpose is demonstrating the
+   complex-grid pipeline on a nontrivial field, not being user-tunable.
+
+3. **`validate()` extended** with the `kdv_cv` ↔ `uniform_cvx` pairing check, following the
+   exact pattern Phase C established for `nls_r` ↔ `bessel_root_r`.
+
+4. **Numerical verification — a real methodological mistake caught and corrected, not just a
+   tolerance tuned.** Since both the PDE and the 5-soliton IC are real-valued in physical
+   space, `u(x,t)` should stay real for all `t`. The first version of this check compared
+   `Im`/`Re` of `PropagatorCV::propagator()`'s output directly and **failed loudly** — `Im`
+   comparable in magnitude to `Re`, not noise. Root cause: `propagator()` exposes the
+   *spectral* array, and a real signal's DFT is generally complex at nonzero frequencies —
+   only that array's *Hermitian symmetry* (`usp[N-k] == conj(usp[k])`) reflects physical-space
+   realness, not `Im(usp)` itself. Rewritten to check that invariant instead, at two points:
+   right after construction (relative asymmetry ~5e-16 — exact machine precision, proving the
+   initial condition and transform introduce no asymmetry), and after `run()` at `tf=0.01`
+   (~2.6e-6 — a legitimate time-stepping accumulation, the same category of effect as Phase
+   C's NLS conservation drift, confirmed rather than assumed because the t0 measurement rules
+   out an IC/transform-level cause). See `test/config_tests.cpp`'s `KDV_CV_STAYS_REAL_VALUED`.
+
+5. **`nls_rt`'s actual blocker identified — not what Phase C's "Consequences" guessed.** 2D
+   report framing (`Report2D`/`ReportComplex2D`) turned out to be *already handled*: the
+   worker's `ManifestBuilder` (Phase A) already classifies `"xyz"`/`"xyz_complex"` as
+   `"field2d"` from the JSON `"type"` field alone, and `ReportingConfig`'s
+   `stepsPerOutput2D`/`maxReports2D` (Phase B) were already frozen into the wire shape ahead of
+   need — both would just start being exercised, no new work required. The **real** blocker:
+   `SpidaRCVT` (the transform `demos/NLSRT.cpp` uses) needs **two independent grids**
+   simultaneously — a `BesselRootGridR` (radial) and a `UniformGridCVT` (time/frequency) — and
+   `SimulationConfig.grid` is a single `GridParams` object, matching the proposal's own
+   `domain.ts` exactly. Representing a second, independent grid dimension is a genuine
+   `SimulationConfig`-level wire-contract question (e.g. a new `gridT` field alongside `grid`)
+   that neither this ADR nor the original proposal anticipated — **left open, pending a
+   decision, rather than guessed at**; see the conversation this addendum was written in for
+   the options considered.
+
+Verified via the mandated Release build+test cycle, 11/11 binaries passing, all new/updated
+tests passing individually, `spida-worker --describe` confirmed to list `kdv_cv` for real.

@@ -27,11 +27,18 @@ NLOHMANN_JSON_SERIALIZE_ENUM(ModelKind,
                                  {ModelKind::nls_rt, "nls_rt"},
                              })
 
-enum class GridKind { uniform_rvx, uniform_rvt, bessel_root_r, cheb_x };
+// uniform_cvx is NOT in the architecture proposal's own domain.ts
+// GridKind union — added here because kdv_cv (which IS in the proposal's
+// ModelKind list) genuinely needs a full-complex-FFT grid distinct from
+// kdv_rv's real-optimized uniform_rvx transform (SpidaCVX vs SpidaRVX —
+// different C++ classes, same n/a/b JSON shape). See docs/adr/0001-spida-
+// console-backend-groundwork.md's Phase D addendum.
+enum class GridKind { uniform_rvx, uniform_rvt, uniform_cvx, bessel_root_r, cheb_x };
 NLOHMANN_JSON_SERIALIZE_ENUM(GridKind,
                              {
                                  {GridKind::uniform_rvx, "uniform_rvx"},
                                  {GridKind::uniform_rvt, "uniform_rvt"},
+                                 {GridKind::uniform_cvx, "uniform_cvx"},
                                  {GridKind::bessel_root_r, "bessel_root_r"},
                                  {GridKind::cheb_x, "cheb_x"},
                              })
@@ -45,9 +52,11 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SolverKind,
                                  {SolverKind::if45dp, "if45dp"},
                              })
 
-/// n/a/b are UniformGridRVX-shaped; rMax is BesselRootGridR-shaped (only
-/// meaningful when kind == bessel_root_r — see simulationbuilder.h's
-/// nls_r case). cheb_x's own params remain left for whoever wires it next.
+/// n/a/b are UniformGridRVX/UniformGridCVX-shaped (both take the same
+/// (n, min, max) constructor signature, so uniform_rvx and uniform_cvx
+/// share this shape); rMax is BesselRootGridR-shaped (only meaningful when
+/// kind == bessel_root_r — see simulationbuilder.h's nls_r case). cheb_x's
+/// own params remain left for whoever wires it next.
 struct GridConfig {
     GridKind kind{GridKind::uniform_rvx};
     unsigned n{256};

@@ -307,22 +307,30 @@ components:
       type: string
       enum: [burgers, kdv_cv, kdv_rv, ks, nls_r, nls_rt]
       description: >
-        Mirrors spida::config::ModelKind exactly. "burgers", "kdv_rv", "ks"
-        (GridKind "uniform_rvx") and "nls_r" (GridKind "bessel_root_r") are
-        wired end to end by SimulationRun and spida-worker (see ADR-0003
-        and ADR-0001's Phase C addendum) — "kdv_cv"/"nls_rt" parse and
-        validate but a run request for them fails with FailureReason
-        "config_validation" until implemented. Requesting a wired model
-        with the wrong GridKind (e.g. "nls_r" with "uniform_rvx") also
-        fails config_validation — see ValidationError.
+        Mirrors spida::config::ModelKind exactly. "burgers"/"kdv_rv"/"ks"
+        (GridKind "uniform_rvx"), "kdv_cv" (GridKind "uniform_cvx" — the
+        same PDE as "kdv_rv", solved on a full-complex-FFT grid instead),
+        and "nls_r" (GridKind "bessel_root_r") are wired end to end by
+        SimulationRun and spida-worker (see ADR-0003 and ADR-0001's Phase
+        C/D addenda) — "nls_rt" parses and validates but a run request for
+        it fails with FailureReason "config_validation" until implemented
+        (it needs a second, independent grid dimension SimulationConfig
+        can't represent yet). Requesting a wired model with the wrong
+        GridKind (e.g. "nls_r" with "uniform_rvx") also fails
+        config_validation — see ValidationError.
 
     GridKind:
       type: string
-      enum: [uniform_rvx, uniform_rvt, bessel_root_r, cheb_x]
+      enum: [uniform_rvx, uniform_rvt, uniform_cvx, bessel_root_r, cheb_x]
       description: >
-        Mirrors spida::config::GridKind exactly. "uniform_rvx" and
-        "bessel_root_r" are wired today, each required by a specific set of
-        ModelKinds — see ModelKind's own description.
+        Mirrors spida::config::GridKind exactly. "uniform_cvx" is NOT in
+        the architecture proposal's own domain.ts GridKind union — added
+        because "kdv_cv" (which IS in the proposal's ModelKind list) needs
+        a full-complex-FFT grid distinct from "uniform_rvx"'s real-
+        optimized transform (see ADR-0001's Phase D addendum).
+        "uniform_rvx", "uniform_cvx", and "bessel_root_r" are wired today,
+        each required by a specific set of ModelKinds — see ModelKind's
+        own description.
 
     SolverKind:
       type: string
@@ -364,6 +372,7 @@ components:
         (see ADR-0003 for why this replaced an earlier BurgersParams-only
         design). {"mu": number} for "burgers" (default 0.0005); {"solitonSpeed":
         number} for "kdv_rv" (default 1.0); {} for "ks" (no free coefficient);
+        {} for "kdv_cv" (fixed 5-soliton initial condition, no free params);
         {"gamma": number, "amplitude": number} for "nls_r" (both default 2.0).
       additionalProperties: true
 

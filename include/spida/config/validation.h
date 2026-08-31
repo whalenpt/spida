@@ -55,11 +55,14 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ValidationError, field, message)
     // Whether grid.kind itself is wired at all, independent of which model
     // was requested — gates the per-model pairing check below so an
     // unwired grid.kind (e.g. cheb_x) isn't reported twice.
-    const bool gridKindWired =
-        cfg.grid.kind == GridKind::uniform_rvx || cfg.grid.kind == GridKind::bessel_root_r;
+    const bool gridKindWired = cfg.grid.kind == GridKind::uniform_rvx ||
+                               cfg.grid.kind == GridKind::uniform_cvx ||
+                               cfg.grid.kind == GridKind::bessel_root_r;
     if (!gridKindWired) {
-        errors.push_back({"grid.kind",
-                          "grid kind is not yet implemented (only uniform_rvx, bessel_root_r are wired)"});
+        errors.push_back(
+            {"grid.kind",
+             "grid kind is not yet implemented (only uniform_rvx, uniform_cvx, bessel_root_r "
+             "are wired)"});
     }
 
     // Mirrors SimulationRun's own "not yet wired" throws, and also catches
@@ -74,24 +77,33 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ValidationError, field, message)
             errors.push_back({"grid.kind", "this model requires grid.kind \"uniform_rvx\""});
         }
         break;
+    case ModelKind::kdv_cv:
+        if (gridKindWired && cfg.grid.kind != GridKind::uniform_cvx) {
+            errors.push_back({"grid.kind", "this model requires grid.kind \"uniform_cvx\""});
+        }
+        break;
     case ModelKind::nls_r:
         if (gridKindWired && cfg.grid.kind != GridKind::bessel_root_r) {
             errors.push_back({"grid.kind", "this model requires grid.kind \"bessel_root_r\""});
         }
         break;
     default:
-        errors.push_back({"model",
-                          "model kind is not yet implemented (only burgers, kdv_rv, ks, nls_r are wired)"});
+        errors.push_back(
+            {"model",
+             "model kind is not yet implemented (only burgers, kdv_rv, ks, kdv_cv, nls_r are "
+             "wired)"});
         break;
     }
 
-    // Mirrors UniformGridX's own throw (src/grid/uniformX.cpp), and the
+    // Mirrors UniformGridX's own throw (src/grid/uniformX.cpp — shared by
+    // uniform_rvx and uniform_cvx, both UniformGridX subclasses), and the
     // analogous shape requirement for BesselRootGridR (a Hankel transform
     // over [0, rMax], no separate "a" bound).
     if (cfg.grid.n == 0) {
         errors.push_back({"grid.n", "grid point count must be greater than zero"});
     }
-    if (cfg.grid.kind == GridKind::uniform_rvx && !(cfg.grid.a < cfg.grid.b)) {
+    if ((cfg.grid.kind == GridKind::uniform_rvx || cfg.grid.kind == GridKind::uniform_cvx) &&
+        !(cfg.grid.a < cfg.grid.b)) {
         errors.push_back({"grid.b", "grid.a must be less than grid.b"});
     }
     if (cfg.grid.kind == GridKind::bessel_root_r && !(cfg.grid.rMax > 0.0)) {

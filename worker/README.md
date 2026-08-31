@@ -9,7 +9,7 @@ spida-console, and exactly what changed along the way.
 
 ## Scope
 
-Four models are implemented, promoted into the library itself at
+Five models are implemented, promoted into the library itself at
 `include/spida/models/{burgers,kdv,ks,nls}.h`, `ETD35` by default (any of
 `spida::config::SolverKind` is honored — see below):
 
@@ -25,6 +25,13 @@ Four models are implemented, promoted into the library itself at
 - `"model": "ks"` — Kuramoto-Sivashinsky, `u_t + u u_x + u_xx + u_xxxx = 0`,
   same grid kind. No `modelParams` — this equation's standard normalization
   has no free coefficient.
+- `"model": "kdv_cv"` — the *same* PDE as `kdv_rv`, on a
+  `"grid": {"kind": "uniform_cvx", "n": ..., "a": ..., "b": ...}` (full
+  complex FFT instead of the real-optimized half-spectrum transform — see
+  ADR-0001's Phase D addendum for why this exists as a separate ModelKind).
+  Fixed 5-soliton initial condition, no `modelParams`; needs a domain at
+  least `[-150, 150]` wide for the soliton centers to fit (see
+  `spida::models::KdvCvPropagator`'s header comment).
 - `"model": "nls_r"` — radial cubic NLS, `dz A = -i kr^2 A + i gamma |A|^2 A`,
   **complex-valued**, on a `"grid": {"kind": "bessel_root_r", "n": ..., "rMax": ...}`
   (Hankel transform, not FFT — the first non-uniform grid wired; see
@@ -42,9 +49,10 @@ check (`spida::config::validate()`) also rejects bad numeric input —
 negative `epsRel`, non-positive `hInit`, `tf <= t0`, zero `grid.n`,
 `grid.a >= grid.b` (uniform grids), non-positive `grid.rMax` (bessel_root_r),
 zero `stepsPerOutput1D`/`maxReports1D` — before anything is constructed or
-`status: "running"` is even written. `kdv_cv`/`nls_rt` come later —
-`spida::config::ModelKind` already has room for them so the wire shape
-won't need to change again when they're wired.
+`status: "running"` is even written. `nls_rt` comes later — it needs a
+second, independent grid dimension `SimulationConfig` can't represent yet
+(see ADR-0001's Phase D addendum); `spida::config::ModelKind` already has
+room for it so the wire shape won't need to change again once it's wired.
 
 Run `spida-worker --describe` (no config/output-dir needed) to print which
 `ModelKind`×`GridKind` combinations and `SolverKind`s this build actually
@@ -128,6 +136,22 @@ or the run truncates with `stopReason: "max_reports_reached"` before `tf`.
 ```json
 {
   "name": "run-4",
+  "model": "kdv_cv",
+  "grid": { "kind": "uniform_cvx", "n": 512, "a": -150.0, "b": 150.0 },
+  "solver": { "epsRel": 1e-4, "t0": 0.0, "tf": 600.0, "hInit": 0.1 },
+  "reporting": { "stepsPerOutput1D": 16, "maxReports1D": 500, "logFrequency": 16 }
+}
+```
+
+`kdv_cv` needs `"grid": {"kind": "uniform_cvx", ...}` — same PDE as
+`kdv_rv`, but solved on a full-complex-FFT grid; requesting it with
+`uniform_rvx` fails `config_validation`. The fixed 5-soliton initial
+condition needs the domain shown (or wider) for the soliton centers
+(spanning `x` in `[-120, 0]`) to fit without immediate periodic wraparound.
+
+```json
+{
+  "name": "run-5",
   "model": "nls_r",
   "modelParams": { "gamma": 2.0, "amplitude": 2.0 },
   "grid": { "kind": "bessel_root_r", "n": 100, "rMax": 5.0 },
@@ -191,3 +215,20 @@ history this moved from) rather than re-run here:
   the error was unchanged between `grid.n=64` and `grid.n=256` (ruling out
   a spatial-resolution cause). See `spida/models/nls.h`'s header comment
   and `test/config_tests.cpp`'s `NLS_R_POWER_IS_CONSERVED`.
+- **`kdv_cv`**: same PDE as `kdv_rv`, whose closed-form check already
+  covers the physics — this model's own numerical question is whether the
+  full-complex-FFT pipeline stays faithful to a real-coefficient PDE with a
+  real initial condition, which should keep `u(x,t)` real for all `t`.
+  `PropagatorCV::propagator()` exposes the *spectral* array though, so the
+  checkable invariant is that array's Hermitian symmetry
+  (`usp[N-k] == conj(usp[k])`), not `Im(u)` directly — an earlier version
+  of this check compared `Im`/`Re` of the spectral array directly and
+  failed loudly (comparable magnitude, not noise), which is how this
+  distinction was caught. Measured for real: ~5e-16 relative asymmetry
+  right after construction (confirms the initial condition/transform
+  introduce none), growing to ~2.6e-6 at `tf=0.01` (a legitimate
+  time-stepping accumulation, same category as `nls_r`'s conservation
+  drift above — confirmed, not assumed, since the t0 measurement rules out
+  an IC/transform-level cause). See `spida/models/kdv.h`'s
+  `KdvCvPropagator` header comment and `test/config_tests.cpp`'s
+  `KDV_CV_STAYS_REAL_VALUED`.
