@@ -4,10 +4,11 @@
 // proposal's domain.ts SimulationConfig (discriminated by ModelKind/GridKind/
 // SolverKind) — the C++-side source of truth a future spida-worker would parse
 // a request into, and demos/usage examples build grids/models/solvers from
-// today by hand. Only ModelKind::burgers and GridKind::uniform_rvx are wired
-// end to end by simulationbuilder.h so far (see its header comment); the enums
-// below are intentionally larger than that to keep the on-disk/wire shape
-// stable as more models and grids come online.
+// today by hand. burgers/kdv_rv/ks (GridKind::uniform_rvx) and nls_r
+// (GridKind::bessel_root_r) are wired end to end by simulationbuilder.h so
+// far (see its header comment); the enums below are intentionally larger
+// than that to keep the on-disk/wire shape stable as more models and grids
+// come online.
 
 #include <nlohmann/json.hpp>
 
@@ -44,15 +45,17 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SolverKind,
                                  {SolverKind::if45dp, "if45dp"},
                              })
 
-/// n/a/b are UniformGridRVX-shaped (the only kind simulationbuilder.h wires
-/// today); rMax/etc. for the other GridKinds are left for whoever wires them.
+/// n/a/b are UniformGridRVX-shaped; rMax is BesselRootGridR-shaped (only
+/// meaningful when kind == bessel_root_r — see simulationbuilder.h's
+/// nls_r case). cheb_x's own params remain left for whoever wires it next.
 struct GridConfig {
     GridKind kind{GridKind::uniform_rvx};
     unsigned n{256};
     double a{0.0};
     double b{1.0};
+    double rMax{5.0};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GridConfig, kind, n, a, b)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GridConfig, kind, n, a, b, rMax)
 
 struct SolverConfig {
     SolverKind kind{SolverKind::etd35};

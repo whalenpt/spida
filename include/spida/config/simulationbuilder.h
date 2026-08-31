@@ -5,23 +5,31 @@
 // after parsing a job's config.json, replacing the hand-assembly every
 // demo/usage example still does. See docs/adr/0003-worker-relocation-and-
 // cooperative-cancellation.md for how this came to cover three real models
-// instead of just the original Burgers pilot.
+// instead of just the original Burgers pilot, and docs/adr/0001-spida-
+// console-backend-groundwork.md's Phase C addendum for nls_r/bessel_root_r.
 //
-// Scope: burgers, kdv_rv, and ks are wired end to end — the three models
-// spida-worker already implemented and numerically verified before this
-// factory existed (see spida/models/{burgers,kdv,ks}.h's header comments for
-// what was checked). kdv_cv/nls_r/nls_rt remain in ModelKind for wire-format
-// stability but are not implemented; the constructor throws
-// std::invalid_argument for them (config_validation, in the job-service
-// error taxonomy). Only GridKind::uniform_rvx is wired — every model here
-// happens to use it, not a real per-model choice yet.
+// Scope: burgers/kdv_rv/ks (GridKind::uniform_rvx) and nls_r
+// (GridKind::bessel_root_r) are wired end to end — see spida/models/
+// {burgers,kdv,ks,nls}.h's header comments for what was checked. kdv_cv/
+// nls_rt remain in ModelKind for wire-format stability but are not
+// implemented; validate() (validation.h) rejects them before this class is
+// ever constructed (config_validation, in the job-service error taxonomy).
+//
+// The grid itself is a per-case LOCAL variable in the constructor below,
+// not a member: Burgers/Kdv/Ks/NlsR all copy the grid into their own
+// internal storage (see e.g. spida/models/kdv.h's `m_grid(grid)`), so
+// nothing needs it to outlive construction — which is what lets each
+// ModelKind's case use whichever concrete grid type it actually needs
+// (UniformGridRVX vs. BesselRootGridR) without a grid-side variant.
 
 #include <spida/config/simulationconfig.h>
 #include <spida/config/validation.h>
+#include <spida/grid/besselR.h>
 #include <spida/grid/uniformRVX.h>
 #include <spida/models/burgers.h>
 #include <spida/models/kdv.h>
 #include <spida/models/ks.h>
+#include <spida/models/nls.h>
 #include <spida/propagator/propagator.h>
 #include <spida/rkstiff/ETDAS.h>
 #include <spida/rkstiff/IFAS.h>
@@ -96,12 +104,20 @@ public:
         return m_solver->evolve(*m_propagator, m_cfg.solver.t0, m_cfg.solver.tf, m_cfg.solver.hInit);
     }
 
-    [[nodiscard]] spida::BasePropagator& propagator()
+    /// Returns PropagatorCV&, not just BasePropagator& — m_propagator is
+    /// always a PropagatorCV in practice (every wired model's Propagator
+    /// class derives from it), so this is a strictly more informative type
+    /// than what every caller so far has actually needed (stopReason(),
+    /// requestCancel(), etc., all declared on BasePropagator). Widened so a
+    /// caller that DOES need the raw field (PropagatorCV::propagator(),
+    /// e.g. a numerical-verification check reading the propagated
+    /// spectral-space array directly) doesn't have to downcast.
+    [[nodiscard]] spida::PropagatorCV& propagator()
     {
         return *m_propagator;
     }
 
-    [[nodiscard]] const spida::BasePropagator& propagator() const
+    [[nodiscard]] const spida::PropagatorCV& propagator() const
     {
         return *m_propagator;
     }
@@ -111,8 +127,8 @@ private:
     // three-argument constructor below can only run after validate(cfg) has
     // already passed. Argument expressions (requireValid(cfg) here) are
     // evaluated before the delegated-to constructor's member-initializer
-    // list runs, so this guarantees validation happens before m_grid is
-    // even constructed, not just before the constructor body starts.
+    // list runs, so this guarantees validation happens before the
+    // constructor body (and the per-case grid it constructs) even starts.
     struct Validated {};
 
     [[nodiscard]] static Validated requireValid(const SimulationConfig& cfg)
@@ -132,25 +148,27 @@ private:
     }
 
     SimulationRun(const SimulationConfig& cfg, std::filesystem::path outDir, Validated)
-        : m_cfg(cfg), m_grid(cfg.grid.n, cfg.grid.a, cfg.grid.b)
+        : m_cfg(cfg)
     {
         if (outDir.empty())
             outDir = std::filesystem::path("sim_" + cfg.name);
 
-        // model/grid.kind are already guaranteed valid by requireValid()
-        // above — the switch's default case below is unreachable in
-        // practice, kept only as a defensive fallback.
+        // model/grid.kind (and their pairing) are already guaranteed valid
+        // by requireValid() above — the switch's default case below is
+        // unreachable in practice, kept only as a defensive fallback.
         switch (cfg.model) {
         case ModelKind::burgers: {
+            spida::UniformGridRVX grid(cfg.grid.n, cfg.grid.a, cfg.grid.b);
             const double mu = cfg.modelParams.value("mu", 0.0005);
-            auto& model = m_model.emplace<spida::models::Burgers>(m_grid, mu);
+            auto& model = m_model.emplace<spida::models::Burgers>(grid, mu);
             m_propagator = std::make_unique<spida::models::BurgersPropagator>(outDir, model);
             m_solver = buildSolver(cfg.solver, model.L(), model.NL());
             break;
         }
         case ModelKind::kdv_rv: {
+            spida::UniformGridRVX grid(cfg.grid.n, cfg.grid.a, cfg.grid.b);
             const double solitonSpeed = cfg.modelParams.value("solitonSpeed", 1.0);
-            auto& model = m_model.emplace<spida::models::Kdv>(m_grid);
+            auto& model = m_model.emplace<spida::models::Kdv>(grid);
             m_propagator =
                 std::make_unique<spida::models::KdvPropagator>(outDir, model, solitonSpeed);
             m_solver = buildSolver(cfg.solver, model.L(), model.NL());
@@ -159,14 +177,25 @@ private:
         case ModelKind::ks: {
             // No modelParams read here — ks's standard normalization has no
             // free coefficient (see spida/models/ks.h's header comment).
-            auto& model = m_model.emplace<spida::models::Ks>(m_grid);
+            spida::UniformGridRVX grid(cfg.grid.n, cfg.grid.a, cfg.grid.b);
+            auto& model = m_model.emplace<spida::models::Ks>(grid);
             m_propagator = std::make_unique<spida::models::KsPropagator>(outDir, model);
+            m_solver = buildSolver(cfg.solver, model.L(), model.NL());
+            break;
+        }
+        case ModelKind::nls_r: {
+            spida::BesselRootGridR grid(cfg.grid.n, cfg.grid.rMax);
+            const double gamma = cfg.modelParams.value("gamma", 2.0);
+            const double amplitude = cfg.modelParams.value("amplitude", 2.0);
+            auto& model = m_model.emplace<spida::models::NlsR>(grid, gamma);
+            m_propagator =
+                std::make_unique<spida::models::NlsRPropagator>(outDir, model, amplitude);
             m_solver = buildSolver(cfg.solver, model.L(), model.NL());
             break;
         }
         default:
             throw std::invalid_argument(
-                "SimulationRun: ModelKind not yet wired (only burgers/kdv_rv/ks are) — "
+                "SimulationRun: ModelKind not yet wired (only burgers/kdv_rv/ks/nls_r are) — "
                 "see simulationbuilder.h's header comment");
         }
 
@@ -185,8 +214,12 @@ private:
     }
 
     SimulationConfig m_cfg;
-    spida::UniformGridRVX m_grid;
-    std::variant<std::monostate, spida::models::Burgers, spida::models::Kdv, spida::models::Ks> m_model;
+    std::variant<std::monostate,
+                spida::models::Burgers,
+                spida::models::Kdv,
+                spida::models::Ks,
+                spida::models::NlsR>
+        m_model;
     std::unique_ptr<spida::PropagatorCV> m_propagator;
     std::unique_ptr<spida::SolverCV_AS> m_solver;
 };

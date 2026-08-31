@@ -9,33 +9,42 @@ spida-console, and exactly what changed along the way.
 
 ## Scope
 
-Three models are implemented, all real-valued on a uniform periodic grid
-with `ETD35` by default (any of `spida::config::SolverKind` is honored —
-see below), promoted into the library itself at
-`include/spida/models/{burgers,kdv,ks}.h`:
+Four models are implemented, promoted into the library itself at
+`include/spida/models/{burgers,kdv,ks,nls}.h`, `ETD35` by default (any of
+`spida::config::SolverKind` is honored — see below):
 
-- `"model": "burgers"` — `u_t + u u_x = mu u_xx`. `modelParams.mu` is the
-  diffusion coefficient (default `0.0005`).
+- `"model": "burgers"` — `u_t + u u_x = mu u_xx`, real-valued, uniform
+  periodic grid (`"grid": {"kind": "uniform_rvx", ...}`). `modelParams.mu`
+  is the diffusion coefficient (default `0.0005`).
 - `"model": "kdv_rv"` — `u_t + 6 u u_x + u_xxx = 0`, the standard
-  normalization with no free PDE coefficient. `modelParams.solitonSpeed`
-  (default `1.0`) sets the initial condition instead: a single soliton
-  whose exact solution translates at speed `c` with no change of shape —
-  see `spida::models::KdvPropagator`'s header comment.
-- `"model": "ks"` — Kuramoto-Sivashinsky, `u_t + u u_x + u_xx + u_xxxx = 0`.
-  No `modelParams` — this equation's standard normalization has no free
-  coefficient.
+  normalization with no free PDE coefficient, same grid kind.
+  `modelParams.solitonSpeed` (default `1.0`) sets the initial condition
+  instead: a single soliton whose exact solution translates at speed `c`
+  with no change of shape — see `spida::models::KdvPropagator`'s header
+  comment.
+- `"model": "ks"` — Kuramoto-Sivashinsky, `u_t + u u_x + u_xx + u_xxxx = 0`,
+  same grid kind. No `modelParams` — this equation's standard normalization
+  has no free coefficient.
+- `"model": "nls_r"` — radial cubic NLS, `dz A = -i kr^2 A + i gamma |A|^2 A`,
+  **complex-valued**, on a `"grid": {"kind": "bessel_root_r", "n": ..., "rMax": ...}`
+  (Hankel transform, not FFT — the first non-uniform grid wired; see
+  ADR-0001's Phase C addendum). `modelParams.gamma` (default `2.0`) is the
+  Kerr nonlinearity coefficient; `modelParams.amplitude` (default `2.0`)
+  sets the initial Gaussian's peak amplitude.
 
-Anything else in `config.json`'s `"model"` field is rejected with
+Requesting a wired model with the wrong `grid.kind` (e.g. `"nls_r"` with
+`"uniform_rvx"`) is rejected the same way as an entirely unwired model:
 `status: "failed", failureReason: "config_validation"`, along with a
 structured `"validationErrors"` array (`{field, message}` per problem —
 see `include/spida/config/validation.h`) so a caller doesn't have to parse
 `"failureDetail"`'s free text to find out which field was wrong. The same
 check (`spida::config::validate()`) also rejects bad numeric input —
 negative `epsRel`, non-positive `hInit`, `tf <= t0`, zero `grid.n`,
-`grid.a >= grid.b`, zero `stepsPerOutput1D`/`maxReports1D` — before
-anything is constructed or `status: "running"` is even written. NLS/`kdv_cv`
-come later — `spida::config::ModelKind` already has room for them so the
-wire shape won't need to change again when they're wired.
+`grid.a >= grid.b` (uniform grids), non-positive `grid.rMax` (bessel_root_r),
+zero `stepsPerOutput1D`/`maxReports1D` — before anything is constructed or
+`status: "running"` is even written. `kdv_cv`/`nls_rt` come later —
+`spida::config::ModelKind` already has room for them so the wire shape
+won't need to change again when they're wired.
 
 Run `spida-worker --describe` (no config/output-dir needed) to print which
 `ModelKind`×`GridKind` combinations and `SolverKind`s this build actually
@@ -116,6 +125,23 @@ attractor reference domain) and a much longer `tf` than either other model
 — `maxReports1D` is raised well above the shared `500` default accordingly,
 or the run truncates with `stopReason: "max_reports_reached"` before `tf`.
 
+```json
+{
+  "name": "run-4",
+  "model": "nls_r",
+  "modelParams": { "gamma": 2.0, "amplitude": 2.0 },
+  "grid": { "kind": "bessel_root_r", "n": 100, "rMax": 5.0 },
+  "solver": { "epsRel": 1e-8, "t0": 0.0, "tf": 0.8, "hInit": 0.01 },
+  "reporting": { "stepsPerOutput1D": 10, "maxReports1D": 500, "logFrequency": 500 }
+}
+```
+
+`nls_r` needs `"grid": {"kind": "bessel_root_r", ...}`, not `uniform_rvx`
+— requesting it with the default grid kind fails `config_validation` (see
+`ValidationError`'s `"grid.kind"` field). Its `"R"`/`"SR"` reports are
+complex (`ReportComplex1D`), unlike every other wired model's real-valued
+reports.
+
 ## Cancellation
 
 `SIGTERM` now triggers real cooperative cancellation
@@ -153,3 +179,15 @@ history this moved from) rather than re-run here:
   times, even though both are equally valid trajectories on the same
   chaotic attractor. The growth/decay-rate check above, not bitwise
   reproducibility, is what actually verifies this model.
+- **`nls_r`**: no closed-form solution for a general Gaussian initial
+  condition, so verified against a conservation law instead — cubic NLS
+  with a purely dispersive linear operator conserves the spectral-space L2
+  norm `sum_k |A_k|^2` exactly for the continuous equation. Measured
+  empirically (not just asserted) against the real ETD35 output: ~6e-6
+  relative deviation at `tf=0.01`/`epsRel=1e-10`, ~1.4e-6 at `tf=0.005`,
+  scaling down roughly quadratically with `tf` — confirmed to be a
+  shrinking time-integration effect (as expected for a finite-order
+  adaptive scheme), not a fixed transform-normalization bug, by checking
+  the error was unchanged between `grid.n=64` and `grid.n=256` (ruling out
+  a spatial-resolution cause). See `spida/models/nls.h`'s header comment
+  and `test/config_tests.cpp`'s `NLS_R_POWER_IS_CONSERVED`.

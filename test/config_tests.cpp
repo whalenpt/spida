@@ -64,7 +64,7 @@ TEST(VALIDATE_TEST, DEFAULT_CONFIG_IS_VALID)
 TEST(VALIDATE_TEST, REJECTS_UNWIRED_MODEL_KIND_WITH_FIELD)
 {
     SimulationConfig cfg;
-    cfg.model = ModelKind::nls_r;
+    cfg.model = ModelKind::kdv_cv; // still unwired (Phase C only wired nls_r)
     auto errors = validate(cfg);
     ASSERT_EQ(errors.size(), 1u);
     EXPECT_EQ(errors[0].field, "model");
@@ -160,6 +160,41 @@ TEST(VALIDATE_TEST, REJECTS_ZERO_LOG_FREQUENCY_ONLY_WHEN_LOG_PROGRESS_ENABLED)
     EXPECT_EQ(errors[0].field, "reporting.logFrequency");
 }
 
+TEST(VALIDATE_TEST, REJECTS_MISMATCHED_MODEL_GRID_PAIRING)
+{
+    // The proposal's own error-taxonomy example: a model paired with a
+    // grid.kind it doesn't use. nls_r requires bessel_root_r, not
+    // uniform_rvx (the default) -- distinct from grid.kind being entirely
+    // unwired (REJECTS_UNWIRED_GRID_KIND_WITH_FIELD, above).
+    SimulationConfig cfg;
+    cfg.model = ModelKind::nls_r;
+    cfg.grid.kind = GridKind::uniform_rvx;
+    auto errors = validate(cfg);
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].field, "grid.kind");
+    EXPECT_NE(errors[0].message.find("bessel_root_r"), std::string::npos);
+}
+
+TEST(VALIDATE_TEST, REJECTS_ZERO_R_MAX_FOR_BESSEL_ROOT_R)
+{
+    SimulationConfig cfg;
+    cfg.model = ModelKind::nls_r;
+    cfg.grid.kind = GridKind::bessel_root_r;
+    cfg.grid.rMax = 0.0;
+    auto errors = validate(cfg);
+    ASSERT_EQ(errors.size(), 1u);
+    EXPECT_EQ(errors[0].field, "grid.rMax");
+}
+
+TEST(VALIDATE_TEST, NLS_R_WITH_BESSEL_ROOT_R_IS_VALID)
+{
+    SimulationConfig cfg;
+    cfg.model = ModelKind::nls_r;
+    cfg.grid.kind = GridKind::bessel_root_r;
+    cfg.grid.rMax = 5.0;
+    EXPECT_TRUE(validate(cfg).empty());
+}
+
 TEST(VALIDATE_TEST, REPORTS_MULTIPLE_ERRORS_AT_ONCE)
 {
     SimulationConfig cfg;
@@ -193,14 +228,14 @@ TEST(SIMULATION_RUN_CONSTRUCTOR_TEST, INVALID_CONFIG_STILL_THROWS_INVALID_ARGUME
 //  Capability discovery (Phase B)
 // ============================================================
 
-TEST(CAPABILITIES_TEST, DESCRIBES_ALL_THREE_WIRED_MODELS)
+TEST(CAPABILITIES_TEST, DESCRIBES_ALL_FOUR_WIRED_MODELS)
 {
     auto caps = spida::config::describeCapabilities();
     ASSERT_TRUE(caps.contains("models"));
     std::vector<std::string> names;
     for (auto const& m : caps.at("models"))
         names.push_back(m.at("model").get<std::string>());
-    EXPECT_EQ(names, (std::vector<std::string>{"burgers", "kdv_rv", "ks"}));
+    EXPECT_EQ(names, (std::vector<std::string>{"burgers", "kdv_rv", "ks", "nls_r"}));
 }
 
 TEST(CAPABILITIES_TEST, LISTS_ALL_FOUR_SOLVER_KINDS)
@@ -267,6 +302,67 @@ TEST_F(SimulationRunTest, KS_PILOT_RUNS_TO_COMPLETION)
     SimulationRun run(m_cfg);
     EXPECT_TRUE(run.run());
     EXPECT_EQ(run.propagator().stopReason(), spida::StopReason::None);
+}
+
+TEST_F(SimulationRunTest, NLS_R_PILOT_RUNS_TO_COMPLETION)
+{
+    m_cfg.name = "run_nls_r";
+    m_cfg.model = ModelKind::nls_r;
+    m_cfg.grid.kind = GridKind::bessel_root_r;
+    m_cfg.grid.n = 64;
+    m_cfg.grid.rMax = 5.0;
+    m_cfg.modelParams = {{"gamma", 2.0}, {"amplitude", 2.0}};
+    m_cfg.solver.epsRel = 1e-8;
+    m_cfg.solver.t0 = 0.0;
+    m_cfg.solver.tf = 0.05;
+    m_cfg.solver.hInit = 0.001;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    EXPECT_TRUE(run.run());
+    EXPECT_EQ(run.propagator().stopReason(), spida::StopReason::None);
+}
+
+TEST_F(SimulationRunTest, NLS_R_POWER_IS_CONSERVED)
+{
+    // Cubic NLS with a purely dispersive linear operator conserves the
+    // spectral-space L2 norm sum_k |A_k|^2 exactly for the CONTINUOUS
+    // equation (see spida/models/nls.h's header comment for the argument)
+    // -- the discrete ETD scheme only approximates that, with error
+    // shrinking as tf/step size shrink (confirmed empirically before
+    // picking this tolerance: ~6e-6 relative at tf=0.01/epsRel=1e-10,
+    // ~1.4e-6 at tf=0.005, ~3e-4 at tf=0.05 -- roughly quadratic in tf,
+    // consistent with a genuine, shrinking time-integration truncation
+    // effect rather than a fixed transform-normalization mismatch, which
+    // was checked too: the error is unchanged between grid.n=64 and
+    // grid.n=256, ruling out a spatial-resolution cause). 1e-4 relative
+    // leaves a ~16x margin over the measured value at these settings.
+    m_cfg.name = "run_nls_r_power";
+    m_cfg.model = ModelKind::nls_r;
+    m_cfg.grid.kind = GridKind::bessel_root_r;
+    m_cfg.grid.n = 64;
+    m_cfg.grid.rMax = 5.0;
+    m_cfg.modelParams = {{"gamma", 2.0}, {"amplitude", 2.0}};
+    m_cfg.solver.epsRel = 1e-10;
+    m_cfg.solver.t0 = 0.0;
+    m_cfg.solver.tf = 0.01;
+    m_cfg.solver.hInit = 0.0005;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    auto power = [](const std::vector<spida::dcmplx>& v) {
+        double p = 0.0;
+        for (auto const& c : v)
+            p += std::norm(c);
+        return p;
+    };
+    const double initialPower = power(run.propagator().propagator());
+    ASSERT_GT(initialPower, 0.0); // sanity: the initial condition isn't all-zero
+
+    EXPECT_TRUE(run.run());
+    const double finalPower = power(run.propagator().propagator());
+
+    EXPECT_NEAR(finalPower, initialPower, 1e-4 * initialPower);
 }
 
 TEST_F(SimulationRunTest, REJECTS_UNWIRED_GRID_KIND)

@@ -144,3 +144,74 @@ actually deliver:
 
 Verified via the project's mandated Release build+test cycle (`conan install` → `cmake
 --preset conan-release -DSPIDA_TEST=ON -DSPIDA_DEMOS=ON -DSPIDA_WORKER=ON` → build → `ctest`).
+
+## Addendum: Phase C (nls_r / bessel_root_r — first complex-valued model, first non-uniform grid)
+
+A fourth model, `nls_r` (radial cubic NLS), wired end to end — chosen over `kdv_cv` specifically
+because `nls_r` already has a home in the existing wire contract (`GridKind::bessel_root_r`,
+already in the enum) while `kdv_cv` would need an entirely new `GridKind` (a complex-valued
+uniform grid) that exists in neither the C++ enum nor the proposal's own `domain.ts`. Wiring
+`nls_r` exercises two things at once: the first complex-valued physical field, and the first
+non-uniform grid — stress-testing whether `simulationbuilder.h`'s factory actually generalizes,
+per this ADR's own original "Negative / follow-up" note.
+
+1. **`spida::models::NlsR`/`NlsRPropagator`** (`include/spida/models/nls.h`), promoted from
+   `demos/NLSR.cpp` following the exact pattern ADR-0003 established for
+   `burgers`/`kdv`/`ks` — a working, self-contained demo already existed for this equation.
+   `modelParams.gamma` (Kerr coefficient, default `2.0`) and `modelParams.amplitude` (initial
+   Gaussian peak, default `2.0`) are exposed; the demo's fixed Gaussian width stays fixed.
+   Reports on the grid's own (non-uniform) `r`/`kr` coordinates directly — no mirroring or
+   synthesized axis, so the proposal's "gridCoords never assumed uniform" principle is
+   satisfied without any extra bookkeeping.
+
+2. **`SimulationRun`'s grid changed from a member to a per-case local variable.** The previous
+   `spida::UniformGridRVX m_grid` member was constructed unconditionally, before `cfg.model`
+   was even switched on — workable only because every wired model used the same grid type.
+   Since `Burgers`/`Kdv`/`Ks`/`NlsR` all copy the grid into their own internal storage (see
+   e.g. `kdv.h`'s `m_grid(grid)`), nothing needs `SimulationRun`'s own grid to outlive
+   construction — so each `switch` case now declares its own concrete grid type
+   (`UniformGridRVX` or `BesselRootGridR`) as a local, with no grid-side `std::variant` needed.
+   `m_model` (which genuinely must outlive `m_propagator`/`m_solver`) stays a member variant,
+   now including `spida::models::NlsR`.
+
+3. **`validate()` (`include/spida/config/validation.h`) now checks model/grid *pairing*, not
+   just whether each is independently wired** — directly implementing the proposal's own
+   `config_validation` example ("incompatible model/grid pairing"), previously unreachable
+   since only one `GridKind` was wired at all. `GridConfig.rMax` added (defaulted `5.0`,
+   `BesselRootGridR`-shaped) and validated (`> 0`) the same way `grid.a < grid.b` is for
+   uniform grids.
+
+4. **`SimulationRun::propagator()`'s return type widened** from `BasePropagator&` to
+   `PropagatorCV&` — source-compatible for every existing caller (all use only
+   `BasePropagator`-declared members), and is what let a real numerical-verification test read
+   the raw complex spectral field directly instead of needing a downcast.
+
+5. **Numerical verification, done the way ADR-0003 set the bar — measured, not assumed.**
+   `nls_r` has no closed-form solution for a general Gaussian, so it's checked against a
+   conservation law: cubic NLS with a purely dispersive linear operator conserves the
+   spectral-space L2 norm `sum_k |A_k|^2` exactly for the *continuous* equation. The first
+   version of this check used a 1e-6 relative tolerance and **failed for real** — ~3e-4
+   relative deviation at `tf=0.05`. Before loosening the tolerance blindly, this was
+   investigated empirically: the deviation was unchanged between `grid.n=64` and `grid.n=256`
+   (ruling out a spatial-resolution cause), and shrank roughly quadratically as `tf` shrank
+   (~6e-6 at `tf=0.01`, ~1.4e-6 at `tf=0.005`) — confirming a genuine, shrinking
+   time-integration truncation effect from the finite-order adaptive ETD scheme, not a fixed
+   transform-normalization bug. Settled on `tf=0.01`, `epsRel=1e-10`, `1e-4` relative
+   tolerance (~16x margin over the measured ~6e-6). See `test/config_tests.cpp`'s
+   `NLS_R_POWER_IS_CONSERVED` for the full investigation trail in comments.
+
+Verified via the same mandated Release build+test cycle as the addenda above, 11/11 binaries
+passing, all new/updated tests passing individually.
+
+## Consequences (Phase C)
+
+- **Positive:** the `PropagatorCV`/variant factory pattern genuinely generalizes to a
+  complex-valued field on a non-uniform grid without structural rework beyond the
+  member-to-local grid change above — no grid-side variant, no changes to `BasePropagator`,
+  `ReportHandler`, or the binary-frame/manifest work from Phase A.
+- **Negative / follow-up:** `kdv_cv`/`nls_rt` remain unimplemented. `nls_rt` (2D, radial +
+  time/frequency) would additionally need `Report2D`/`ReportComplex2D` wired through the
+  worker's manifest — `docs/api/binary-frame-spec.md` already flags 2D framing as "not yet
+  specified." `kdv_cv` still has no home in `GridKind` at all; wiring it means adding a new
+  grid kind to both the C++ enum and the proposal's own `domain.ts`, a larger wire-contract
+  change than this addendum took on.
