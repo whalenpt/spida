@@ -22,6 +22,7 @@
 // actually needs (UniformGridRVX / UniformGridCVX / BesselRootGridR /
 // BesselRootGridR+UniformGridCVT) without a grid-side variant.
 
+#include <spida/config/modelregistry.h>
 #include <spida/config/simulationconfig.h>
 #include <spida/config/validation.h>
 #include <spida/grid/besselR.h>
@@ -157,11 +158,17 @@ private:
 
         // model/grid.kind (and their pairing) are already guaranteed valid
         // by requireValid() above — the switch's default case below is
-        // unreachable in practice, kept only as a defensive fallback.
+        // unreachable in practice, kept only as a defensive fallback. `desc`
+        // is therefore guaranteed non-null inside every real case: describe()
+        // returning nullptr for cfg.model is exactly what requireValid()
+        // above would already have rejected (see validation.h, and
+        // modelregistry.h's own header comment for why this is now the one
+        // definition of "wired" instead of a third hardcoded copy).
+        const auto* desc = describe(cfg.model);
         switch (cfg.model) {
         case ModelKind::burgers: {
             spida::UniformGridRVX grid(cfg.grid.n, cfg.grid.a, cfg.grid.b);
-            const double mu = cfg.modelParams.value("mu", 0.0005);
+            const double mu = cfg.modelParams.value("mu", paramDefault(*desc, "mu"));
             auto& model = m_model.emplace<spida::models::Burgers>(grid, mu);
             m_propagator = std::make_unique<spida::models::BurgersPropagator>(outDir, model);
             m_solver = buildSolver(cfg.solver, model.L(), model.NL());
@@ -169,7 +176,8 @@ private:
         }
         case ModelKind::kdv_rv: {
             spida::UniformGridRVX grid(cfg.grid.n, cfg.grid.a, cfg.grid.b);
-            const double solitonSpeed = cfg.modelParams.value("solitonSpeed", 1.0);
+            const double solitonSpeed =
+                cfg.modelParams.value("solitonSpeed", paramDefault(*desc, "solitonSpeed"));
             auto& model = m_model.emplace<spida::models::Kdv>(grid);
             m_propagator =
                 std::make_unique<spida::models::KdvPropagator>(outDir, model, solitonSpeed);
@@ -197,8 +205,9 @@ private:
         }
         case ModelKind::nls_r: {
             spida::BesselRootGridR grid(cfg.grid.n, cfg.grid.rMax);
-            const double gamma = cfg.modelParams.value("gamma", 2.0);
-            const double amplitude = cfg.modelParams.value("amplitude", 2.0);
+            const double gamma = cfg.modelParams.value("gamma", paramDefault(*desc, "gamma"));
+            const double amplitude =
+                cfg.modelParams.value("amplitude", paramDefault(*desc, "amplitude"));
             auto& model = m_model.emplace<spida::models::NlsR>(grid, gamma);
             m_propagator =
                 std::make_unique<spida::models::NlsRPropagator>(outDir, model, amplitude);
@@ -213,8 +222,9 @@ private:
             // stays at its default of 1 -- not exposed via modelParams.
             spida::BesselRootGridR gridR(cfg.grid.n, cfg.grid.rMax);
             spida::UniformGridCVT gridT(cfg.gridT.n, cfg.gridT.a, cfg.gridT.b);
-            const double gamma = cfg.modelParams.value("gamma", 2.0);
-            const double amplitude = cfg.modelParams.value("amplitude", 4.0);
+            const double gamma = cfg.modelParams.value("gamma", paramDefault(*desc, "gamma"));
+            const double amplitude =
+                cfg.modelParams.value("amplitude", paramDefault(*desc, "amplitude"));
             auto& model = m_model.emplace<spida::models::NlsRt>(gridR, gridT, gamma);
             m_propagator =
                 std::make_unique<spida::models::NlsRtPropagator>(outDir, model, amplitude);

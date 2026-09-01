@@ -2,60 +2,68 @@
 
 // Capability discovery — what a given spida binary build actually
 // supports (ModelKind x GridKind combinations, each model's modelParams
-// schema, and the full SolverKind list), exposed as JSON. Written because
-// ADR-0003 already hit real drift once between spida-console's
-// hand-maintained TS domain.ts and what spida-worker actually implements
-// ("the wire shape had to be realigned... rather than the shape ADR-0001
-// had speculatively designed") — this lets a frontend/api-server
-// introspect a worker binary directly instead of hand-syncing enums across
-// the repo boundary. Wired into spida-worker as `spida-worker --describe`
-// (worker/src/main.cpp); see docs/api/openapi.yaml's (not-yet-implemented)
-// GET /capabilities for the HTTP surface this is meant to eventually back.
+// schema, sensible default configs, and the report series it produces),
+// exposed as JSON. Serialized directly from modelregistry.h's
+// ModelDescriptor table — the single source of truth this file, validate()
+// (validation.h), and SimulationRun (simulationbuilder.h) all read, rather
+// than each independently hardcoding the same per-model facts (which had
+// already drifted for real once — see modelregistry.h's own header
+// comment). Wired into spida-worker as `spida-worker --describe`
+// (worker/src/main.cpp); see docs/api/openapi.yaml's Capabilities schema
+// for the HTTP surface this is meant to eventually back.
+
+#include <spida/config/modelregistry.h>
 
 #include <nlohmann/json.hpp>
 
+#include <utility>
+
 namespace spida::config {
 
-/// Kept by hand in sync with validate() (validation.h) and SimulationRun's
-/// own switch statements (simulationbuilder.h) — there's no single
-/// generator for all three yet, so extend this in the same commit that
-/// wires a new ModelKind/GridKind.
 [[nodiscard]] inline nlohmann::json describeCapabilities()
 {
+    nlohmann::json models = nlohmann::json::array();
+    for (auto const& d : modelRegistry()) {
+        nlohmann::json params = nlohmann::json::array();
+        for (auto const& p : d.modelParams) {
+            params.push_back({
+                {"name", p.name},
+                {"type", p.type},
+                {"default", p.defaultValue},
+                {"description", p.description},
+            });
+        }
+        nlohmann::json series = nlohmann::json::array();
+        for (auto const& s : d.series) {
+            series.push_back({
+                {"name", s.name},
+                {"kind", s.kind},
+                {"valueType", s.valueType},
+                {"description", s.description},
+            });
+        }
+        nlohmann::json entry = {
+            {"model", d.model},
+            {"description", d.description},
+            {"grids", nlohmann::json::array({d.gridKind})},
+            {"modelParams", params},
+            {"defaultGrid", d.defaultGrid},
+            {"defaultSolver", d.defaultSolver},
+            {"defaultReporting", d.defaultReporting},
+            {"series", series},
+        };
+        // gridT/defaultGridT present only for models needing a second grid
+        // dimension (nls_rt today) — matches SimulationConfig.gridT's own
+        // "absent/default for every other model" contract.
+        if (d.gridTKind.has_value()) {
+            entry["gridT"] = nlohmann::json::array({*d.gridTKind});
+            entry["defaultGridT"] = *d.defaultGridT;
+        }
+        models.push_back(std::move(entry));
+    }
     return {
-        {"schemaVersion", 1},
-        {"models",
-         nlohmann::json::array({
-             {{"model", "burgers"},
-              {"grids", nlohmann::json::array({"uniform_rvx"})},
-              {"modelParams",
-               nlohmann::json::array(
-                   {{{"name", "mu"}, {"type", "number"}, {"default", 0.0005}}})}},
-             {{"model", "kdv_rv"},
-              {"grids", nlohmann::json::array({"uniform_rvx"})},
-              {"modelParams",
-               nlohmann::json::array(
-                   {{{"name", "solitonSpeed"}, {"type", "number"}, {"default", 1.0}}})}},
-             {{"model", "ks"},
-              {"grids", nlohmann::json::array({"uniform_rvx"})},
-              {"modelParams", nlohmann::json::array()}},
-             {{"model", "kdv_cv"},
-              {"grids", nlohmann::json::array({"uniform_cvx"})},
-              {"modelParams", nlohmann::json::array()}},
-             {{"model", "nls_r"},
-              {"grids", nlohmann::json::array({"bessel_root_r"})},
-              {"modelParams",
-               nlohmann::json::array(
-                   {{{"name", "gamma"}, {"type", "number"}, {"default", 2.0}},
-                    {{"name", "amplitude"}, {"type", "number"}, {"default", 2.0}}})}},
-             {{"model", "nls_rt"},
-              {"grids", nlohmann::json::array({"bessel_root_r"})},
-              {"gridT", nlohmann::json::array({"uniform_cvt"})}, // needs BOTH grid and gridT
-              {"modelParams",
-               nlohmann::json::array(
-                   {{{"name", "gamma"}, {"type", "number"}, {"default", 2.0}},
-                    {{"name", "amplitude"}, {"type", "number"}, {"default", 4.0}}})}},
-         })},
+        {"schemaVersion", 2},
+        {"models", models},
         {"solvers", nlohmann::json::array({"etd35", "etd34", "if34", "if45dp"})},
     };
 }

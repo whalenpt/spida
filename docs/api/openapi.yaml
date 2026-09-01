@@ -489,11 +489,20 @@ components:
         id: { type: string }
         simulationId: { type: string }
         at: { type: string, format: date-time }
-        kind: { type: string, enum: [log, progress, status] }
+        kind: { type: string, enum: [log, progress, status, report] }
         level: { type: string, enum: [info, warn, error] }
         message: { type: string }
         progress: { $ref: '#/components/schemas/ProgressSnapshot' }
         status: { $ref: '#/components/schemas/SimulationStatus' }
+        seriesName:
+          type: string
+          description: 'Only meaningful when kind == "report" — matches ResultSeriesDescriptor.name.'
+        frameIndex:
+          type: integer
+          minimum: 0
+          description: >
+            Only meaningful when kind == "report" — 0-based; GET
+            /simulations/:id/results/:series/frames/:i is now servable for this (series, i) pair.
 
     SeriesKind:
       type: string
@@ -559,8 +568,13 @@ components:
         config/capabilities.h) exactly — what a given spida-worker build
         actually supports, sourced from `spida-worker --describe` rather
         than hand-maintained here, so this never has to be kept in sync by
-        hand a second time (see ADR-0001's Phase B addendum for the drift
-        this is meant to prevent).
+        hand a second time. Serialized directly from
+        include/spida/config/modelregistry.h's ModelDescriptor table —
+        the same single source of truth validate() and SimulationRun read
+        — rather than a second hand-written literal, closing a real drift
+        (capabilities.h and simulationbuilder.h had independently
+        hardcoded the same modelParams default twice) rather than just
+        documenting the risk of it.
       required: [schemaVersion, models, solvers]
       properties:
         schemaVersion: { type: integer }
@@ -568,9 +582,14 @@ components:
           type: array
           items:
             type: object
-            required: [model, grids, modelParams]
+            required:
+              [model, description, grids, modelParams, defaultGrid, defaultSolver,
+               defaultReporting, series]
             properties:
               model: { $ref: '#/components/schemas/ModelKind' }
+              description:
+                type: string
+                description: Human-readable one-line summary of the PDE/model (for ModelPicker copy).
               grids:
                 type: array
                 items: { $ref: '#/components/schemas/GridKind' }
@@ -582,11 +601,37 @@ components:
                 type: array
                 items:
                   type: object
-                  required: [name, type]
+                  required: [name, type, default, description]
                   properties:
                     name: { type: string }
                     type: { type: string }
                     default: {}
+                    description:
+                      type: string
+                      description: Human-readable meaning of this parameter (for a config form's help text).
+              defaultGrid:
+                allOf: [{ $ref: '#/components/schemas/GridConfig' }]
+                description: >
+                  A numerically-sensible starting point for this model, sourced from
+                  worker/README.md's own verified worked examples — NOT GridConfig's generic
+                  struct default (a=0, b=1), which is numerically wrong for most wired models
+                  (e.g. a soliton needs room to translate without periodic wraparound).
+              defaultGridT:
+                allOf: [{ $ref: '#/components/schemas/GridConfig' }]
+                description: Present only for models needing a second grid dimension (nls_rt).
+              defaultSolver: { $ref: '#/components/schemas/SolverConfig' }
+              defaultReporting: { $ref: '#/components/schemas/ReportingConfig' }
+              series:
+                type: array
+                description: The report series (name/kind/valueType) this model actually registers.
+                items:
+                  type: object
+                  required: [name, kind, valueType, description]
+                  properties:
+                    name: { type: string, description: 'Matches ResultSeriesDescriptor.name once a run exists, e.g. "X", "SX".' }
+                    kind: { $ref: '#/components/schemas/SeriesKind' }
+                    valueType: { $ref: '#/components/schemas/ValueType' }
+                    description: { type: string }
         solvers:
           type: array
           items: { $ref: '#/components/schemas/SolverKind' }

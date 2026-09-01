@@ -1,10 +1,13 @@
 #include "spida/config/capabilities.h"
+#include "spida/config/modelregistry.h"
 #include "spida/config/simulationbuilder.h"
 #include "spida/config/simulationconfig.h"
 #include "spida/config/validation.h"
 
 #include <algorithm>
 #include <filesystem>
+#include <map>
+#include <string>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -667,4 +670,224 @@ TEST_F(SimulationRunTest, CANCEL_REQUESTED_BEFORE_RUN_STOPS_EARLY)
     run.propagator().requestCancel();
     EXPECT_TRUE(run.run()); // solver-level evolve() still returns true (no step failed)
     EXPECT_EQ(run.propagator().stopReason(), spida::StopReason::CancelRequested);
+}
+
+// ============================================================
+//  modelregistry.h (single source of truth for validate()/
+//  simulationbuilder.h/capabilities.h's per-model facts)
+// ============================================================
+
+TEST(MODEL_REGISTRY_TEST, DESCRIBE_RETURNS_NULLPTR_FOR_UNWIRED_MODEL)
+{
+    // Same out-of-range-enumerator technique as VALIDATE_TEST's own unwired-
+    // model case -- describe() returning nullptr is now the one definition
+    // of "not wired" that validate()/SimulationRun both key off.
+    EXPECT_EQ(describe(static_cast<ModelKind>(-1)), nullptr);
+}
+
+TEST(MODEL_REGISTRY_TEST, DESCRIBE_FINDS_EVERY_WIRED_MODEL)
+{
+    for (auto const& d : modelRegistry()) {
+        const auto* desc = describe(d.model);
+        ASSERT_NE(desc, nullptr);
+        EXPECT_EQ(desc->model, d.model);
+    }
+}
+
+TEST(MODEL_REGISTRY_TEST, PARAM_DEFAULT_MATCHES_CAPABILITIES_JSON)
+{
+    // Cross-checks two independent readers of the same ModelDescriptor
+    // (paramDefault() and describeCapabilities()'s JSON serialization)
+    // agree -- both are sourced from modelRegistry() now, so this is a
+    // regression guard against the two ever being read inconsistently,
+    // not a check on two independently-maintained copies anymore.
+    const auto* desc = describe(ModelKind::burgers);
+    ASSERT_NE(desc, nullptr);
+    const double mu = paramDefault(*desc, "mu");
+
+    auto caps = spida::config::describeCapabilities();
+    bool found = false;
+    for (auto const& m : caps.at("models")) {
+        if (m.at("model").get<std::string>() != "burgers")
+            continue;
+        for (auto const& p : m.at("modelParams")) {
+            if (p.at("name").get<std::string>() == "mu") {
+                EXPECT_DOUBLE_EQ(p.at("default").get<double>(), mu);
+                found = true;
+            }
+        }
+    }
+    EXPECT_TRUE(found);
+}
+
+TEST(MODEL_REGISTRY_TEST, PARAM_DEFAULT_THROWS_FOR_UNKNOWN_NAME)
+{
+    const auto* desc = describe(ModelKind::ks); // ks has no modelParams at all
+    ASSERT_NE(desc, nullptr);
+    EXPECT_THROW((void)paramDefault(*desc, "not_a_real_param"), std::logic_error);
+}
+
+// One TEST_F per model: constructs a minimal, fast SimulationConfig (the
+// same values the *_PILOT_RUNS_TO_COMPLETION cases above already use, to
+// avoid introducing a second set of magic numbers), registers a report
+// sink the same way worker/src/main.cpp's ManifestBuilder does, and checks
+// the series it actually observes match modelRegistry()'s declared
+// `series` exactly -- name, kind ("field1d"/"field2d"), and valueType
+// ("real"/"complex"). Closes the one drift surface the registry itself
+// introduces: nothing previously enforced that a model's real
+// initReport()-registered labels agree with what the registry now
+// advertises via --describe.
+namespace {
+
+struct ObservedSeries {
+    std::string kind;
+    std::string valueType;
+};
+
+void expectSeriesMatchRegistry(SimulationRun& run, ModelKind model)
+{
+    std::map<std::string, ObservedSeries> observed;
+    run.propagator().setReportSink([&observed](std::string_view name, const nlohmann::json& j) {
+        const std::string type = j.value("type", "xy");
+        const std::string valueType = (type == "xy_complex" || type == "xyz_complex")
+                                           ? "complex"
+                                           : "real";
+        const std::string kind =
+            (type == "xyz" || type == "xyz_complex") ? "field2d" : "field1d";
+        observed[std::string(name)] = {kind, valueType};
+    });
+
+    ASSERT_TRUE(run.run());
+
+    const auto* desc = describe(model);
+    ASSERT_NE(desc, nullptr);
+    ASSERT_EQ(observed.size(), desc->series.size());
+    for (auto const& s : desc->series) {
+        auto it = observed.find(s.name);
+        ASSERT_NE(it, observed.end())
+            << "modelRegistry() declares series \"" << s.name << "\" but it was never reported";
+        EXPECT_EQ(it->second.kind, s.kind) << s.name;
+        EXPECT_EQ(it->second.valueType, s.valueType) << s.name;
+    }
+}
+
+} // namespace
+
+TEST_F(SimulationRunTest, REGISTERED_SERIES_MATCH_REGISTRY_BURGERS)
+{
+    m_cfg.name = "run_registry_series_burgers";
+    m_cfg.grid.n = 64;
+    m_cfg.grid.a = -spida::PI;
+    m_cfg.grid.b = spida::PI;
+    m_cfg.solver.tf = 0.05;
+    m_cfg.solver.hInit = 0.01;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    expectSeriesMatchRegistry(run, m_cfg.model);
+}
+
+TEST_F(SimulationRunTest, REGISTERED_SERIES_MATCH_REGISTRY_KDV_RV)
+{
+    m_cfg.name = "run_registry_series_kdv_rv";
+    m_cfg.model = ModelKind::kdv_rv;
+    m_cfg.modelParams = {{"solitonSpeed", 1.0}};
+    m_cfg.grid.n = 128;
+    m_cfg.grid.a = -20.0;
+    m_cfg.grid.b = 20.0;
+    m_cfg.solver.epsRel = 1e-10;
+    m_cfg.solver.tf = 0.05;
+    m_cfg.solver.hInit = 0.01;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    expectSeriesMatchRegistry(run, m_cfg.model);
+}
+
+TEST_F(SimulationRunTest, REGISTERED_SERIES_MATCH_REGISTRY_KS)
+{
+    m_cfg.name = "run_registry_series_ks";
+    m_cfg.model = ModelKind::ks;
+    m_cfg.grid.n = 64;
+    m_cfg.grid.a = 0.0;
+    m_cfg.grid.b = 100.530964914873;
+    m_cfg.solver.tf = 0.5;
+    m_cfg.solver.hInit = 0.01;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    expectSeriesMatchRegistry(run, m_cfg.model);
+}
+
+TEST_F(SimulationRunTest, REGISTERED_SERIES_MATCH_REGISTRY_KDV_CV)
+{
+    m_cfg.name = "run_registry_series_kdv_cv";
+    m_cfg.model = ModelKind::kdv_cv;
+    m_cfg.grid.kind = GridKind::uniform_cvx;
+    m_cfg.grid.n = 256;
+    m_cfg.grid.a = -150.0;
+    m_cfg.grid.b = 150.0;
+    m_cfg.solver.tf = 1.0;
+    m_cfg.solver.hInit = 0.1;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    expectSeriesMatchRegistry(run, m_cfg.model);
+}
+
+TEST_F(SimulationRunTest, REGISTERED_SERIES_MATCH_REGISTRY_NLS_R)
+{
+    m_cfg.name = "run_registry_series_nls_r";
+    m_cfg.model = ModelKind::nls_r;
+    m_cfg.grid.kind = GridKind::bessel_root_r;
+    m_cfg.grid.n = 64;
+    m_cfg.grid.rMax = 5.0;
+    m_cfg.modelParams = {{"gamma", 2.0}, {"amplitude", 2.0}};
+    m_cfg.solver.tf = 0.05;
+    m_cfg.solver.hInit = 0.001;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+
+    SimulationRun run(m_cfg);
+    expectSeriesMatchRegistry(run, m_cfg.model);
+}
+
+TEST_F(SimulationRunTest, REGISTERED_SERIES_MATCH_REGISTRY_NLS_RT)
+{
+    m_cfg.name = "run_registry_series_nls_rt";
+    m_cfg.model = ModelKind::nls_rt;
+    m_cfg.grid.kind = GridKind::bessel_root_r;
+    m_cfg.grid.n = 32;
+    m_cfg.grid.rMax = 4.0;
+    m_cfg.gridT.kind = GridKind::uniform_cvt;
+    m_cfg.gridT.n = 64;
+    m_cfg.gridT.a = -6.0;
+    m_cfg.gridT.b = 6.0;
+    m_cfg.modelParams = {{"gamma", 2.0}, {"amplitude", 4.0}};
+    m_cfg.solver.tf = 0.01;
+    m_cfg.solver.hInit = 0.001;
+    m_cfg.reporting.stepsPerOutput1D = 1;
+    m_cfg.reporting.stepsPerOutput2D = 1;
+
+    SimulationRun run(m_cfg);
+    expectSeriesMatchRegistry(run, m_cfg.model);
+}
+
+TEST(CAPABILITIES_TEST, INCLUDES_SERIES_AND_DEFAULTS_FROM_REGISTRY)
+{
+    auto caps = spida::config::describeCapabilities();
+    bool checkedNlsRt = false;
+    for (auto const& m : caps.at("models")) {
+        ASSERT_TRUE(m.contains("series"));
+        ASSERT_TRUE(m.contains("defaultGrid"));
+        ASSERT_TRUE(m.contains("defaultSolver"));
+        ASSERT_TRUE(m.contains("defaultReporting"));
+        ASSERT_TRUE(m.contains("description"));
+        EXPECT_FALSE(m.at("series").empty());
+        if (m.at("model").get<std::string>() == "nls_rt") {
+            EXPECT_TRUE(m.contains("gridT"));
+            EXPECT_TRUE(m.contains("defaultGridT"));
+            checkedNlsRt = true;
+        }
+    }
+    EXPECT_TRUE(checkedNlsRt);
 }
