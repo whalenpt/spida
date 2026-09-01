@@ -6,9 +6,9 @@
 // field of a SimulationConfig was wrong without parsing a free-text
 // exception message, and without constructing a grid/model/solver at all.
 // This directly serves the proposal's own UX principle ("inline field
-// errors on the config form; no run is created" — see docs/adr/0001-spida-
-// console-backend-groundwork.md's Consequences) which plain exceptions
-// can't: one exception carries one free-text message, not a list of
+// errors on the config form; no run is created" — see
+// docs/adr/0001-library-extension-seams.md) which plain exceptions can't:
+// one exception carries one free-text message, not a list of
 // (field, message) pairs a form could highlight.
 //
 // Each check below mirrors an exception that already fires somewhere

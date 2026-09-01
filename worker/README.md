@@ -3,9 +3,10 @@
 One executable, links `SPIDA::spida` directly (in-tree — see this
 directory's `CMakeLists.txt`), runs exactly one job, exits. See
 `src/main.cpp`'s header comment for what it reads/writes, and
-`docs/adr/0003-worker-relocation-and-cooperative-cancellation.md` for how
-this came to live here instead of as a separate Conan consumer in
-spida-console, and exactly what changed along the way.
+`docs/adr/0002-worker-model-coverage-and-config-registry.md` for how this
+came to live here instead of as a separate Conan consumer in spida-console,
+and `docs/adr/0003-transport-and-live-events.md` for the live-events
+transport design.
 
 ## Scope
 
@@ -28,22 +29,25 @@ default (any of `spida::config::SolverKind` is honored — see below):
 - `"model": "kdv_cv"` — the *same* PDE as `kdv_rv`, on a
   `"grid": {"kind": "uniform_cvx", "n": ..., "a": ..., "b": ...}` (full
   complex FFT instead of the real-optimized half-spectrum transform — see
-  ADR-0001's Phase D addendum for why this exists as a separate ModelKind).
+  docs/adr/0002-worker-model-coverage-and-config-registry.md for why this
+  exists as a separate ModelKind).
   Fixed 5-soliton initial condition, no `modelParams`; needs a domain at
   least `[-150, 150]` wide for the soliton centers to fit (see
   `spida::models::KdvCvPropagator`'s header comment).
 - `"model": "nls_r"` — radial cubic NLS, `dz A = -i kr^2 A + i gamma |A|^2 A`,
   **complex-valued**, on a `"grid": {"kind": "bessel_root_r", "n": ..., "rMax": ...}`
   (Hankel transform, not FFT — the first non-uniform grid wired; see
-  ADR-0001's Phase C addendum). `modelParams.gamma` (default `2.0`) is the
+  docs/adr/0002-worker-model-coverage-and-config-registry.md).
+  `modelParams.gamma` (default `2.0`) is the
   Kerr nonlinearity coefficient; `modelParams.amplitude` (default `2.0`)
   sets the initial Gaussian's peak amplitude.
 - `"model": "nls_rt"` — 2D radial + time/frequency cubic NLS,
   `dz A = (-i kr^2 + i*0.5*omega^2) A + i gamma |A|^2 A`, **complex-valued,
   2D**. Needs TWO grids simultaneously: `"grid": {"kind": "bessel_root_r", ...}`
   (radial) AND `"gridT": {"kind": "uniform_cvt", "n": ..., "a": ..., "b": ...}`
-  (time/frequency) — see ADR-0001's Phase E addendum for why this needed a
-  new `SimulationConfig.gridT` field. `modelParams.gamma` (default `2.0`)
+  (time/frequency) — see docs/adr/0002-worker-model-coverage-and-config-
+  registry.md for why this needed a new `SimulationConfig.gridT` field.
+  `modelParams.gamma` (default `2.0`)
   and `modelParams.amplitude` (default `4.0`, the initial pulse peak). The
   first model reporting 2D data (`ReportComplex2D`, `"RT"`/`"SR"`).
 
@@ -264,9 +268,9 @@ checkpoint — not an immediate hard kill. The process exits normally (code
 `0`) and writes its own `status.json` (`status: "completed"`,
 `stopReason: "cancel_requested"`) once it reaches that checkpoint, the same
 way a run that finishes any other way does. See
-`docs/adr/0003-worker-relocation-and-cooperative-cancellation.md` for the
-api-server-side consequence this has (not addressed here — api-server lives
-in spida-console).
+`docs/adr/0003-transport-and-live-events.md` for the api-server-side
+consequence this has (not addressed here — api-server lives in
+spida-console).
 
 **Known, accepted gap**: the `SIGTERM` handler is installed only after
 `SimulationRun` finishes constructing. A `SIGTERM` sent before that point

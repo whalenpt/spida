@@ -2,14 +2,13 @@
 
 // Radial nonlinear Schrödinger equation (cubic Kerr nonlinearity):
 //   dz A = -i kr^2 A + i*gamma*|A|^2 A
-// promoted from demos/NLSR.cpp — see docs/adr/0003-worker-relocation-and-
-// cooperative-cancellation.md for the promotion pattern this follows
-// exactly (spida/models/{burgers,kdv,ks}.h). Complex-valued physical field
-// on a BesselRootGridR (Hankel transform, not FFT) — the first model wired
+// promoted from demos/NLSR.cpp — see docs/adr/0002-worker-model-coverage-
+// and-config-registry.md for the promotion pattern this follows exactly
+// (spida/models/{burgers,kdv,ks}.h). Complex-valued physical field on a
+// BesselRootGridR (Hankel transform, not FFT) — the first model wired
 // that isn't real-valued-on-a-uniform-periodic-grid, exercising both
 // PropagatorCV's complex-field path and GridKind::bessel_root_r for the
-// first time (see docs/adr/0001-spida-console-backend-groundwork.md's
-// Phase C addendum).
+// first time (see docs/adr/0002-worker-model-coverage-and-config-registry.md).
 //
 // Numerical verification: cubic NLS with a purely dispersive linear
 // operator and a pointwise Kerr nonlinearity conserves the spectral-space
@@ -26,10 +25,9 @@
 // Also holds NlsRt/NlsRtPropagator below (ModelKind::nls_rt) — the 2D
 // radial + time/frequency cubic NLS, promoted from demos/NLSRT.cpp. Needs
 // TWO independent grids (BesselRootGridR for r, UniformGridCVT for t) via
-// SpidaRCVT — the reason nls_rt stayed unwired through Phase C: representing
-// a second grid dimension is a SimulationConfig-level wire-contract
-// question (see docs/adr/0001-spida-console-backend-groundwork.md's Phase E
-// addendum for how SimulationConfig.gridT resolved it).
+// SpidaRCVT — representing a second grid dimension is a SimulationConfig-
+// level wire-contract question (see docs/adr/0002-worker-model-coverage-
+// and-config-registry.md for how SimulationConfig.gridT resolved it).
 
 #include "spida/R.h"
 #include "spida/RCVT.h"
@@ -215,11 +213,10 @@ private:
 /// concern, not something a config-driven backend model should bake in
 /// (see NlsRPropagator's header comment for the same reasoning re:
 /// mirroring). This is the first model to actually exercise
-/// ReportingConfig's stepsPerOutput2D/maxReports2D fields (frozen ahead of
-/// need in Phase B) and the worker manifest's "field2d" classification
-/// (already handled since Phase A, unknowingly, before any 2D model
-/// existed — see this file's own header comment and ADR-0001's Phase E
-/// addendum).
+/// ReportingConfig's stepsPerOutput2D/maxReports2D fields and the worker
+/// manifest's "field2d" classification, both already in place before any
+/// 2D model existed — see this file's own header comment and
+/// docs/adr/0002-worker-model-coverage-and-config-registry.md.
 class NlsRtPropagator : public spida::PropagatorCV {
 public:
     NlsRtPropagator(const std::filesystem::path& path, NlsRt& model, double amplitude)

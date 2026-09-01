@@ -2,7 +2,7 @@
 
 // Real-valued KdV (u_t + 6 u u_x + u_xxx = 0), promoted from the spida-worker
 // implementation originally authored in spida-console (see
-// docs/adr/0003-worker-relocation-and-cooperative-cancellation.md) — verified
+// docs/adr/0002-worker-model-coverage-and-config-registry.md) — verified
 // there against the exact single-soliton closed-form solution (max abs error
 // 0.0024 at n=1024, consistent with grid spacing, not drift). Mirrors
 // spida/models/burgers.h's structure exactly: a model class owning L()/NL(),
@@ -13,9 +13,9 @@
 // uniform grid (GridKind::uniform_cvx, SpidaCVX) instead of Kdv's
 // real-optimized half-spectrum one (SpidaRVX). Kept in this file rather
 // than a separate one since it's the same equation family, not a
-// different model — see docs/adr/0001-spida-console-backend-groundwork.md's
-// Phase D addendum for why kdv_cv exists as its own ModelKind at all
-// (the proposal's own domain.ts lists it separately from kdv_rv).
+// different model — see docs/adr/0002-worker-model-coverage-and-config-
+// registry.md for why kdv_cv exists as its own ModelKind at all (the
+// proposal's own domain.ts lists it separately from kdv_rv).
 
 #include "spida/CVX.h"
 #include "spida/RVX.h"

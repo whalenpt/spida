@@ -3,10 +3,10 @@
 // Builds a runnable grid/model/propagator/solver quartet from a
 // spida::config::SimulationConfig — the factory spida-worker (worker/) calls
 // after parsing a job's config.json, replacing the hand-assembly every
-// demo/usage example still does. See docs/adr/0003-worker-relocation-and-
-// cooperative-cancellation.md for how this came to cover three real models
-// instead of just the original Burgers pilot, and docs/adr/0001-spida-
-// console-backend-groundwork.md's Phase C addendum for nls_r/bessel_root_r.
+// demo/usage example still does. See
+// docs/adr/0002-worker-model-coverage-and-config-registry.md for how this
+// came to cover all six wired models, starting from an original
+// Burgers-only pilot (docs/adr/0001-library-extension-seams.md).
 //
 // Scope: burgers/kdv_rv/ks (GridKind::uniform_rvx), kdv_cv
 // (GridKind::uniform_cvx), nls_r (GridKind::bessel_root_r), and nls_rt

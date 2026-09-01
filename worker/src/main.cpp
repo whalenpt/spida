@@ -33,7 +33,7 @@
 //
 // This is the in-tree successor to a worker originally authored and
 // numerically verified in spida-console's services/worker — see
-// docs/adr/0003-worker-relocation-and-cooperative-cancellation.md for why it
+// docs/adr/0002-worker-model-coverage-and-config-registry.md for why it
 // moved here and exactly what changed. In short: construction now goes
 // through spida::config::SimulationRun instead of hand-duplicating each
 // model's setup; progress comes from the real
@@ -42,14 +42,15 @@
 // the real spida::StopReason instead of a manifest-scanning heuristic; and
 // SIGTERM now triggers real cooperative cancellation via requestCancel()
 // instead of always requiring a hard SIGKILL from the caller. See
-// ADR-0003 for a real consequence this has on api-server's own exit-handling
-// logic that still needs to be picked up there (out of scope for this repo).
+// docs/adr/0003-transport-and-live-events.md for a real consequence this
+// has on api-server's own exit-handling logic that still needs to be
+// picked up there (out of scope for this repo).
 //
 // config.json is now checked with spida::config::validate() before
 // SimulationRun is ever constructed, producing a structured
 // "validationErrors" array (field + message per entry) in status.json
 // instead of a single free-text exception message — see
-// docs/adr/0001-spida-console-backend-groundwork.md's Phase B addendum.
+// docs/adr/0002-worker-model-coverage-and-config-registry.md.
 //
 // Two more fields since: status.json's "config" now echoes the fully-
 // resolved SimulationConfig (every field defaulted, not just what the
@@ -259,10 +260,11 @@ private:
 // the files SPIDA itself just wrote. The original worker re-parsed each
 // "<name>_<i>.json" off disk and regex-matched filenames to recover what
 // this JSON already told us the moment it was produced — exactly the
-// file-tailing/re-parsing pattern docs/adr/0002-spida-console-phase2-live-
-// feedback.md rejected for the progress channel ("added latency, races on
-// partial writes, and re-parsing JSON the same process just serialized").
-// Same argument applies here: setReportSink() (ADR-0001) delivers each
+// file-tailing/re-parsing pattern
+// docs/adr/0003-transport-and-live-events.md rejects for the live events
+// channel too ("added latency, races on partial writes, and re-parsing
+// JSON the same process just serialized"). Same argument applies here:
+// setReportSink() (docs/adr/0001-library-extension-seams.md) delivers each
 // report's name and JSON in-process, at the moment BasePropagator::report1D
 // ()/report2D() call it, with no filesystem round-trip.
 //
@@ -582,9 +584,10 @@ int main(int argc, char** argv)
         // MaxReportsReached / CancelRequested / None (tf reached) all land
         // on "completed" from the worker's own point of view — a cancelled
         // run now finishes through this same path instead of being killed
-        // mid-flight. See ADR-0003 for what that means for api-server's
-        // exit handler, which still assumes a cancelling job never gets to
-        // write its own terminal status.json.
+        // mid-flight. See docs/adr/0003-transport-and-live-events.md for
+        // what that means for api-server's exit handler, which still
+        // assumes a cancelling job never gets to write its own terminal
+        // status.json.
         writeStatus(outDir,
                     {{"status", "completed"},
                      {"stopReason", stopReasonToString(reason)},
