@@ -93,6 +93,7 @@ RUN apt-get update && \
         cmake \
         curl \
         gdb \
+        gh \
         git \
         gnupg \
         lcov \
