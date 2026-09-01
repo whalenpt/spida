@@ -2,7 +2,7 @@
 
 // Kuramoto-Sivashinsky (u_t + u u_x + u_xx + u_xxxx = 0), promoted from the
 // spida-worker implementation originally authored in spida-console (see
-// docs/adr/0003-worker-relocation-and-cooperative-cancellation.md) — verified
+// docs/adr/0002-worker-model-coverage-and-config-registry.md) — verified
 // there against linear stability theory (growth/decay rate at two Fourier
 // modes, both exact to 6 decimal places against the analytic L(k)) rather
 // than a closed-form nonlinear solution, since KS has none. Mirrors

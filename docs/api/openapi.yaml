@@ -3,19 +3,22 @@ info:
   title: SPIDA Console job-service API
   version: 0.1.0-draft
   description: >
-    Phase 0 contract freeze for the SPIDA Console proposal's REST surface
-    (proposal §1). Not implemented — no api-server exists yet (see
-    docs/adr/0002-spida-console-phase2-live-feedback.md). Written now, ahead
-    of any server code, so a frontend can generate types and build against a
-    mock server without waiting on the real worker.
+    Contract for the SPIDA Console job-service's REST surface. Not
+    implemented — no api-server exists yet (a separate `spida-console` repo;
+    see docs/adr/0003-transport-and-live-events.md for the recommended
+    transport it should implement against). Written ahead of any server
+    code, so a frontend can generate types and build against a mock server
+    without waiting on it.
 
     Config/grid/solver schemas below are sourced field-for-field from the
     actual C++ types in this repo (spida::config::SimulationConfig et al.,
-    see include/spida/config/simulationconfig.h) rather than re-derived, so
-    the wire format and the C++ struct can never quietly drift apart. Where
-    a schema describes something broader than what's implemented today
-    (e.g. ModelKind lists six values but only "burgers" is wired — see
-    docs/adr/0001-spida-console-backend-groundwork.md), that's called out
+    see include/spida/config/simulationconfig.h and
+    include/spida/config/modelregistry.h) rather than re-derived, so the
+    wire format and the C++ struct can never quietly drift apart. All six
+    ModelKind values are wired end to end as of
+    docs/adr/0002-worker-model-coverage-and-config-registry.md; where a
+    schema still describes something broader than what's implemented (e.g.
+    GridKind's "cheb_x", not yet wired to any model), that's called out
     explicitly in the schema description.
 
 servers:
@@ -199,9 +202,9 @@ paths:
       summary: Request cooperative cancellation
       description: >
         Maps to spida::BasePropagator::requestCancel() on the worker side
-        (see docs/adr/0001-spida-console-backend-groundwork.md) — takes
-        effect at the run's next stepUpdate() checkpoint, not immediately.
-        Moves status to "cancelling", not "cancelled".
+        (see docs/adr/0001-library-extension-seams.md) — takes effect at
+        the run's next stepUpdate() checkpoint, not immediately. Moves
+        status to "cancelling", not "cancelled".
       operationId: cancelSimulation
       responses:
         '202':

@@ -1,3 +1,38 @@
+## SPIDA Console Backend (spida-worker)
+
+This repo doubles as the compute backend for **SPIDA Console**, a planned browser
+frontend for configuring, running, and monitoring SPIDA simulations — a separate
+`spida-console` repo (frontend + job-service api-server) that does **not** exist in
+this workspace yet. Three parts of this repo exist specifically in service of that:
+
+1. **`include/spida/config/`** — `SimulationConfig`/`SimulationRun` (build a
+   grid/model/solver from JSON), `validate()` (structured per-field errors),
+   `describeCapabilities()` (introspectable JSON: wired `ModelKind`×`GridKind`
+   pairs, `modelParams` schema, sensible default configs, report series). All three
+   read from `modelregistry.h`'s `ModelDescriptor` table — the single source of
+   truth for these per-model facts; extend the registry, not each of its three
+   consumers, when wiring a new model.
+2. **`worker/`** — `spida-worker`, a CLI that runs exactly one job and exits: parses
+   `config.json`, runs it via `SimulationRun`, writes `status.json`/`manifest.json`/
+   report files, and streams `SimulationEvent`s live. See `worker/README.md` for the
+   full contract.
+3. **`docs/adr/`** / **`docs/api/`** — architecture decisions and the wire contracts
+   (`openapi.yaml`, `events.schema.json`, `binary-frame-spec.md`) a future
+   `spida-console` api-server is meant to implement against.
+
+**Recommended transport for whoever builds `spida-console`'s api-server** (already
+decided here, not yet built there): plain HTTP for commands/queries; `spida-worker`'s
+own stdout — flushed NDJSON, via its `EventSink` fan-out — as the live
+worker→api-server channel, no polling or file-tailing needed; Server-Sent Events
+(not WebSocket) for api-server→browser, since the data flow is one-directional and
+SSE's native reconnect (`Last-Event-ID`) maps directly onto the `since=<cursor>`
+replay shape already in the wire contract. See
+`docs/adr/0003-transport-and-live-events.md` and `worker/README.md`'s "Live events
+(transport)" section for the full reasoning.
+
+**Scope boundary**: this repo stops at the worker CLI and the library itself — no
+REST/WS/queue/HTTP-server code belongs here. That's `spida-console`'s.
+
 ## Build
 
 Dependencies are managed with Conan 2. The build works in any environment with Conan 2

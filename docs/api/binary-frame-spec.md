@@ -19,9 +19,10 @@ at that size.
 `src/utils/report.hpp`) already builds a `nlohmann::json` object per report
 — `{"type": "xy", "x": [...], "y": [...]}` for real 1D data,
 `{"type": "xy_complex", "x": [...], "yr": [...], "yi": [...]}` for complex
-— and, since ADR-0001, can push that same object to a `ReportHandler::Sink`
-callback instead of (or in addition to) writing it to disk
-(`setReportSink()`/`setWriteReportFiles()` on `BasePropagator`).
+— and, since `docs/adr/0001-library-extension-seams.md`, can push that same
+object to a `ReportHandler::Sink` callback instead of (or in addition to)
+writing it to disk (`setReportSink()`/`setWriteReportFiles()` on
+`BasePropagator`).
 
 This binary format is a **transport re-encoding** of that same data, done
 by the (not-yet-built) API server after receiving a report event — it does
@@ -111,9 +112,9 @@ silently baked into the spec.
 ## 2D frames
 
 Specified now that a real 2D-reporting model exists — `nls_rt`
-(`spida::models::NlsRtPropagator`, `include/spida/models/nls.h`,
-docs/adr/0001-spida-console-backend-groundwork.md's Phase E addendum),
-which reports `"RT"`/`"SR"` as `ReportComplex2D`.
+(`spida::models::NlsRtPropagator`, `include/spida/models/nls.h`, see
+`docs/adr/0002-worker-model-coverage-and-config-registry.md`), which
+reports `"RT"`/`"SR"` as `ReportComplex2D`.
 
 ### Layout: row-major, x outer / y inner
 

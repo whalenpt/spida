@@ -33,8 +33,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(ModelKind,
 // enumerated: uniform_cvx is a full-complex-FFT grid distinct from
 // kdv_rv's real-optimized uniform_rvx transform; uniform_cvt is the
 // time/frequency dimension nls_rt needs ALONGSIDE bessel_root_r (see
-// SimulationConfig.gridT below). See docs/adr/0001-spida-console-backend-
-// groundwork.md's Phase D/E addenda.
+// SimulationConfig.gridT below). See
+// docs/adr/0002-worker-model-coverage-and-config-registry.md.
 enum class GridKind { uniform_rvx, uniform_rvt, uniform_cvx, uniform_cvt, bessel_root_r, cheb_x };
 NLOHMANN_JSON_SERIALIZE_ENUM(GridKind,
                              {
@@ -83,16 +83,16 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SolverConfig, kind, epsRel, t0, 
 /// and the proposal's own domain.ts ReportingConfig field-for-field.
 /// logFrequency lives here, not on SolverConfig, matching the real worker
 /// wire contract (spida-console's apps/web sends it nested under
-/// "reporting", not "solver" — see ADR-0003).
+/// "reporting", not "solver" — see docs/adr/0002-worker-model-coverage-
+/// and-config-registry.md).
 ///
-/// stepsPerOutput2D/maxReports2D/stepsPerOutputTrack are defaulted and
-/// currently unused by simulationbuilder.h — no model wired today
-/// (burgers/kdv_rv/ks) reports 2D or track data. Kept present rather than
-/// added later specifically to freeze the wire shape now: ADR-0003 already
-/// had to realign this struct's shape once (modelParams, logFrequency's
-/// nesting) when the real worker/frontend contract turned out to differ
-/// from what was speculatively designed — adding these fields after a 2D
-/// model exists would risk the same kind of break a second time.
+/// stepsPerOutput2D/maxReports2D are now exercised for real by nls_rt (the
+/// first, and so far only, model reporting 2D data); stepsPerOutputTrack
+/// remains defaulted and unused — no wired model registers a Track report
+/// yet. Kept present in the wire shape well ahead of nls_rt's own arrival,
+/// specifically to avoid a second wire-shape break of the kind this repo's
+/// git history already records once for modelParams/logFrequency's own
+/// nesting.
 struct ReportingConfig {
     unsigned stepsPerOutput1D{5};
     unsigned stepsPerOutput2D{1};
@@ -120,8 +120,8 @@ struct SimulationConfig {
     /// a sibling field rather than turning `grid` itself into an array —
     /// keeps `grid`'s existing single-dimension meaning untouched for
     /// every model that doesn't need a second one. Not in the
-    /// architecture proposal's own domain.ts at all; see docs/adr/0001-
-    /// spida-console-backend-groundwork.md's Phase E addendum for why.
+    /// architecture proposal's own domain.ts at all; see
+    /// docs/adr/0002-worker-model-coverage-and-config-registry.md for why.
     GridConfig gridT;
     SolverConfig solver;
     /// Model-specific parameters, generic rather than a per-model typed
