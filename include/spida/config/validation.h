@@ -55,11 +55,14 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ValidationError, field, message)
     // Whether grid.kind itself is wired at all, independent of which model
     // was requested — gates the per-model pairing check below so an
     // unwired grid.kind (e.g. cheb_x) isn't reported twice.
-    const bool gridKindWired =
-        cfg.grid.kind == GridKind::uniform_rvx || cfg.grid.kind == GridKind::bessel_root_r;
+    const bool gridKindWired = cfg.grid.kind == GridKind::uniform_rvx ||
+                               cfg.grid.kind == GridKind::uniform_cvx ||
+                               cfg.grid.kind == GridKind::bessel_root_r;
     if (!gridKindWired) {
-        errors.push_back({"grid.kind",
-                          "grid kind is not yet implemented (only uniform_rvx, bessel_root_r are wired)"});
+        errors.push_back(
+            {"grid.kind",
+             "grid kind is not yet implemented (only uniform_rvx, uniform_cvx, bessel_root_r "
+             "are wired)"});
     }
 
     // Mirrors SimulationRun's own "not yet wired" throws, and also catches
@@ -74,28 +77,63 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ValidationError, field, message)
             errors.push_back({"grid.kind", "this model requires grid.kind \"uniform_rvx\""});
         }
         break;
+    case ModelKind::kdv_cv:
+        if (gridKindWired && cfg.grid.kind != GridKind::uniform_cvx) {
+            errors.push_back({"grid.kind", "this model requires grid.kind \"uniform_cvx\""});
+        }
+        break;
     case ModelKind::nls_r:
         if (gridKindWired && cfg.grid.kind != GridKind::bessel_root_r) {
             errors.push_back({"grid.kind", "this model requires grid.kind \"bessel_root_r\""});
         }
         break;
+    case ModelKind::nls_rt:
+        // Needs BOTH grid.kind == bessel_root_r AND gridT.kind ==
+        // uniform_cvt (SpidaRCVT combines the two) -- see
+        // SimulationConfig.gridT's own comment.
+        if (gridKindWired && cfg.grid.kind != GridKind::bessel_root_r) {
+            errors.push_back({"grid.kind", "this model requires grid.kind \"bessel_root_r\""});
+        }
+        if (cfg.gridT.kind != GridKind::uniform_cvt) {
+            errors.push_back({"gridT.kind", "this model requires gridT.kind \"uniform_cvt\""});
+        }
+        break;
     default:
-        errors.push_back({"model",
-                          "model kind is not yet implemented (only burgers, kdv_rv, ks, nls_r are wired)"});
+        errors.push_back(
+            {"model",
+             "model kind is not yet implemented (only burgers, kdv_rv, ks, kdv_cv, nls_r, "
+             "nls_rt are wired)"});
         break;
     }
 
-    // Mirrors UniformGridX's own throw (src/grid/uniformX.cpp), and the
+    // Mirrors UniformGridX's own throw (src/grid/uniformX.cpp — shared by
+    // uniform_rvx and uniform_cvx, both UniformGridX subclasses), and the
     // analogous shape requirement for BesselRootGridR (a Hankel transform
     // over [0, rMax], no separate "a" bound).
     if (cfg.grid.n == 0) {
         errors.push_back({"grid.n", "grid point count must be greater than zero"});
     }
-    if (cfg.grid.kind == GridKind::uniform_rvx && !(cfg.grid.a < cfg.grid.b)) {
+    if ((cfg.grid.kind == GridKind::uniform_rvx || cfg.grid.kind == GridKind::uniform_cvx) &&
+        !(cfg.grid.a < cfg.grid.b)) {
         errors.push_back({"grid.b", "grid.a must be less than grid.b"});
     }
     if (cfg.grid.kind == GridKind::bessel_root_r && !(cfg.grid.rMax > 0.0)) {
         errors.push_back({"grid.rMax", "rMax must be greater than zero"});
+    }
+
+    // gridT only matters for nls_rt (UniformGridCVT — same shape/throw as
+    // uniform_rvx/uniform_cvx's own UniformGridX::minX>=maxX check), but
+    // checked unconditionally rather than gated on cfg.model: gridT's
+    // shape should be self-consistent regardless of whether the model
+    // requesting it is otherwise valid, same reasoning as grid.n/grid.b
+    // above being checked independent of cfg.model.
+    if (cfg.gridT.kind == GridKind::uniform_cvt) {
+        if (cfg.gridT.n == 0) {
+            errors.push_back({"gridT.n", "grid point count must be greater than zero"});
+        }
+        if (!(cfg.gridT.a < cfg.gridT.b)) {
+            errors.push_back({"gridT.b", "gridT.a must be less than gridT.b"});
+        }
     }
 
     // Mirrors Control::setEpsRel's own throw (src/rkstiff/solver.cpp).
@@ -111,13 +149,27 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ValidationError, field, message)
 
     // Mirrors BasePropagator::validatePositive()'s throws
     // (src/propagator/propagator.cpp), reached via SimulationRun's calls to
-    // setStepsPerOutput1D()/setMaxReports1D()/setLogFrequency().
+    // setStepsPerOutput1D()/setMaxReports1D()/setLogFrequency(). The 2D
+    // pair is checked unconditionally (not just for nls_rt) because
+    // simulationbuilder.h now calls setStepsPerOutput2D()/setMaxReports2D()
+    // for every model, not just 2D-reporting ones — see its own comment:
+    // a 1D-only model would otherwise stop after zero steps if a caller
+    // ever set maxReports2D: 0 (BasePropagator::maxReportReached() checks
+    // m_report_count2D >= m_max_reports2D regardless of whether any 2D
+    // report is actually registered).
     if (cfg.reporting.stepsPerOutput1D == 0) {
         errors.push_back(
             {"reporting.stepsPerOutput1D", "stepsPerOutput1D must be greater than zero"});
     }
     if (cfg.reporting.maxReports1D == 0) {
         errors.push_back({"reporting.maxReports1D", "maxReports1D must be greater than zero"});
+    }
+    if (cfg.reporting.stepsPerOutput2D == 0) {
+        errors.push_back(
+            {"reporting.stepsPerOutput2D", "stepsPerOutput2D must be greater than zero"});
+    }
+    if (cfg.reporting.maxReports2D == 0) {
+        errors.push_back({"reporting.maxReports2D", "maxReports2D must be greater than zero"});
     }
     if (cfg.solver.logProgress && cfg.reporting.logFrequency == 0) {
         errors.push_back({"reporting.logFrequency",

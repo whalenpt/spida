@@ -9,9 +9,9 @@ spida-console, and exactly what changed along the way.
 
 ## Scope
 
-Four models are implemented, promoted into the library itself at
-`include/spida/models/{burgers,kdv,ks,nls}.h`, `ETD35` by default (any of
-`spida::config::SolverKind` is honored — see below):
+All six `ModelKind` values are implemented, promoted into the library
+itself at `include/spida/models/{burgers,kdv,ks,nls}.h`, `ETD35` by
+default (any of `spida::config::SolverKind` is honored — see below):
 
 - `"model": "burgers"` — `u_t + u u_x = mu u_xx`, real-valued, uniform
   periodic grid (`"grid": {"kind": "uniform_rvx", ...}`). `modelParams.mu`
@@ -25,26 +25,41 @@ Four models are implemented, promoted into the library itself at
 - `"model": "ks"` — Kuramoto-Sivashinsky, `u_t + u u_x + u_xx + u_xxxx = 0`,
   same grid kind. No `modelParams` — this equation's standard normalization
   has no free coefficient.
+- `"model": "kdv_cv"` — the *same* PDE as `kdv_rv`, on a
+  `"grid": {"kind": "uniform_cvx", "n": ..., "a": ..., "b": ...}` (full
+  complex FFT instead of the real-optimized half-spectrum transform — see
+  ADR-0001's Phase D addendum for why this exists as a separate ModelKind).
+  Fixed 5-soliton initial condition, no `modelParams`; needs a domain at
+  least `[-150, 150]` wide for the soliton centers to fit (see
+  `spida::models::KdvCvPropagator`'s header comment).
 - `"model": "nls_r"` — radial cubic NLS, `dz A = -i kr^2 A + i gamma |A|^2 A`,
   **complex-valued**, on a `"grid": {"kind": "bessel_root_r", "n": ..., "rMax": ...}`
   (Hankel transform, not FFT — the first non-uniform grid wired; see
   ADR-0001's Phase C addendum). `modelParams.gamma` (default `2.0`) is the
   Kerr nonlinearity coefficient; `modelParams.amplitude` (default `2.0`)
   sets the initial Gaussian's peak amplitude.
+- `"model": "nls_rt"` — 2D radial + time/frequency cubic NLS,
+  `dz A = (-i kr^2 + i*0.5*omega^2) A + i gamma |A|^2 A`, **complex-valued,
+  2D**. Needs TWO grids simultaneously: `"grid": {"kind": "bessel_root_r", ...}`
+  (radial) AND `"gridT": {"kind": "uniform_cvt", "n": ..., "a": ..., "b": ...}`
+  (time/frequency) — see ADR-0001's Phase E addendum for why this needed a
+  new `SimulationConfig.gridT` field. `modelParams.gamma` (default `2.0`)
+  and `modelParams.amplitude` (default `4.0`, the initial pulse peak). The
+  first model reporting 2D data (`ReportComplex2D`, `"RT"`/`"SR"`).
 
-Requesting a wired model with the wrong `grid.kind` (e.g. `"nls_r"` with
-`"uniform_rvx"`) is rejected the same way as an entirely unwired model:
+Requesting a wired model with the wrong `grid.kind`/missing `gridT` (e.g.
+`"nls_r"` with `"uniform_rvx"`, or `"nls_rt"` without a `gridT`) is
+rejected the same way as an entirely unwired model:
 `status: "failed", failureReason: "config_validation"`, along with a
 structured `"validationErrors"` array (`{field, message}` per problem —
 see `include/spida/config/validation.h`) so a caller doesn't have to parse
 `"failureDetail"`'s free text to find out which field was wrong. The same
 check (`spida::config::validate()`) also rejects bad numeric input —
-negative `epsRel`, non-positive `hInit`, `tf <= t0`, zero `grid.n`,
-`grid.a >= grid.b` (uniform grids), non-positive `grid.rMax` (bessel_root_r),
-zero `stepsPerOutput1D`/`maxReports1D` — before anything is constructed or
-`status: "running"` is even written. `kdv_cv`/`nls_rt` come later —
-`spida::config::ModelKind` already has room for them so the wire shape
-won't need to change again when they're wired.
+negative `epsRel`, non-positive `hInit`, `tf <= t0`, zero `grid.n`/`gridT.n`,
+`grid.a >= grid.b`/`gridT.a >= gridT.b` (uniform grids), non-positive
+`grid.rMax` (bessel_root_r), zero `stepsPerOutput1D`/`maxReports1D`/
+`stepsPerOutput2D`/`maxReports2D` — before anything is constructed or
+`status: "running"` is even written.
 
 Run `spida-worker --describe` (no config/output-dir needed) to print which
 `ModelKind`×`GridKind` combinations and `SolverKind`s this build actually
@@ -128,6 +143,22 @@ or the run truncates with `stopReason: "max_reports_reached"` before `tf`.
 ```json
 {
   "name": "run-4",
+  "model": "kdv_cv",
+  "grid": { "kind": "uniform_cvx", "n": 512, "a": -150.0, "b": 150.0 },
+  "solver": { "epsRel": 1e-4, "t0": 0.0, "tf": 600.0, "hInit": 0.1 },
+  "reporting": { "stepsPerOutput1D": 16, "maxReports1D": 500, "logFrequency": 16 }
+}
+```
+
+`kdv_cv` needs `"grid": {"kind": "uniform_cvx", ...}` — same PDE as
+`kdv_rv`, but solved on a full-complex-FFT grid; requesting it with
+`uniform_rvx` fails `config_validation`. The fixed 5-soliton initial
+condition needs the domain shown (or wider) for the soliton centers
+(spanning `x` in `[-120, 0]`) to fit without immediate periodic wraparound.
+
+```json
+{
+  "name": "run-5",
   "model": "nls_r",
   "modelParams": { "gamma": 2.0, "amplitude": 2.0 },
   "grid": { "kind": "bessel_root_r", "n": 100, "rMax": 5.0 },
@@ -142,6 +173,26 @@ or the run truncates with `stopReason: "max_reports_reached"` before `tf`.
 complex (`ReportComplex1D`), unlike every other wired model's real-valued
 reports.
 
+```json
+{
+  "name": "run-6",
+  "model": "nls_rt",
+  "modelParams": { "gamma": 2.0, "amplitude": 4.0 },
+  "grid": { "kind": "bessel_root_r", "n": 80, "rMax": 4.0 },
+  "gridT": { "kind": "uniform_cvt", "n": 512, "a": -6.0, "b": 6.0 },
+  "solver": { "epsRel": 1e-8, "t0": 0.0, "tf": 0.3, "hInit": 0.01 },
+  "reporting": { "stepsPerOutput2D": 4, "maxReports2D": 100, "logFrequency": 12 }
+}
+```
+
+`nls_rt` needs BOTH `"grid": {"kind": "bessel_root_r", ...}` (radial) AND
+`"gridT": {"kind": "uniform_cvt", ...}` (time/frequency) — omitting
+`gridT`, or setting its `kind` to anything else, fails `config_validation`
+with a `"gridT.kind"` field error. Its `"RT"`/`"SR"` reports are
+`ReportComplex2D` — the first (and, today, only) model reporting 2D data;
+`reporting.stepsPerOutput2D`/`maxReports2D` (not the `...1D` fields) govern
+its cadence.
+
 ## Cancellation
 
 `SIGTERM` now triggers real cooperative cancellation
@@ -153,6 +204,25 @@ way a run that finishes any other way does. See
 `docs/adr/0003-worker-relocation-and-cooperative-cancellation.md` for the
 api-server-side consequence this has (not addressed here — api-server lives
 in spida-console).
+
+## Timeout
+
+```bash
+./build/Release/worker/spida-worker config.json /path/to/output-dir 30
+```
+
+An optional 3rd argument, `timeout-seconds`, enforces an **operator**
+wall-clock cap (proposal's error taxonomy: `timeout`) — not part of
+`config.json`/`SimulationConfig` itself, a deployment concern the caller
+supplies separately. Omitted or `<= 0` disables it (the only behavior
+before this). Enforced the same way `SIGTERM` is: reuses `requestCancel()`,
+checked at the run's next report checkpoint, not an immediate kill — a
+timed-out run still exits normally (code `1`) and writes its own
+`status.json` (`status: "failed"`, `failureReason: "timeout"`,
+`failureDetail`: how long the budget was), not killed mid-flight. Checked
+every accepted solver step (not throttled by `stepsPerOutput1D` the way
+`events.ndjson` progress forwarding is), so a coarse report cadence never
+delays noticing a timeout has been exceeded.
 
 ## Numerical verification
 
@@ -191,3 +261,26 @@ history this moved from) rather than re-run here:
   the error was unchanged between `grid.n=64` and `grid.n=256` (ruling out
   a spatial-resolution cause). See `spida/models/nls.h`'s header comment
   and `test/config_tests.cpp`'s `NLS_R_POWER_IS_CONSERVED`.
+- **`kdv_cv`**: same PDE as `kdv_rv`, whose closed-form check already
+  covers the physics — this model's own numerical question is whether the
+  full-complex-FFT pipeline stays faithful to a real-coefficient PDE with a
+  real initial condition, which should keep `u(x,t)` real for all `t`.
+  `PropagatorCV::propagator()` exposes the *spectral* array though, so the
+  checkable invariant is that array's Hermitian symmetry
+  (`usp[N-k] == conj(usp[k])`), not `Im(u)` directly — an earlier version
+  of this check compared `Im`/`Re` of the spectral array directly and
+  failed loudly (comparable magnitude, not noise), which is how this
+  distinction was caught. Measured for real: ~5e-16 relative asymmetry
+  right after construction (confirms the initial condition/transform
+  introduce none), growing to ~2.6e-6 at `tf=0.01` (a legitimate
+  time-stepping accumulation, same category as `nls_r`'s conservation
+  drift above — confirmed, not assumed, since the t0 measurement rules out
+  an IC/transform-level cause). See `spida/models/kdv.h`'s
+  `KdvCvPropagator` header comment and `test/config_tests.cpp`'s
+  `KDV_CV_STAYS_REAL_VALUED`.
+- **`nls_rt`**: same conservation argument as `nls_r` (L(k) is purely
+  dispersive here too), checked the same way — spectral-space L2 norm
+  measured at `t0` and `tf`. ~6.35e-4 relative deviation measured at
+  `tf=0.005`/`epsRel=1e-10`/`grid.n=32`/`gridT.n=64`; test tolerance set to
+  `2e-3` (~3x margin). See `spida/models/nls.h`'s `NlsRt` header comment
+  and `test/config_tests.cpp`'s `NLS_RT_POWER_IS_CONSERVED`.

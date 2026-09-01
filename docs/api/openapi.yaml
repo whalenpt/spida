@@ -307,22 +307,28 @@ components:
       type: string
       enum: [burgers, kdv_cv, kdv_rv, ks, nls_r, nls_rt]
       description: >
-        Mirrors spida::config::ModelKind exactly. "burgers", "kdv_rv", "ks"
-        (GridKind "uniform_rvx") and "nls_r" (GridKind "bessel_root_r") are
-        wired end to end by SimulationRun and spida-worker (see ADR-0003
-        and ADR-0001's Phase C addendum) — "kdv_cv"/"nls_rt" parse and
-        validate but a run request for them fails with FailureReason
-        "config_validation" until implemented. Requesting a wired model
-        with the wrong GridKind (e.g. "nls_r" with "uniform_rvx") also
-        fails config_validation — see ValidationError.
+        Mirrors spida::config::ModelKind exactly. All six values are now
+        wired end to end by SimulationRun and spida-worker: "burgers"/
+        "kdv_rv"/"ks" (GridKind "uniform_rvx"), "kdv_cv" (GridKind
+        "uniform_cvx" — the same PDE as "kdv_rv", solved on a full-complex-
+        FFT grid instead), "nls_r" (GridKind "bessel_root_r"), and "nls_rt"
+        (GridKind "bessel_root_r" for `grid` AND GridKind "uniform_cvt" for
+        `gridT` simultaneously — see ADR-0001's Phase C/D/E addenda).
+        Requesting a wired model with the wrong GridKind/gridT (e.g.
+        "nls_r" with "uniform_rvx", or "nls_rt" missing `gridT`) fails
+        FailureReason "config_validation" — see ValidationError.
 
     GridKind:
       type: string
-      enum: [uniform_rvx, uniform_rvt, bessel_root_r, cheb_x]
+      enum: [uniform_rvx, uniform_rvt, uniform_cvx, uniform_cvt, bessel_root_r, cheb_x]
       description: >
-        Mirrors spida::config::GridKind exactly. "uniform_rvx" and
-        "bessel_root_r" are wired today, each required by a specific set of
-        ModelKinds — see ModelKind's own description.
+        Mirrors spida::config::GridKind exactly. "uniform_cvx"/"uniform_cvt"
+        are NOT in the architecture proposal's own domain.ts GridKind union
+        — added because "kdv_cv" and "nls_rt" (both IN the proposal's
+        ModelKind list) need grid types the proposal never enumerated (see
+        ADR-0001's Phase D/E addenda). All GridKinds except "cheb_x" are
+        wired today, each required by a specific ModelKind (or pair, for
+        "nls_rt") — see ModelKind's own description.
 
     SolverKind:
       type: string
@@ -332,11 +338,14 @@ components:
     GridConfig:
       type: object
       description: >
-        Mirrors spida::config::GridConfig. n/a/b are UniformGridRVX-shaped
-        (used when kind == uniform_rvx); rMax is BesselRootGridR-shaped
-        (used when kind == bessel_root_r — see ADR-0001's Phase C
-        addendum). cheb_x's own params remain intentionally not yet
-        defined — add them here when that grid kind is wired.
+        Mirrors spida::config::GridConfig. n/a/b are UniformGridRVX/
+        UniformGridCVX/UniformGridCVT-shaped (used when kind is
+        uniform_rvx/uniform_cvx/uniform_cvt respectively — all three take
+        the same (n, min, max) constructor signature); rMax is
+        BesselRootGridR-shaped (used when kind == bessel_root_r — see
+        ADR-0001's Phase C addendum). cheb_x's own params remain
+        intentionally not yet defined — add them here when that grid kind
+        is wired.
       properties:
         kind: { $ref: '#/components/schemas/GridKind', default: uniform_rvx }
         n: { type: integer, minimum: 1, default: 256 }
@@ -364,17 +373,19 @@ components:
         (see ADR-0003 for why this replaced an earlier BurgersParams-only
         design). {"mu": number} for "burgers" (default 0.0005); {"solitonSpeed":
         number} for "kdv_rv" (default 1.0); {} for "ks" (no free coefficient);
-        {"gamma": number, "amplitude": number} for "nls_r" (both default 2.0).
+        {} for "kdv_cv" (fixed 5-soliton initial condition, no free params);
+        {"gamma": number, "amplitude": number} for "nls_r" (both default 2.0)
+        and "nls_rt" (gamma default 2.0, amplitude default 4.0).
       additionalProperties: true
 
     ReportingConfig:
       type: object
       description: >
         Mirrors spida::config::ReportingConfig. stepsPerOutput2D/
-        maxReports2D/stepsPerOutputTrack are defined now (defaulted) even
-        though no wired model reports 2D/track data yet — frozen ahead of
-        need to avoid a second wire-shape break (see ADR-0001's Phase B
-        addendum for why).
+        maxReports2D are now exercised for real by "nls_rt" (see ADR-0001's
+        Phase E addendum) — frozen ahead of need back in Phase B, exactly
+        for this. stepsPerOutputTrack remains defaulted/unused; no wired
+        model reports track data yet.
       properties:
         stepsPerOutput1D: { type: integer, minimum: 1, default: 5 }
         stepsPerOutput2D: { type: integer, minimum: 1, default: 1 }
@@ -391,6 +402,14 @@ components:
         name: { type: string, default: run }
         model: { $ref: '#/components/schemas/ModelKind', default: burgers }
         grid: { $ref: '#/components/schemas/GridConfig' }
+        gridT:
+          allOf: [{ $ref: '#/components/schemas/GridConfig' }]
+          description: >
+            A second, independent grid dimension — only meaningful for
+            "nls_rt" (kind must be "uniform_cvt"). Absent/default for
+            every other model. Not in the proposal's own domain.ts at all
+            — see ADR-0001's Phase E addendum for why this is a sibling
+            field rather than turning `grid` itself into an array.
         solver: { $ref: '#/components/schemas/SolverConfig' }
         modelParams: { $ref: '#/components/schemas/ModelParams' }
         reporting: { $ref: '#/components/schemas/ReportingConfig' }
@@ -415,7 +434,14 @@ components:
     FailureReason:
       type: string
       enum: [config_validation, runtime_exception, divergence, timeout, worker_crash]
-      description: Proposal §1 error taxonomy.
+      description: >
+        Proposal §1 error taxonomy. config_validation/runtime_exception/
+        divergence/timeout are all actually produced by spida-worker today
+        (timeout via an optional operator wall-clock cap passed on argv,
+        NOT part of SimulationConfig — see worker/README.md). worker_crash
+        is NOT producible by the worker itself (a crashed process can't
+        write its own status.json) — it's the future api-server detecting
+        a dead process, out of scope for this repo.
 
     ProgressSnapshot:
       type: object
@@ -481,14 +507,27 @@ components:
       type: object
       required: [name, kind, valueType, frameCount, gridCoords]
       properties:
-        name: { type: string, description: 'Matches the report label, e.g. "X", "SX".' }
+        name: { type: string, description: 'Matches the report label, e.g. "X", "SX", "RT".' }
         kind: { $ref: '#/components/schemas/SeriesKind' }
         valueType: { $ref: '#/components/schemas/ValueType' }
         frameCount: { type: integer, minimum: 1 }
         gridCoords:
           type: array
           items: { type: number }
-          description: Explicit coordinates — never assumed uniform (Bessel-root/Chebyshev grids are not).
+          description: >
+            Explicit coordinates for the x axis — never assumed uniform
+            (Bessel-root/Chebyshev grids are not). For kind == "field2d"
+            this is specifically the x axis; see gridCoordsY for the
+            second axis.
+        gridCoordsY:
+          type: array
+          items: { type: number }
+          description: >
+            Explicit coordinates for the y axis. Present (and required) only
+            when kind == "field2d" — e.g. nls_rt's "RT" series has non-
+            uniform r (gridCoords) and uniform t (gridCoordsY) as its two
+            independent axes. Absent for field1d/track. See
+            docs/api/binary-frame-spec.md's "2D frames" section.
 
     ValidationError:
       type: object
@@ -535,6 +574,10 @@ components:
               grids:
                 type: array
                 items: { $ref: '#/components/schemas/GridKind' }
+              gridT:
+                type: array
+                items: { $ref: '#/components/schemas/GridKind' }
+                description: Present only for models needing a second grid dimension (nls_rt).
               modelParams:
                 type: array
                 items:

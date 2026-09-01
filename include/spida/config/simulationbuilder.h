@@ -8,23 +8,25 @@
 // instead of just the original Burgers pilot, and docs/adr/0001-spida-
 // console-backend-groundwork.md's Phase C addendum for nls_r/bessel_root_r.
 //
-// Scope: burgers/kdv_rv/ks (GridKind::uniform_rvx) and nls_r
-// (GridKind::bessel_root_r) are wired end to end — see spida/models/
-// {burgers,kdv,ks,nls}.h's header comments for what was checked. kdv_cv/
-// nls_rt remain in ModelKind for wire-format stability but are not
-// implemented; validate() (validation.h) rejects them before this class is
-// ever constructed (config_validation, in the job-service error taxonomy).
+// Scope: burgers/kdv_rv/ks (GridKind::uniform_rvx), kdv_cv
+// (GridKind::uniform_cvx), nls_r (GridKind::bessel_root_r), and nls_rt
+// (GridKind::bessel_root_r + GridKind::uniform_cvt via
+// SimulationConfig.gridT) are wired end to end — see spida/models/
+// {burgers,kdv,ks,nls}.h's header comments for what was checked.
 //
 // The grid itself is a per-case LOCAL variable in the constructor below,
-// not a member: Burgers/Kdv/Ks/NlsR all copy the grid into their own
-// internal storage (see e.g. spida/models/kdv.h's `m_grid(grid)`), so
-// nothing needs it to outlive construction — which is what lets each
-// ModelKind's case use whichever concrete grid type it actually needs
-// (UniformGridRVX vs. BesselRootGridR) without a grid-side variant.
+// not a member: Burgers/Kdv/KdvCv/Ks/NlsR/NlsRt all copy the grid(s) into
+// their own internal storage (see e.g. spida/models/kdv.h's
+// `m_grid(grid)`), so nothing needs it to outlive construction — which is
+// what lets each ModelKind's case use whichever concrete grid type(s) it
+// actually needs (UniformGridRVX / UniformGridCVX / BesselRootGridR /
+// BesselRootGridR+UniformGridCVT) without a grid-side variant.
 
 #include <spida/config/simulationconfig.h>
 #include <spida/config/validation.h>
 #include <spida/grid/besselR.h>
+#include <spida/grid/uniformCVT.h>
+#include <spida/grid/uniformCVX.h>
 #include <spida/grid/uniformRVX.h>
 #include <spida/models/burgers.h>
 #include <spida/models/kdv.h>
@@ -183,6 +185,16 @@ private:
             m_solver = buildSolver(cfg.solver, model.L(), model.NL());
             break;
         }
+        case ModelKind::kdv_cv: {
+            // No modelParams read here — the 5-soliton initial condition
+            // is fixed, matching demos/kdvCV.cpp (see
+            // spida/models/kdv.h's KdvCvPropagator header comment).
+            spida::UniformGridCVX grid(cfg.grid.n, cfg.grid.a, cfg.grid.b);
+            auto& model = m_model.emplace<spida::models::KdvCv>(grid);
+            m_propagator = std::make_unique<spida::models::KdvCvPropagator>(outDir, model);
+            m_solver = buildSolver(cfg.solver, model.L(), model.NL());
+            break;
+        }
         case ModelKind::nls_r: {
             spida::BesselRootGridR grid(cfg.grid.n, cfg.grid.rMax);
             const double gamma = cfg.modelParams.value("gamma", 2.0);
@@ -193,14 +205,41 @@ private:
             m_solver = buildSolver(cfg.solver, model.L(), model.NL());
             break;
         }
+        case ModelKind::nls_rt: {
+            // Two independent grids -- see this class's own header comment
+            // and SimulationConfig.gridT's own comment for why. Worker
+            // runs are single-process, single-threaded jobs (see
+            // worker/src/main.cpp), so SpidaRCVT's own threads parameter
+            // stays at its default of 1 -- not exposed via modelParams.
+            spida::BesselRootGridR gridR(cfg.grid.n, cfg.grid.rMax);
+            spida::UniformGridCVT gridT(cfg.gridT.n, cfg.gridT.a, cfg.gridT.b);
+            const double gamma = cfg.modelParams.value("gamma", 2.0);
+            const double amplitude = cfg.modelParams.value("amplitude", 4.0);
+            auto& model = m_model.emplace<spida::models::NlsRt>(gridR, gridT, gamma);
+            m_propagator =
+                std::make_unique<spida::models::NlsRtPropagator>(outDir, model, amplitude);
+            m_solver = buildSolver(cfg.solver, model.L(), model.NL());
+            break;
+        }
         default:
             throw std::invalid_argument(
-                "SimulationRun: ModelKind not yet wired (only burgers/kdv_rv/ks/nls_r are) — "
-                "see simulationbuilder.h's header comment");
+                "SimulationRun: ModelKind not yet wired (only burgers/kdv_rv/ks/kdv_cv/nls_r/"
+                "nls_rt are) — see simulationbuilder.h's header comment");
         }
 
         m_propagator->setStepsPerOutput1D(cfg.reporting.stepsPerOutput1D);
         m_propagator->setMaxReports1D(cfg.reporting.maxReports1D);
+        // 2D cadence/budget — a no-op for every model above except nls_rt
+        // (none of the others register a 2D report, and BasePropagator's
+        // ready2D()/maxReportReached() both gate on hasData2D()). Only
+        // safe to call unconditionally because validate() now rejects
+        // reporting.stepsPerOutput2D/maxReports2D == 0 for every model,
+        // not just when a 2D-reporting model is requested — see
+        // validation.h's own comment for why that had to be unconditional
+        // too (a 1D-only model would otherwise stop after zero steps if a
+        // caller ever set maxReports2D: 0).
+        m_propagator->setStepsPerOutput2D(cfg.reporting.stepsPerOutput2D);
+        m_propagator->setMaxReports2D(cfg.reporting.maxReports2D);
         m_propagator->setLogProgress(cfg.solver.logProgress);
         if (cfg.solver.logProgress)
             m_propagator->setLogFrequency(cfg.reporting.logFrequency);
@@ -218,7 +257,9 @@ private:
                 spida::models::Burgers,
                 spida::models::Kdv,
                 spida::models::Ks,
-                spida::models::NlsR>
+                spida::models::KdvCv,
+                spida::models::NlsR,
+                spida::models::NlsRt>
         m_model;
     std::unique_ptr<spida::PropagatorCV> m_propagator;
     std::unique_ptr<spida::SolverCV_AS> m_solver;

@@ -110,8 +110,67 @@ silently baked into the spec.
 
 ## 2D frames
 
-Not yet specified — `Report2D`/`ReportComplex2D` produce a `z` matrix
-(`x.length × y.length`), and the proposal's `SeriesKind` includes
-`field2d`. Extend this doc (row-major vs column-major, and whether `y`
-axis coords also move to `ResultSeriesDescriptor` alongside `x`) when a
-2D-reporting model is wired — none is today (only the Burgers 1D pilot).
+Specified now that a real 2D-reporting model exists — `nls_rt`
+(`spida::models::NlsRtPropagator`, `include/spida/models/nls.h`,
+docs/adr/0001-spida-console-backend-groundwork.md's Phase E addendum),
+which reports `"RT"`/`"SR"` as `ReportComplex2D`.
+
+### Layout: row-major, x outer / y inner
+
+`Report2D`/`ReportComplex2D::buildJson()` (`src/utils/report.hpp`) build
+their `z`/`zr`/`zi` JSON arrays as `x.length` rows of `y.length` columns
+each — `z[i][j]` is the value at `(x[i], y[j])`, iterating `i` (x) as the
+outer loop and `j` (y) as the inner one, directly off the model's own flat
+storage convention `m_z[i * y.length + j]` (e.g. `NlsRtPropagator`'s
+`m_uphys[i * t.size() + j]`). The binary frame payload below mirrors that
+exactly — no transpose, no re-ordering — so the API server can serialize
+straight from the report event's flat array.
+
+### Header JSON
+
+```json
+{
+  "valueType": "complex",
+  "countX": 80,
+  "countY": 512,
+  "t": 0.1234
+}
+```
+
+`countX`/`countY` replace 1D's single `count` for 2D series — `countX`
+matches `ResultSeriesDescriptor.gridCoords.length`, `countY` matches
+`ResultSeriesDescriptor.gridCoordsY.length` (see below).
+
+### Payload
+
+| `valueType` | Payload length | Layout |
+|---|---|---|
+| `real` | `countX × countY × 8` bytes | `z[0][0], z[0][1], ..., z[0][countY-1], z[1][0], ..., z[countX-1][countY-1]` |
+| `complex` | `countX × countY × 2 × 8` bytes | interleaved per point, same row-major traversal: `re[0][0], im[0][0], re[0][1], im[0][1], ..., re[countX-1][countY-1], im[countX-1][countY-1]` |
+
+Same interleaving rationale as the 1D case: one `Float64Array`, stride-2
+indexed for complex, no second allocation.
+
+### `ResultSeriesDescriptor` needs a second axis
+
+1D's `gridCoords` (a single array) isn't enough once a series has two
+independent axes — `nls_rt`'s `"RT"` series has non-uniform `r` (from
+`BesselRootGridR`) on one axis and uniform `t` (from `UniformGridCVT`) on
+the other, and its `"SR"` series has `kr`/`omega` similarly. Proposed:
+`ResultSeriesDescriptor` gains an optional `gridCoordsY: number[]`,
+present (and required) exactly when `kind == "field2d"`, absent for
+`field1d`/`track`. `gridCoords` keeps its existing meaning (the x axis)
+unchanged for every series kind — see `openapi.yaml`'s
+`ResultSeriesDescriptor` schema, updated to match.
+
+### What's still open
+
+Same caveat 1D's payload-alignment note gives: `payloadOffset` isn't
+guaranteed 8-byte aligned, same fix applies (pad the header, or
+`buf.slice()` before constructing the typed array). Downsampling
+(`Report2D::setStrideX()`/`setStrideY()`, used by `demos/NLSRT.cpp` for
+plot-friendly output) is deliberately NOT part of this wire format —
+`NlsRtPropagator` reports every point at stride 1 (see its own header
+comment); if a future model or caller wants server-side downsampling, that
+belongs in the API server's frame-serving logic, not baked into the
+propagator or this wire format.
