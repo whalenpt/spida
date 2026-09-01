@@ -2,19 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spida.dev/schemas/simulation-event.json",
   "title": "SimulationEvent",
-  "description": "Phase 0 contract freeze for the WS /simulations/:id/stream payload and the REST GET /simulations/:id/events replay (proposal §1/§7). Not implemented yet — see docs/adr/0002-spida-console-phase2-live-feedback.md. ProgressSnapshot below mirrors spida::ProgressSnapshot field-for-field (include/spida/propagator/propagator.h); keep them in sync by hand until there's a generator.",
+  "description": "One line of worker/src/main.cpp's EventLog output, delivered through two EventSinks: events.ndjson (durable, replayable via GET /simulations/:id/events?since=) and the worker subprocess's own stdout (live -- an api-server already holds a pipe to it the instant it spawns the worker; recommended transport to the browser from there is Server-Sent Events, not WebSocket, since this is a one-directional push and SSE's native Last-Event-ID reconnect maps directly onto the since=<cursor> replay shape below). See worker/README.md's \"Live events (transport)\" section. ProgressSnapshot below mirrors spida::ProgressSnapshot field-for-field (include/spida/propagator/propagator.h); keep them in sync by hand until there's a generator.",
   "type": "object",
   "required": ["id", "simulationId", "at", "kind"],
   "properties": {
     "id": {
       "type": "string",
-      "description": "Monotonic per-simulation event id — the cursor GET /simulations/:id/events?since= and WS reconnect replay key off."
+      "description": "Monotonic per-simulation event id — the cursor GET /simulations/:id/events?since= and SSE Last-Event-ID replay key off."
     },
     "simulationId": { "type": "string" },
     "at": { "type": "string", "format": "date-time" },
     "kind": {
       "type": "string",
-      "enum": ["log", "progress", "status"]
+      "enum": ["log", "progress", "status", "report"]
     },
     "level": {
       "type": "string",
@@ -32,6 +32,15 @@
     "status": {
       "$ref": "#/$defs/SimulationStatus",
       "description": "Only meaningful when kind == \"status\"."
+    },
+    "seriesName": {
+      "type": "string",
+      "description": "Only meaningful when kind == \"report\" — matches ResultSeriesDescriptor.name, e.g. \"X\", \"SX\"."
+    },
+    "frameIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Only meaningful when kind == \"report\" — 0-based; GET /simulations/:id/results/:series/frames/:i is now servable for this (series, i) pair, and manifest.json's matching series entry has already been rewritten to reflect it (see worker/src/main.cpp's writeManifest())."
     }
   },
   "allOf": [
@@ -46,6 +55,10 @@
     {
       "if": { "properties": { "kind": { "const": "status" } } },
       "then": { "required": ["status"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "report" } } },
+      "then": { "required": ["seriesName", "frameIndex"] }
     }
   ],
   "$defs": {
@@ -95,6 +108,14 @@
       "at": "2026-08-31T12:00:05Z",
       "kind": "status",
       "status": "completed"
+    },
+    {
+      "id": "evt_00045",
+      "simulationId": "sim_run_to_completion",
+      "at": "2026-08-31T12:00:01Z",
+      "kind": "report",
+      "seriesName": "X",
+      "frameIndex": 3
     }
   ]
 }

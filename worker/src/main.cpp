@@ -4,8 +4,21 @@
 // outcome the way the job-service backend expects to find it (see
 // docs/api/openapi.yaml, docs/api/events.schema.json): a status.json written
 // before and after the run, a manifest.json summarizing whatever report
-// files SPIDA itself wrote into the output directory, and an events.ndjson
-// (one SimulationEvent per line) appended as the run progresses.
+// files SPIDA itself wrote into the output directory -- rewritten LIVE on
+// every new frame, not just once at the end, so GET /results can answer
+// mid-run instead of only after the process exits -- and a SimulationEvent
+// stream (one JSON object per line, EventLog below, now including a
+// "report" kind fired alongside each manifest rewrite) delivered through
+// TWO independent EventSinks as the run progresses:
+//   - FileEventSink -> events.ndjson, appended -- durable; replayable by a
+//     caller after this process exits, or after an api-server restart.
+//   - StdoutEventSink -> this process's stdout, flushed per line -- the
+//     LIVE channel. A caller that spawns spida-worker already holds a pipe
+//     to its stdout the instant it does, so this needs no polling and no
+//     filesystem watching to get real-time delivery: read a line from the
+//     child's stdout, forward it (e.g. as one SSE frame per line to a
+//     browser), done. See EventSink's own header comment below for why
+//     these are two sinks fed by one producer, not two separate code paths.
 //
 // Usage: spida-worker <config.json> <output-dir> [timeout-seconds]
 //        spida-worker --describe   (prints capabilities.h's JSON, exits 0)
@@ -37,8 +50,19 @@
 // "validationErrors" array (field + message per entry) in status.json
 // instead of a single free-text exception message — see
 // docs/adr/0001-spida-console-backend-groundwork.md's Phase B addendum.
+//
+// Two more fields since: status.json's "config" now echoes the fully-
+// resolved SimulationConfig (every field defaulted, not just what the
+// caller's config.json actually set) on every write from "running" onward
+// — a client no longer has to re-derive spida's own default table (see
+// modelregistry.h) to know what a run actually used. manifest.json's
+// per-series entries now also carry "gridCoords" (and "gridCoordsY" for a
+// 2D series) — the x/y axis values are static across a series' frames and
+// captured once from the report sink instead of requiring a caller to
+// open and re-parse a report file to get them.
 
 #include <spida/config/capabilities.h>
+#include <spida/config/modelregistry.h>
 #include <spida/config/simulationbuilder.h>
 #include <spida/config/simulationconfig.h>
 #include <spida/config/validation.h>
@@ -52,8 +76,10 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -77,6 +103,25 @@ void writeStatus(const fs::path& dir, const json& status)
     os << status.dump(2);
 }
 
+// Rewrites manifest.json in full each time -- called from the report sink
+// on every new frame (see main()'s setReportSink() call), not just once
+// after the run finishes. Without this, GET /simulations/:id/results (the
+// endpoint that tells a frontend what series exist and their axes) can't
+// return anything until the ENTIRE run is over, which defeats the point of
+// the live status/progress channel: a caller could see "73% done" but not
+// what the field actually looks like at 73%, only at 100%. Cheap to do
+// unconditionally -- a few KB, called at most a few hundred times over a
+// run, trivial next to actual solve cost -- and each frame's own file is
+// already on disk by the time this runs (report1D()/report2D() write the
+// file and call the sink synchronously, in that order, at the same
+// checkpoint), so nothing this writes ever points at a file that isn't
+// there yet.
+void writeManifest(const fs::path& dir, std::string_view simulationId, const json& series)
+{
+    std::ofstream mf(dir / "manifest.json");
+    mf << json{{"simulationId", std::string(simulationId)}, {"series", series}}.dump(2);
+}
+
 /// String values chosen to stay compatible with the original worker's
 /// "tf_reached"/"max_reports_reached" — api-server already passes
 /// status.json's "stopReason" through opaquely (see jobs.ts), so the two new
@@ -97,25 +142,80 @@ std::string stopReasonToString(spida::StopReason reason)
     return "tf_reached";
 }
 
-// ---- events.ndjson: SimulationEvent, one JSON object per line ------------
-// Appended (not rewritten) so api-server can tail it with a byte offset
-// while the worker is still running (see events.ts's poll()). Unchanged
-// from the original worker — see docs/api/events.schema.json for the shape.
+// ---- EventSink: where a built SimulationEvent goes -----------------------
+// An implementation's only job is delivery -- it never builds event content
+// (id/simulationId/at/kind) or knows what "progress" vs "log" means. That's
+// EventLog's job (below), which fans one already-built event out to every
+// registered sink. Splitting these apart (rather than one class that both
+// assembles and appends-to-a-file, as before) is what makes adding a second
+// destination -- stdout, for a future api-server to read as a live pipe,
+// alongside the existing durable file -- purely additive: a new EventSink
+// implementation and one more entry in main()'s sink list, no change to
+// EventLog's status()/log()/progress() or their callers at all.
+class EventSink {
+public:
+    virtual ~EventSink() = default;
+    virtual void write(const json& event) = 0;
+};
+
+// events.ndjson, appended (not rewritten) — the durable copy: still there
+// for a caller to replay after the process exits (GET .../events?since=)
+// or to recover from after an api-server restart, independent of whether
+// anything was reading the live stdout feed at the time.
+class FileEventSink : public EventSink {
+public:
+    explicit FileEventSink(fs::path path) : m_path(std::move(path))
+    {
+    }
+
+    void write(const json& event) override
+    {
+        std::ofstream os(m_path, std::ios::app);
+        os << event.dump() << "\n";
+    }
+
+private:
+    fs::path m_path;
+};
+
+// One NDJSON line per event on stdout, explicitly flushed. This is the
+// live channel: a parent process that spawns spida-worker already holds a
+// pipe to its stdout the instant it does, with no polling, no inotify, and
+// none of the partial-write races that come with tailing a file mid-append
+// -- see this file's own header comment for the fuller argument. The
+// explicit flush() matters: stdout is fully-buffered (not line-buffered)
+// the moment it's redirected to a pipe rather than a tty, so without it
+// events would sit in libstdc++'s internal buffer and only reach the
+// parent in a burst at process exit -- silently defeating the entire
+// point of using stdout as a live channel instead of a batch one.
+class StdoutEventSink : public EventSink {
+public:
+    void write(const json& event) override
+    {
+        std::cout << event.dump() << "\n";
+        std::cout.flush();
+    }
+};
+
+// ---- EventLog: builds a SimulationEvent, fans it out to every sink -------
+// Public API (status()/log()/progress()) unchanged from before this
+// refactor — only how an assembled event is delivered changed. See
+// docs/api/events.schema.json for the shape.
 class EventLog {
 public:
-    EventLog(fs::path dir, std::string simulationId)
-        : m_path(std::move(dir) / "events.ndjson"), m_simId(std::move(simulationId))
+    EventLog(std::string simulationId, std::vector<std::unique_ptr<EventSink>> sinks)
+        : m_simId(std::move(simulationId)), m_sinks(std::move(sinks))
     {
     }
 
     void status(const std::string& status_)
     {
-        append({{"kind", "status"}, {"status", status_}});
+        emit({{"kind", "status"}, {"status", status_}});
     }
 
     void log(const std::string& level, const std::string& message)
     {
-        append({{"kind", "log"}, {"level", level}, {"message", message}});
+        emit({{"kind", "log"}, {"level", level}, {"message", message}});
     }
 
     void progress(const spida::ProgressSnapshot& s)
@@ -125,21 +225,33 @@ public:
             p["tf"] = *s.tf;
         if (s.currentStepSize.has_value())
             p["currentStepSize"] = *s.currentStepSize;
-        append({{"kind", "progress"}, {"progress", p}});
+        emit({{"kind", "progress"}, {"progress", p}});
+    }
+
+    // A new frame of `seriesName` is available -- both as its own file
+    // (<seriesName>_<frameIndex>.json) and reflected into the just-rewritten
+    // manifest.json (see writeManifest()) -- by the time this event is
+    // observed. Lets a live subscriber fetch/render the new frame the
+    // instant it exists instead of polling GET /results to notice
+    // frameCount grew, the same reasoning that motivated pushing
+    // status/progress live rather than leaving them poll-only.
+    void report(const std::string& seriesName, std::size_t frameIndex)
+    {
+        emit({{"kind", "report"}, {"seriesName", seriesName}, {"frameIndex", frameIndex}});
     }
 
 private:
-    void append(json evt)
+    void emit(json evt)
     {
         evt["id"] = std::to_string(m_seq++);
         evt["simulationId"] = m_simId;
         evt["at"] = nowIso8601();
-        std::ofstream os(m_path, std::ios::app);
-        os << evt.dump() << "\n";
+        for (auto const& sink : m_sinks)
+            sink->write(evt);
     }
 
-    fs::path m_path;
     std::string m_simId;
+    std::vector<std::unique_ptr<EventSink>> m_sinks;
     std::size_t m_seq{0};
 };
 
@@ -164,25 +276,53 @@ private:
 // kind called it — flagged here rather than silently assumed away.
 class ManifestBuilder {
 public:
-    void observe(std::string_view name, const json& j)
+    // Returns the series' new frameCount (i.e. 1-based count including the
+    // just-observed frame) so a caller can derive that frame's 0-based file
+    // index (frameCount - 1) without duplicating any counting of its own --
+    // matches BasePropagator's own m_report_count1D/m_report_count2D
+    // numbering exactly, since both this series and every other 1D (or
+    // both every other 2D) series registered on the same propagator share
+    // one counter, incremented once per checkpoint (see propagator.cpp).
+    std::size_t observe(std::string_view name, const json& j)
     {
         auto& s = m_series[std::string(name)];
         const std::string type = j.value("type", "xy");
         s.valueType = (type == "xy_complex" || type == "xyz_complex") ? "complex" : "real";
         s.kind = (type == "xyz" || type == "xyz_complex") ? "field2d" : "field1d";
+        // Grid coordinates ("x", and "y" for a 2D series) are static across
+        // every frame of a series -- report.hpp's buildJson() re-embeds them
+        // redundantly in each frame's JSON, so capturing them once here (on
+        // first observation) is enough. Done specifically so a future
+        // api-server's ResultSeriesDescriptor.gridCoords/gridCoordsY (see
+        // docs/api/openapi.yaml, docs/api/binary-frame-spec.md's "x is not
+        // repeated per frame -- served once") doesn't have to re-open and
+        // re-parse a report file to reconstruct them -- the same
+        // sink-not-file-scan argument this class's own header comment
+        // already makes for the manifest itself.
+        if (s.frameCount == 0) {
+            if (j.contains("x"))
+                s.gridCoords = j.at("x");
+            if (s.kind == "field2d" && j.contains("y"))
+                s.gridCoordsY = j.at("y");
+        }
         s.frameCount++;
+        return s.frameCount;
     }
 
     [[nodiscard]] json build() const
     {
         json out = json::array();
         for (auto const& [name, s] : m_series) {
-            out.push_back({
+            json entry = {
                 {"name", name},
                 {"kind", s.kind},
                 {"valueType", s.valueType},
                 {"frameCount", s.frameCount},
-            });
+                {"gridCoords", s.gridCoords},
+            };
+            if (s.kind == "field2d")
+                entry["gridCoordsY"] = s.gridCoordsY;
+            out.push_back(std::move(entry));
         }
         return out;
     }
@@ -192,6 +332,8 @@ private:
         std::string kind;
         std::string valueType;
         std::size_t frameCount = 0;
+        json gridCoords = json::array();
+        json gridCoordsY = json::array();
     };
     std::map<std::string, Series> m_series;
 };
@@ -247,10 +389,41 @@ int main(int argc, char** argv)
         is >> configJson;
     }
 
-    EventLog events(outDir, outDir.filename().string());
+    const std::string simId = outDir.filename().string();
+
+    // Two sinks: events.ndjson (durable, replayable after this process
+    // exits) and stdout (live -- the pipe an api-server already holds the
+    // instant it spawns this process). See EventSink's own header comment
+    // above for why this is a fan-out, not a choice between the two.
+    std::vector<std::unique_ptr<EventSink>> sinks;
+    sinks.push_back(std::make_unique<FileEventSink>(outDir / "events.ndjson"));
+    sinks.push_back(std::make_unique<StdoutEventSink>());
+    EventLog events(simId, std::move(sinks));
 
     try {
-        const auto cfg = configJson.get<spida::config::SimulationConfig>();
+        auto cfg = configJson.get<spida::config::SimulationConfig>();
+
+        // Backfill modelParams with this model's own registry defaults for
+        // any key the caller's config.json omitted, BEFORE anything reads
+        // cfg.modelParams (including SimulationRun's construction below) or
+        // it's echoed into status.json's "config" field. Without this,
+        // "config" would show modelParams as {} whenever a caller relied on
+        // a default -- the struct-level fields (grid/solver/reporting)
+        // really are resolved by NLOHMANN_DEFINE_TYPE_..._WITH_DEFAULT the
+        // moment configJson.get<SimulationConfig>() ran above, but
+        // modelParams is an opaque JSON blob whose defaults were previously
+        // only ever applied ad hoc, inside simulationbuilder.h's
+        // cfg.modelParams.value(name, ...) calls -- invisible to anything
+        // that only reads cfg.modelParams itself. Caught by actually running
+        // this end to end (a burgers config with no modelParams echoed back
+        // "modelParams": {}), not by the unit tests, which never inspected
+        // status.json's "config" field this closely.
+        if (const auto* desc = spida::config::describe(cfg.model); desc != nullptr) {
+            for (auto const& p : desc->modelParams) {
+                if (!cfg.modelParams.contains(p.name))
+                    cfg.modelParams[p.name] = p.defaultValue;
+            }
+        }
 
         // Checked before anything is constructed (or "running" is even
         // written) so a bad config never claims to have started. Structured
@@ -266,17 +439,37 @@ int main(int argc, char** argv)
                          {"failureReason", "config_validation"},
                          {"failureDetail", detail},
                          {"validationErrors", errors},
+                         {"config", cfg},
                          {"finishedAt", nowIso8601()}});
             events.log("error", detail);
             events.status("failed");
             return 1;
         }
 
-        writeStatus(outDir, {{"status", "running"}, {"startedAt", nowIso8601()}});
+        // "config" below is the fully-resolved SimulationConfig (every
+        // omitted field already filled by NLOHMANN_DEFINE_TYPE_..._WITH_
+        // DEFAULT the moment configJson.get<SimulationConfig>() ran above),
+        // not just an echo of the caller's raw config.json -- written into
+        // every status.json from here on so a client can see exactly what
+        // ran (e.g. the real "mu" used when the caller never set one)
+        // without re-deriving spida's own default table itself.
+        writeStatus(outDir,
+                    {{"status", "running"}, {"config", cfg}, {"startedAt", nowIso8601()}});
         events.status("running");
 
         spida::config::SimulationRun run(cfg, outDir);
         g_propagator = &run.propagator();
+        // Known, accepted gap: SIGTERM sent to this process BEFORE this
+        // point (construction above, or the config-parse/validate steps
+        // before it) gets the default disposition -- immediate termination,
+        // no status.json written -- rather than cooperative cancellation.
+        // Narrow in practice (construction is milliseconds at these problem
+        // sizes) but real; not closed here because doing so needs a
+        // pre-construction cancel flag checked at a couple of points, which
+        // is meaningfully more complexity than the size of the actual risk
+        // justifies right now. Documented in worker/README.md's
+        // "Cancellation" section too -- flagged rather than silently
+        // assumed away.
         std::signal(SIGTERM, handleSigterm);
 
         // Progress events at report cadence (stepsPerOutput1D), matching the
@@ -312,14 +505,28 @@ int main(int argc, char** argv)
         // Report files are still written to outDir as before (setWriteReportFiles
         // defaults to true) — the sink only adds an in-process observation of
         // the same data, replacing the manifest's old post-run file scan.
+        // manifest.json is rewritten on every frame, not just once at the
+        // end (see writeManifest()'s own comment for why), and a "report"
+        // event fires alongside it -- both derived from the same observe()
+        // call, so a live subscriber and a GET /results poller can never
+        // see mutually inconsistent states.
         ManifestBuilder manifest;
-        run.propagator().setReportSink(
-            [&manifest](std::string_view name, const json& j) { manifest.observe(name, j); });
+        run.propagator().setReportSink([&manifest, &outDir, &simId, &events](std::string_view name,
+                                                                             const json& j) {
+            const std::size_t frameCount = manifest.observe(name, j);
+            writeManifest(outDir, simId, manifest.build());
+            events.report(std::string(name), frameCount - 1); // 0-based, matches "<name>_<i>.json"
+        });
 
         const bool stepOk = run.run();
 
-        std::ofstream mf(outDir / "manifest.json");
-        mf << json{{"simulationId", outDir.filename().string()}, {"series", manifest.build()}}.dump(2);
+        // Final write: a safety net for a hypothetical model that registers
+        // zero report series (none of the six wired ones do -- every model
+        // has at least one), so manifest.json always exists once a run
+        // reaches this point either way. For every real model today this is
+        // a no-op re-write of exactly what the sink above already wrote on
+        // the last frame.
+        writeManifest(outDir, simId, manifest.build());
 
         if (!stepOk) {
             const std::string detail = "solver.evolve() returned false (a solver step failed)";
@@ -327,6 +534,7 @@ int main(int argc, char** argv)
                         {{"status", "failed"},
                          {"failureReason", "runtime_exception"},
                          {"failureDetail", detail},
+                         {"config", cfg},
                          {"finishedAt", nowIso8601()}});
             events.log("error", detail);
             events.status("failed");
@@ -341,6 +549,7 @@ int main(int argc, char** argv)
                          {"failureReason", "divergence"},
                          {"stopReason", stopReasonToString(reason)},
                          {"failureDetail", detail},
+                         {"config", cfg},
                          {"finishedAt", nowIso8601()}});
             events.log("error", detail);
             events.status("failed");
@@ -363,6 +572,7 @@ int main(int argc, char** argv)
                          {"failureReason", "timeout"},
                          {"stopReason", stopReasonToString(reason)},
                          {"failureDetail", detail},
+                         {"config", cfg},
                          {"finishedAt", nowIso8601()}});
             events.log("error", detail);
             events.status("failed");
@@ -378,6 +588,7 @@ int main(int argc, char** argv)
         writeStatus(outDir,
                     {{"status", "completed"},
                      {"stopReason", stopReasonToString(reason)},
+                     {"config", cfg},
                      {"finishedAt", nowIso8601()}});
         events.status("completed");
         return 0;

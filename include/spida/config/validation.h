@@ -28,6 +28,7 @@
 // instead. validate() rejects it before SimulationRun (and therefore
 // Control::setEpsRel) is ever reached.
 
+#include <spida/config/modelregistry.h>
 #include <spida/config/simulationconfig.h>
 
 #include <nlohmann/json.hpp>
@@ -52,58 +53,51 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ValidationError, field, message)
 {
     std::vector<ValidationError> errors;
 
-    // Whether grid.kind itself is wired at all, independent of which model
-    // was requested — gates the per-model pairing check below so an
-    // unwired grid.kind (e.g. cheb_x) isn't reported twice.
-    const bool gridKindWired = cfg.grid.kind == GridKind::uniform_rvx ||
-                               cfg.grid.kind == GridKind::uniform_cvx ||
-                               cfg.grid.kind == GridKind::bessel_root_r;
+    // Whether grid.kind itself is used by ANY wired model (as either its
+    // `grid` or `gridT` requirement), independent of which model was
+    // requested — gates the per-model pairing check below so an unwired
+    // grid.kind (e.g. cheb_x) isn't reported twice. Derived from
+    // modelRegistry() (modelregistry.h) rather than a second hardcoded
+    // enum list, so a newly-wired GridKind can't drift out of sync here.
+    bool gridKindWired = false;
+    for (auto const& d : modelRegistry()) {
+        if (cfg.grid.kind == d.gridKind || cfg.grid.kind == d.gridTKind) {
+            gridKindWired = true;
+            break;
+        }
+    }
     if (!gridKindWired) {
-        errors.push_back(
-            {"grid.kind",
-             "grid kind is not yet implemented (only uniform_rvx, uniform_cvx, bessel_root_r "
-             "are wired)"});
+        errors.push_back({"grid.kind", "grid kind is not yet implemented by any wired model"});
     }
 
-    // Mirrors SimulationRun's own "not yet wired" throws, and also catches
+    // Mirrors SimulationRun's own "not yet wired" throw, and also catches
     // the proposal's own "incompatible model/grid pairing" example (e.g.
     // model: "nls_r" with grid.kind: "uniform_rvx") — each wired model
-    // requires exactly one GridKind today.
-    switch (cfg.model) {
-    case ModelKind::burgers:
-    case ModelKind::kdv_rv:
-    case ModelKind::ks:
-        if (gridKindWired && cfg.grid.kind != GridKind::uniform_rvx) {
-            errors.push_back({"grid.kind", "this model requires grid.kind \"uniform_rvx\""});
+    // requires exactly one GridKind (and, for nls_rt, one GridTKind too).
+    // describe() returning nullptr is the one definition of "not wired" —
+    // see modelregistry.h's own header comment for why this used to be a
+    // hardcoded list in three separate files.
+    if (const auto* desc = describe(cfg.model); desc != nullptr) {
+        if (gridKindWired && cfg.grid.kind != desc->gridKind) {
+            errors.push_back({"grid.kind",
+                              "this model requires grid.kind \"" +
+                                  nlohmann::json(desc->gridKind).get<std::string>() + "\""});
         }
-        break;
-    case ModelKind::kdv_cv:
-        if (gridKindWired && cfg.grid.kind != GridKind::uniform_cvx) {
-            errors.push_back({"grid.kind", "this model requires grid.kind \"uniform_cvx\""});
+        if (desc->gridTKind.has_value() && cfg.gridT.kind != *desc->gridTKind) {
+            errors.push_back({"gridT.kind",
+                              "this model requires gridT.kind \"" +
+                                  nlohmann::json(*desc->gridTKind).get<std::string>() + "\""});
         }
-        break;
-    case ModelKind::nls_r:
-        if (gridKindWired && cfg.grid.kind != GridKind::bessel_root_r) {
-            errors.push_back({"grid.kind", "this model requires grid.kind \"bessel_root_r\""});
+    }
+    else {
+        std::string wired;
+        for (auto const& d : modelRegistry()) {
+            if (!wired.empty())
+                wired += ", ";
+            wired += nlohmann::json(d.model).get<std::string>();
         }
-        break;
-    case ModelKind::nls_rt:
-        // Needs BOTH grid.kind == bessel_root_r AND gridT.kind ==
-        // uniform_cvt (SpidaRCVT combines the two) -- see
-        // SimulationConfig.gridT's own comment.
-        if (gridKindWired && cfg.grid.kind != GridKind::bessel_root_r) {
-            errors.push_back({"grid.kind", "this model requires grid.kind \"bessel_root_r\""});
-        }
-        if (cfg.gridT.kind != GridKind::uniform_cvt) {
-            errors.push_back({"gridT.kind", "this model requires gridT.kind \"uniform_cvt\""});
-        }
-        break;
-    default:
         errors.push_back(
-            {"model",
-             "model kind is not yet implemented (only burgers, kdv_rv, ks, kdv_cv, nls_r, "
-             "nls_rt are wired)"});
-        break;
+            {"model", "model kind is not yet implemented (only " + wired + " are wired)"});
     }
 
     // Mirrors UniformGridX's own throw (src/grid/uniformX.cpp — shared by

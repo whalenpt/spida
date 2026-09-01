@@ -63,10 +63,32 @@ negative `epsRel`, non-positive `hInit`, `tf <= t0`, zero `grid.n`/`gridT.n`,
 
 Run `spida-worker --describe` (no config/output-dir needed) to print which
 `ModelKind`×`GridKind` combinations and `SolverKind`s this build actually
-supports, plus each model's `modelParams` schema, as JSON — see
-`include/spida/config/capabilities.h`. Meant to let a frontend/api-server
-introspect a worker binary directly instead of hand-syncing enums against
-this README.
+supports, plus each model's `modelParams` schema, a numerically-sensible
+`defaultGrid`/`defaultGridT`/`defaultSolver`/`defaultReporting` (sourced
+from this README's own worked examples below — NOT the generic
+`GridConfig` struct default, which is numerically wrong for most wired
+models), the report `series` (name/kind/valueType) it registers, and a
+human-readable `description` per model/param/series — see
+`include/spida/config/capabilities.h`, which now serializes all of this
+straight from `include/spida/config/modelregistry.h`'s `ModelDescriptor`
+table (the single source of truth `validate()` and `SimulationRun` also
+read, rather than three files each hand-encoding the same facts). Meant to
+let a frontend/api-server introspect a worker binary directly instead of
+hand-syncing enums against this README — including pre-filling a
+ConfigurePage's grid/solver fields with values that will actually produce
+a physically sensible run for the selected model, and building a series
+picker/plot-tab list before any run exists.
+
+`manifest.json` and `status.json` also carry more than they used to:
+`manifest.json`'s per-series entries now include `gridCoords` (and
+`gridCoordsY` for a 2D series) — the static x/y axis values, captured once
+from the report sink's first frame — so a caller doesn't have to re-open
+and re-parse a report file to get them (see
+`docs/api/binary-frame-spec.md`'s "x is not repeated per frame"). Every
+`status.json` from `"running"` onward now also carries `"config"`: the
+fully-resolved `SimulationConfig` (every field defaulted, not just what
+the caller's `config.json` actually set) — e.g. the real `mu` a run used
+even if the caller never set one.
 
 Construction goes through `spida::config::SimulationRun`
 (`include/spida/config/simulationbuilder.h`), which also means any of the
@@ -193,6 +215,47 @@ with a `"gridT.kind"` field error. Its `"RT"`/`"SR"` reports are
 `reporting.stepsPerOutput2D`/`maxReports2D` (not the `...1D` fields) govern
 its cadence.
 
+## Live events (transport)
+
+Every `SimulationEvent` (`status`/`log`/`progress`/`report`) is delivered
+to two independent sinks — `EventLog`/`EventSink` in `src/main.cpp` — from
+one producer, so the two can never drift apart:
+
+- `events.ndjson`, appended to the output directory — durable, replayable
+  after this process exits (e.g. `GET /simulations/:id/events?since=`) or
+  after an api-server restart.
+- `stdout`, one JSON line per event, explicitly flushed — the **live**
+  channel. A caller that spawns `spida-worker` already holds a pipe to its
+  stdout the instant it does, so this is the recommended way for an
+  api-server to get real-time updates: no polling `status.json`, no
+  filesystem watching `events.ndjson` for new lines (and none of the
+  partial-write races that come with tailing a file mid-append) — just
+  read a line, forward it (e.g. as one SSE frame per line to a browser).
+
+Recommended full transport shape, browser included: plain HTTP for
+commands/queries (`POST /simulations`, `POST /simulations/:id/cancel`,
+`GET /simulations/:id`); this stdout NDJSON pipe for worker→api-server;
+Server-Sent Events, not WebSocket, for api-server→browser — SSE is a
+structural match for what this actually is (a one-directional push of
+already-defined `SimulationEvent`s), and its native `Last-Event-ID`
+reconnect maps directly onto the `since=<cursor>` replay shape
+`events.schema.json`/`openapi.yaml` already define, without hand-rolling a
+WS reconnect protocol on top.
+
+**`manifest.json` is rewritten live, not just once at the end** — on every
+new report frame, from the same `setReportSink()` callback that already
+observes it (see `ManifestBuilder`/`writeManifest()` in `src/main.cpp`), so
+`GET /simulations/:id/results` can answer mid-run instead of only once a
+run finishes. A matching `"report"` event (`{seriesName, frameIndex}`)
+fires alongside each rewrite — `frameIndex` is 0-based and matches the
+on-disk `<seriesName>_<frameIndex>.json` file, which is already written
+(report files are written synchronously, before the sink runs) and
+`manifest.json` already reflects by the time a subscriber sees the event.
+Lets a live client fetch/render a new frame the moment it exists instead
+of polling `GET /results` to notice `frameCount` grew — the same reasoning
+that motivated pushing `status`/`progress` live rather than leaving them
+poll-only.
+
 ## Cancellation
 
 `SIGTERM` now triggers real cooperative cancellation
@@ -204,6 +267,18 @@ way a run that finishes any other way does. See
 `docs/adr/0003-worker-relocation-and-cooperative-cancellation.md` for the
 api-server-side consequence this has (not addressed here — api-server lives
 in spida-console).
+
+**Known, accepted gap**: the `SIGTERM` handler is installed only after
+`SimulationRun` finishes constructing. A `SIGTERM` sent before that point
+(config parsing/validation, or construction itself) gets the default
+disposition — immediate termination, no `status.json` written — instead of
+cooperative cancellation. Narrow in practice (construction is milliseconds
+at the problem sizes above) but real, and worth knowing if an api-server
+integration test sends cancel immediately after submit and occasionally
+sees a run vanish with no terminal status rather than a `"cancelled"`
+result. Not closed here: doing so needs a pre-construction cancel flag
+checked at a couple of points, more complexity than the size of the actual
+risk currently justifies.
 
 ## Timeout
 
@@ -223,6 +298,25 @@ timed-out run still exits normally (code `1`) and writes its own
 every accepted solver step (not throttled by `stepsPerOutput1D` the way
 `events.ndjson` progress forwarding is), so a coarse report cadence never
 delays noticing a timeout has been exceeded.
+
+## Exit codes
+
+An already-existing but previously undocumented three-tier contract a
+process supervisor (e.g. an api-server's `child_process.spawn` handler)
+can rely on:
+
+| Code | Meaning |
+|---|---|
+| `0` | Reached a terminal `"completed"` state — this covers `tf` reached, `max_reports_reached`, **and** `cancel_requested` (a cooperatively-cancelled run still exits `0`; see "Cancellation" above). Check `status.json`'s `stopReason` to tell these apart. |
+| `1` | Reached a terminal `"failed"` state — `failureReason` is one of `config_validation`/`runtime_exception`/`divergence`/`timeout`. `status.json` was written before exit either way. |
+| `2` | CLI usage error — bad argument count, unparsable `timeout-seconds`, or `config.json` couldn't be opened. **No `status.json` is written** — this happens before any output directory work begins. |
+
+A process that exits with neither a written `status.json` nor code `2` was
+killed (e.g. `SIGKILL`, OOM, or the known `SIGTERM`-before-construction gap
+above) rather than exiting normally — that's the `worker_crash`
+`FailureReason` from the proposal's error taxonomy, which this process can
+never report about itself (see `docs/api/openapi.yaml`'s `FailureReason`
+schema); detecting it is the caller's job.
 
 ## Numerical verification
 
