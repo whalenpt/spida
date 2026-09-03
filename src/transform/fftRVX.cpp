@@ -5,6 +5,7 @@
 #include "spida/helper/constants.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <new>
 #include <stdexcept>
@@ -59,11 +60,20 @@ void FFTRVX::SX_To_X(const dcmplx* in, double* out) noexcept
 
 void FFTRVX::X_To_SX(const std::vector<double>& in, std::vector<dcmplx>& out) noexcept
 {
+    // Debug-only guard against caller/grid size drift -- the raw-pointer
+    // overload this delegates to has no length to check itself, since it
+    // has no size parameter at all (m_nx is trusted implicitly). Compiled
+    // out under NDEBUG, so no Release-path cost. SX domain is the real-FFT
+    // half-spectrum (m_nx/2+1), matching m_temp's own size.
+    assert(in.size() == m_nx);
+    assert(out.size() == m_nx / 2 + 1);
     X_To_SX(in.data(), out.data());
 }
 
 void FFTRVX::SX_To_X(const std::vector<dcmplx>& in, std::vector<double>& out) noexcept
 {
+    assert(in.size() == m_nx / 2 + 1);
+    assert(out.size() == m_nx);
     SX_To_X(in.data(), out.data());
 }
 

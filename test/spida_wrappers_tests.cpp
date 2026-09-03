@@ -6,11 +6,13 @@
 #include <gtest/gtest.h>
 #include <spida/CVT.h>
 #include <spida/CVX.h>
+#include <spida/grid/besselR.h>
 #include <spida/grid/uniformCVT.h>
 #include <spida/grid/uniformCVX.h>
 #include <spida/grid/uniformRVT.h>
 #include <spida/grid/uniformRVX.h>
 #include <spida/helper/constants.h>
+#include <spida/RCVT.h>
 #include <spida/RVT.h>
 #include <spida/RVX.h>
 #include <utils/except.h>
@@ -596,4 +598,42 @@ TEST(SPIDA_RVT_TEST, DT_SECOND_DERIVATIVE_SIN)
 
     spi.dT(in, out, 2);
     EXPECT_LT(detail::relative_error(expect, out), 1e-5);
+}
+
+// ============================================================
+// SpidaRCVT wrapper tests
+// ============================================================
+
+TEST(SPIDA_RCVT_TEST, MIRROR_R_REFLECTS_AND_PRESERVES)
+{
+    // Regression test for a real bug: mirrorR()'s reversed-half loop used to
+    // be "for (unsigned i = nr - 1; i >= 0; i--)" -- i >= 0 is always true
+    // for an unsigned type, so i wrapped past 0 to UINT_MAX instead of
+    // stopping, running in/out far out of bounds. Reliably segfaulted
+    // demos/nlsRT (caught there, not by any prior test -- nothing exercised
+    // mirrorR() before this). Every (i, j) pair is checked explicitly so a
+    // future regression fails loudly here instead of needing a demo crash.
+    unsigned nr = 4;
+    unsigned nt = 4;
+    spida::BesselRootGridR gridR(nr, 5.0);
+    spida::UniformGridCVT gridT(nt, -1.0, 1.0);
+    spida::SpidaRCVT spi(gridR, gridT);
+
+    std::vector<dcmplx> in(nr * nt);
+    for (unsigned i = 0; i < nr; i++)
+        for (unsigned j = 0; j < nt; j++)
+            in[i * nt + j] = dcmplx(static_cast<double>(i), static_cast<double>(j));
+
+    std::vector<dcmplx> out(2 * nr * nt);
+    spi.mirrorR(in, out);
+
+    // Reversed half (indices [0, nr)): out[k] == in[nr-1-k]
+    for (unsigned k = 0; k < nr; k++)
+        for (unsigned j = 0; j < nt; j++)
+            EXPECT_EQ(out[k * nt + j], in[(nr - 1 - k) * nt + j]);
+
+    // Original half (indices [nr, 2*nr)): out[i+nr] == in[i], unchanged
+    for (unsigned i = 0; i < nr; i++)
+        for (unsigned j = 0; j < nt; j++)
+            EXPECT_EQ(out[(i + nr) * nt + j], in[i * nt + j]);
 }

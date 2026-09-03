@@ -1,6 +1,6 @@
 # Binary frame wire format
 
-Phase 0 contract freeze for `GET /simulations/:id/results/:series/frames/:i`
+Wire format for `GET /simulations/:id/results/:series/frames/:i`
 (proposal §1: *"a small JSON header followed by a raw Float64Array buffer...
 never a JSON number array"*). Not implemented — no api-server exists yet.
 

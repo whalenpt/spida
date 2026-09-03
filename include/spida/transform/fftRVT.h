@@ -25,6 +25,13 @@ public:
     FFTRVT() = delete;
     FFTRVT(const FFTRVT& sp) = delete;
     FFTRVT& operator=(const FFTRVT& sp) = delete;
+    // Move is suppressed too, not just implicitly left unavailable by the
+    // deleted copy ops above -- m_cfg_forward/m_cfg_reverse/m_rcfg_forward/
+    // m_rcfg_reverse are raw owning handles freed in the destructor, and a
+    // moved-from instance's destructor would double-free them without an
+    // explicit transfer this class doesn't implement.
+    FFTRVT(FFTRVT&& sp) = delete;
+    FFTRVT& operator=(FFTRVT&& sp) = delete;
 
     void T_To_ST(const std::vector<double>& in, std::vector<dcmplx>& out);
     void ST_To_T(const std::vector<dcmplx>& in, std::vector<double>& out);

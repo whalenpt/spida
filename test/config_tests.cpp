@@ -56,7 +56,8 @@ TEST(SIMULATION_CONFIG_TEST, MODEL_KIND_SERIALIZES_TO_EXPECTED_STRING)
 }
 
 // ============================================================
-//  validate() (Phase B: structured, field-keyed config validation)
+//  validate() (docs/adr/0002-worker-model-coverage-and-config-registry.md:
+//  structured, field-keyed config validation)
 // ============================================================
 
 TEST(VALIDATE_TEST, DEFAULT_CONFIG_IS_VALID)
@@ -67,7 +68,8 @@ TEST(VALIDATE_TEST, DEFAULT_CONFIG_IS_VALID)
 
 TEST(VALIDATE_TEST, REJECTS_UNWIRED_MODEL_KIND_WITH_FIELD)
 {
-    // All six ModelKind enumerators are wired as of nls_rt (Phase E) --
+    // All six ModelKind enumerators are wired (see
+    // docs/adr/0002-worker-model-coverage-and-config-registry.md) --
     // nothing legitimate is left to construct here. Exercises validate()'s
     // defensive default: branch instead, via a value outside the
     // enumerator set (well-defined: ModelKind's underlying type can
@@ -328,7 +330,7 @@ TEST(SIMULATION_RUN_CONSTRUCTOR_TEST, INVALID_CONFIG_STILL_THROWS_INVALID_ARGUME
 }
 
 // ============================================================
-//  Capability discovery (Phase B)
+//  Capability discovery (docs/adr/0002-worker-model-coverage-and-config-registry.md)
 // ============================================================
 
 TEST(CAPABILITIES_TEST, DESCRIBES_ALL_SIX_WIRED_MODELS)
@@ -368,7 +370,8 @@ protected:
 
 TEST_F(SimulationRunTest, REJECTS_UNWIRED_MODEL_KIND)
 {
-    // All six ModelKind enumerators are wired as of nls_rt (Phase E) --
+    // All six ModelKind enumerators are wired (see
+    // docs/adr/0002-worker-model-coverage-and-config-registry.md) --
     // see VALIDATE_TEST.REJECTS_UNWIRED_MODEL_KIND_WITH_FIELD for why this
     // now uses an out-of-range value instead of a real enumerator.
     m_cfg.model = static_cast<ModelKind>(-1);

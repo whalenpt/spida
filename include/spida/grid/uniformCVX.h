@@ -7,10 +7,10 @@
 
 namespace spida {
 
-class UniformGridCVX : public UniformGridX {
+class UniformGridCVX final : public UniformGridX {
 public:
     UniformGridCVX(unsigned nx, double min, double max);
-    ~UniformGridCVX() final = default;
+    ~UniformGridCVX() = default;
 
     const std::vector<double>& getSX() const override final
     {

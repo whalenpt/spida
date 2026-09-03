@@ -26,6 +26,17 @@ public:
     HankelFFTRRVT() = delete;
     HankelFFTRRVT(const HankelFFTRRVT& sp) = delete;
     HankelFFTRRVT& operator=(const HankelFFTRRVT& sp) = delete;
+    // Move is suppressed too, not just implicitly left unavailable by the
+    // deleted copy ops above -- the worker threads in m_thread are bound
+    // (via std::thread(&HankelFFTRRVT::worker_thread, this, ...)) to this
+    // exact object's address, and the mutex/condition_variable state
+    // machine they coordinate through is neither movable-with-correctness
+    // nor safe to leave half-transferred. A moved-from instance's
+    // destructor joining threads that still reference the moved-to
+    // instance's `this` would be a use-after-move bug this class doesn't
+    // implement a fix for.
+    HankelFFTRRVT(HankelFFTRRVT&& sp) = delete;
+    HankelFFTRRVT& operator=(HankelFFTRRVT&& sp) = delete;
 
     void RT_To_SRST(const std::vector<double>& in, std::vector<dcmplx>& out); // tested - success
     void SRST_To_RT(const std::vector<dcmplx>& in, std::vector<double>& out); // tested - success
