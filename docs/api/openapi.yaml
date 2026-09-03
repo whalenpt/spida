@@ -33,8 +33,10 @@ paths:
         directly by `spida-worker --describe`'s JSON output (see
         include/spida/config/capabilities.h), so ConfigurePage/ModelPicker
         can render only what's actually wired instead of a hand-maintained
-        TS enum drifting from the real worker (see ADR-0001's Phase B
-        addendum, and ADR-0003 for the drift this already caused once).
+        TS enum drifting from the real worker — see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md for the
+        modelregistry.h decision this reads from, and the real mu-default
+        drift it closed.
       operationId: getCapabilities
       responses:
         '200':
@@ -316,7 +318,9 @@ components:
         "uniform_cvx" — the same PDE as "kdv_rv", solved on a full-complex-
         FFT grid instead), "nls_r" (GridKind "bessel_root_r"), and "nls_rt"
         (GridKind "bessel_root_r" for `grid` AND GridKind "uniform_cvt" for
-        `gridT` simultaneously — see ADR-0001's Phase C/D/E addenda).
+        `gridT` simultaneously — see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md for full
+        per-model grid/gridT wiring).
         Requesting a wired model with the wrong GridKind/gridT (e.g.
         "nls_r" with "uniform_rvx", or "nls_rt" missing `gridT`) fails
         FailureReason "config_validation" — see ValidationError.
@@ -328,8 +332,9 @@ components:
         Mirrors spida::config::GridKind exactly. "uniform_cvx"/"uniform_cvt"
         are NOT in the architecture proposal's own domain.ts GridKind union
         — added because "kdv_cv" and "nls_rt" (both IN the proposal's
-        ModelKind list) need grid types the proposal never enumerated (see
-        ADR-0001's Phase D/E addenda). All GridKinds except "cheb_x" are
+        ModelKind list) need grid types the proposal never enumerated — see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md. All
+        GridKinds except "cheb_x" are
         wired today, each required by a specific ModelKind (or pair, for
         "nls_rt") — see ModelKind's own description.
 
@@ -346,7 +351,8 @@ components:
         uniform_rvx/uniform_cvx/uniform_cvt respectively — all three take
         the same (n, min, max) constructor signature); rMax is
         BesselRootGridR-shaped (used when kind == bessel_root_r — see
-        ADR-0001's Phase C addendum). cheb_x's own params remain
+        docs/adr/0002-worker-model-coverage-and-config-registry.md).
+        cheb_x's own params remain
         intentionally not yet defined — add them here when that grid kind
         is wired.
       properties:
@@ -359,7 +365,7 @@ components:
     SolverConfig:
       type: object
       description: Mirrors spida::config::SolverConfig. logFrequency lives
-        on ReportingConfig, not here (see ADR-0003).
+        on ReportingConfig, not here.
       properties:
         kind: { $ref: '#/components/schemas/SolverKind', default: etd35 }
         epsRel: { type: number, default: 1.0e-8 }
@@ -373,8 +379,9 @@ components:
       description: >
         Mirrors spida::config::SimulationConfig.modelParams — a generic
         object whose shape depends on "model", not a per-model typed schema
-        (see ADR-0003 for why this replaced an earlier BurgersParams-only
-        design). {"mu": number} for "burgers" (default 0.0005); {"solitonSpeed":
+        — see docs/adr/0002-worker-model-coverage-and-config-registry.md for
+        why this replaced an earlier BurgersParams-only design.
+        {"mu": number} for "burgers" (default 0.0005); {"solitonSpeed":
         number} for "kdv_rv" (default 1.0); {} for "ks" (no free coefficient);
         {} for "kdv_cv" (fixed 5-soliton initial condition, no free params);
         {"gamma": number, "amplitude": number} for "nls_r" (both default 2.0)
@@ -385,9 +392,10 @@ components:
       type: object
       description: >
         Mirrors spida::config::ReportingConfig. stepsPerOutput2D/
-        maxReports2D are now exercised for real by "nls_rt" (see ADR-0001's
-        Phase E addendum) — frozen ahead of need back in Phase B, exactly
-        for this. stepsPerOutputTrack remains defaulted/unused; no wired
+        maxReports2D are now exercised for real by "nls_rt" (see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md) —
+        present in this schema from the start, ahead of nls_rt's own
+        wiring, exactly for this. stepsPerOutputTrack remains defaulted/unused; no wired
         model reports track data yet.
       properties:
         stepsPerOutput1D: { type: integer, minimum: 1, default: 5 }
@@ -411,8 +419,9 @@ components:
             A second, independent grid dimension — only meaningful for
             "nls_rt" (kind must be "uniform_cvt"). Absent/default for
             every other model. Not in the proposal's own domain.ts at all
-            — see ADR-0001's Phase E addendum for why this is a sibling
-            field rather than turning `grid` itself into an array.
+            — see docs/adr/0002-worker-model-coverage-and-config-registry.md
+            for why this is a sibling field rather than turning `grid`
+            itself into an array.
         solver: { $ref: '#/components/schemas/SolverConfig' }
         modelParams: { $ref: '#/components/schemas/ModelParams' }
         reporting: { $ref: '#/components/schemas/ReportingConfig' }
@@ -547,7 +556,7 @@ components:
         Mirrors spida::config::ValidationError (include/spida/config/
         validation.h) exactly. Lets a config form highlight the specific
         field that was wrong instead of only showing one free-text message
-        — see ADR-0001's Phase B addendum.
+        — see docs/adr/0002-worker-model-coverage-and-config-registry.md.
       required: [field, message]
       properties:
         field: { type: string, description: 'Dotted path into SimulationConfig, e.g. "solver.epsRel".' }

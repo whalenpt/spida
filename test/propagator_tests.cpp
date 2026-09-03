@@ -665,7 +665,7 @@ TEST_F(PropagatorTest, PROGRESS_OBSERVER_RECEIVES_SNAPSHOT_EACH_STEP)
 }
 
 // ============================================================
-//  ReportHandler sink (Phase D)
+//  ReportHandler sink (docs/adr/0001-library-extension-seams.md)
 // ============================================================
 
 TEST_F(PropagatorTest, REPORT_SINK_RECEIVES_1D_PAYLOAD)
