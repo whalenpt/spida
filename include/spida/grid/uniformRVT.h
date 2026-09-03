@@ -8,11 +8,11 @@
 
 namespace spida {
 
-class UniformGridRVT : public UniformGridT {
+class UniformGridRVT final : public UniformGridT {
 public:
     explicit UniformGridRVT(unsigned nt, double minT, double maxT, double minST, double maxST);
     explicit UniformGridRVT(unsigned nt, double minT, double maxT);
-    ~UniformGridRVT() final = default;
+    ~UniformGridRVT() = default;
 
     const std::vector<double>& getST() const final
     {
