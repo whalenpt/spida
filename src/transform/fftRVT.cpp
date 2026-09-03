@@ -119,21 +119,34 @@ void FFTRVT::ST_To_CVT(const dcmplx* in, dcmplx* out)
 
 void FFTRVT::T_To_ST(const std::vector<double>& in, std::vector<dcmplx>& out)
 {
+    // Debug-only guard against caller/grid size drift -- the raw-pointer
+    // overloads these delegate to have no length to check themselves (no
+    // size parameter at all; m_nt/m_nst are trusted implicitly). Compiled
+    // out under NDEBUG, so no Release-path cost. ST domain is the
+    // band-limited half-spectrum (m_nst == m_maxI - m_minI + 1), not m_nt.
+    assert(in.size() == m_nt);
+    assert(out.size() == m_nst);
     T_To_ST(in.data(), out.data());
 }
 
 void FFTRVT::ST_To_T(const std::vector<dcmplx>& in, std::vector<double>& out)
 {
+    assert(in.size() == m_nst);
+    assert(out.size() == m_nt);
     ST_To_T(in.data(), out.data());
 }
 
 void FFTRVT::CVT_To_ST(const std::vector<dcmplx>& in, std::vector<dcmplx>& out)
 {
+    assert(in.size() == m_nt);
+    assert(out.size() == m_nst);
     CVT_To_ST(in.data(), out.data());
 }
 
 void FFTRVT::ST_To_CVT(const std::vector<dcmplx>& in, std::vector<dcmplx>& out)
 {
+    assert(in.size() == m_nst);
+    assert(out.size() == m_nt);
     ST_To_CVT(in.data(), out.data());
 }
 

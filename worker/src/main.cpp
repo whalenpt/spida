@@ -165,18 +165,23 @@ public:
 // anything was reading the live stdout feed at the time.
 class FileEventSink : public EventSink {
 public:
-    explicit FileEventSink(fs::path path) : m_path(std::move(path))
+    // Opened once, append mode, kept open for this sink's whole lifetime --
+    // not reopened per event. Each write() still explicitly flush()es, so
+    // this keeps the original "durable per line" guarantee (every event
+    // reaches the OS before the next one is accepted) without paying an
+    // open/close syscall pair per event.
+    explicit FileEventSink(fs::path path) : m_stream(path, std::ios::app)
     {
     }
 
     void write(const json& event) override
     {
-        std::ofstream os(m_path, std::ios::app);
-        os << event.dump() << "\n";
+        m_stream << event.dump() << "\n";
+        m_stream.flush();
     }
 
 private:
-    fs::path m_path;
+    std::ofstream m_stream;
 };
 
 // One NDJSON line per event on stdout, explicitly flushed. This is the
@@ -354,6 +359,37 @@ extern "C" void handleSigterm(int)
         g_propagator->requestCancel();
 }
 
+// RAII guard bracketing the window in which g_propagator may validly be
+// dereferenced by handleSigterm: from construction (which points
+// g_propagator at a live propagator and installs the handler) to
+// destruction (which clears g_propagator back to nullptr and restores the
+// default disposition). Constructed AFTER `run` in main() and therefore --
+// by ordinary reverse-declaration-order destruction, on every path out of
+// that scope including exception unwinding -- destroyed BEFORE `run`. That
+// closes the mirror-image gap to the documented pre-construction one: without
+// this, g_propagator kept pointing at run's BasePropagator for the rest of
+// main()'s scope even after `run` (and the propagator it owns) was
+// destroyed, so a SIGTERM landing in that post-destruction window would
+// dereference a dangling pointer. See
+// docs/adr/0003-transport-and-live-events.md.
+class SigtermGuard {
+public:
+    explicit SigtermGuard(spida::BasePropagator& propagator)
+    {
+        g_propagator = &propagator;
+        std::signal(SIGTERM, handleSigterm);
+    }
+    ~SigtermGuard()
+    {
+        std::signal(SIGTERM, SIG_DFL);
+        g_propagator = nullptr;
+    }
+    SigtermGuard(const SigtermGuard&) = delete;
+    SigtermGuard& operator=(const SigtermGuard&) = delete;
+    SigtermGuard(SigtermGuard&&) = delete;
+    SigtermGuard& operator=(SigtermGuard&&) = delete;
+};
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -460,7 +496,6 @@ int main(int argc, char** argv)
         events.status("running");
 
         spida::config::SimulationRun run(cfg, outDir);
-        g_propagator = &run.propagator();
         // Known, accepted gap: SIGTERM sent to this process BEFORE this
         // point (construction above, or the config-parse/validate steps
         // before it) gets the default disposition -- immediate termination,
@@ -472,7 +507,13 @@ int main(int argc, char** argv)
         // justifies right now. Documented in worker/README.md's
         // "Cancellation" section too -- flagged rather than silently
         // assumed away.
-        std::signal(SIGTERM, handleSigterm);
+        //
+        // The symmetric post-destruction gap (SIGTERM arriving after `run`,
+        // and the propagator it owns, is destroyed) IS closed: SigtermGuard
+        // is declared after `run`, so it's destroyed before `run` on every
+        // path out of this scope, and its destructor clears g_propagator
+        // back to nullptr first. See SigtermGuard's own comment above.
+        SigtermGuard sigtermGuard(run.propagator());
 
         // Progress events at report cadence (stepsPerOutput1D), matching the
         // original worker's rate — setProgressObserver() itself fires every

@@ -27,6 +27,15 @@ public:
     FFTCVX() = delete;
     FFTCVX(const FFTCVX& sp) = delete;
     FFTCVX& operator=(const FFTCVX& sp) = delete;
+    // Move is suppressed too, not just implicitly left unavailable by the
+    // deleted copy ops above -- m_cfg_forward/m_cfg_reverse are raw owning
+    // handles freed in the destructor, and a moved-from instance's
+    // destructor would double-free them without an explicit transfer this
+    // class doesn't implement. Declared explicitly so that stays true even
+    // if a future edit adds a defaulted/user-provided special member above
+    // that would otherwise re-enable move.
+    FFTCVX(FFTCVX&& sp) = delete;
+    FFTCVX& operator=(FFTCVX&& sp) = delete;
     void X_To_SX(const std::vector<dcmplx>& in, std::vector<dcmplx>& out) noexcept;
     void SX_To_X(const std::vector<dcmplx>& in, std::vector<dcmplx>& out) noexcept;
     void X_To_SX(const dcmplx* in, dcmplx* out) noexcept;

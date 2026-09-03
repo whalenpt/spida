@@ -5,6 +5,7 @@
 #include "spida/helper/constants.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <new>
 #include <stdexcept>
@@ -68,11 +69,19 @@ void FFTCVX::SX_To_X(const dcmplx* in, dcmplx* out) noexcept
 
 void FFTCVX::X_To_SX(const std::vector<dcmplx>& in, std::vector<dcmplx>& out) noexcept
 {
+    // Debug-only guard against caller/grid size drift -- the raw-pointer
+    // overload this delegates to has no length to check itself, since it
+    // has no size parameter at all (m_nx is trusted implicitly). Compiled
+    // out under NDEBUG, so no Release-path cost.
+    assert(in.size() == m_nx);
+    assert(out.size() == m_nx);
     X_To_SX(in.data(), out.data());
 }
 
 void FFTCVX::SX_To_X(const std::vector<dcmplx>& in, std::vector<dcmplx>& out) noexcept
 {
+    assert(in.size() == m_nx);
+    assert(out.size() == m_nx);
     SX_To_X(in.data(), out.data());
 }
 
