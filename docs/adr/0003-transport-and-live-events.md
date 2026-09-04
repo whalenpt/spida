@@ -69,6 +69,14 @@ caller's job.
 - **Positive**: for a single api-server instance, the whole pipeline is
   strikingly thin — read a line from the worker's stdout pipe, forward it as one SSE
   frame, append it to `events.ndjson`. No message broker, no queue, no WS server.
+- **Positive, confirmed real-world shape**: spida-console's own build (a Docker
+  multi-stage build) validates the "subprocess, not a library" framing above
+  concretely — a build-only stage clones this repo at a pinned tag, builds just
+  the `spida-worker` target (`worker/README.md`'s "Building as an external
+  consumer" section), and copies the one static binary into the final image.
+  The api-server's own runtime image ends up with no C++ compiler, no Conan, no
+  CMake — nothing there ever links against or rebuilds spida, only spawns the
+  binary and reads its stdout/exit code, exactly this ADR's decision.
 - **Negative / follow-up, not addressed here**: this in-process "tail my own child's
   stdout" model doesn't survive an api-server scaled to multiple instances — a
   browser connected to instance B can't see a worker instance A spawned. Fix then

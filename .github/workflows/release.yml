@@ -7,6 +7,22 @@ name: Release
 # tarball is what conanfile.py's source() fallback downloads for a consumer
 # with no local git checkout of spida (see conanfile.py and CLAUDE.md).
 #
+# Also includes worker/, conanfile.py, and conan.lock — a second, broader
+# audience than conanfile.py's own Conan-library-consumer one above: someone
+# building spida-worker itself (see worker/README.md's "Building as an
+# external consumer" section, e.g. spida-console's own Docker build)
+# standalone, with no git checkout and no separate copy of conanfile.py
+# already in hand. conanfile.py/conan.lock are harmless, unused extras in
+# the source()-fallback flow above (Conan has already loaded and is
+# executing the real recipe file by the time source() runs; a second copy
+# landing in source_folder alongside the fetched sources is never re-read)
+# but load-bearing for the standalone case, which runs `conan install .`
+# directly against the extracted tarball and needs a conanfile.py right
+# there to do it. This is why the tarball's staged file list below no
+# longer matches conanfile.py's exports_sources exactly — see that file's
+# own comment for why worker/ deliberately stays out of the Conan package
+# proper.
+#
 # Gated on the CMake workflow (build+test+package-test on Linux/Windows/
 # macOS) actually passing for this same tag. An earlier version of this
 # workflow tried to get that via `on: workflow_run` listening for CMake's
@@ -105,9 +121,15 @@ jobs:
           staging="/tmp/spida-${version}"
           mkdir -p "${staging}"
 
-          # Exactly what conanfile.py's exports_sources bundles for a local
-          # `conan create .` — keep these two lists in sync.
-          cp -R CMakeLists.txt cmake include src "${staging}/"
+          # CMakeLists.txt/cmake/include/src/external/nayukidct match
+          # conanfile.py's exports_sources (the Conan-library-consumer
+          # scope); worker/conanfile.py/conan.lock are additional, for the
+          # "build spida-worker standalone, no git checkout" audience
+          # conanfile.py's recipe was never meant to cover on its own — see
+          # this file's header comment and conanfile.py's own
+          # exports_sources comment for why that's intentional, not a
+          # missed sync.
+          cp -R CMakeLists.txt cmake include src worker conanfile.py conan.lock "${staging}/"
           mkdir -p "${staging}/external/nayukidct"
           cp -R external/nayukidct/CMakeLists.txt \
                 external/nayukidct/cmake \

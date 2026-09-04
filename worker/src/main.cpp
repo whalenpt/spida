@@ -92,7 +92,16 @@ std::string nowIso8601()
     auto now = std::chrono::system_clock::now();
     auto t = std::chrono::system_clock::to_time_t(now);
     std::tm tm{};
+    // gmtime_r is POSIX-only -- MinGW/MSVC provide the thread-safe
+    // equivalent as gmtime_s instead, with the arguments reversed
+    // (tm* first, time_t* second) and an errno_t return instead of a
+    // tm* return. Caught by CI's new -DSPIDA_WORKER=ON Windows build
+    // (see cmake.yml) the first time this file was ever compiled there.
+#if defined(_WIN32)
+    gmtime_s(&tm, &t);
+#else
     gmtime_r(&t, &tm);
+#endif
     char buf[32];
     std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &tm);
     return buf;

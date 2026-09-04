@@ -16,10 +16,16 @@ class SpidaConan(ConanFile):
 
     # Only what's needed to configure+build spida itself (plus its
     # always-vendored NayukiDCT submodule) inside `conan create` — deliberately
-    # excludes test/, demos/, and the other external/ submodules (kissfft,
-    # spida's own googletest, the vendored Boost fallback), since those are
-    # either unused during packaging (the four Conan-provided deps are always
-    # found first) or not part of the installed package.
+    # excludes test/, demos/, worker/, and the other external/ submodules
+    # (kissfft, spida's own googletest, the vendored Boost fallback), since
+    # those are either unused during packaging (the four Conan-provided deps
+    # are always found first) or not part of the installed package. worker/
+    # in particular: cmake.install() below only installs the spida library
+    # target, never spida-worker, so this recipe has no use for it even
+    # though .github/workflows/release.yml's published source tarball
+    # includes worker/ (for a different audience — see that file's header
+    # comment). That tarball's staged file list intentionally no longer
+    # matches this tuple one-for-one; this stays library-scoped on purpose.
     exports_sources = (
         "CMakeLists.txt",
         "cmake/*",
