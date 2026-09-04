@@ -19,7 +19,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/whalenpt/spida:v1.5
+      image: ghcr.io/whalenpt/spida:v1.6
       options: --user root
     steps:
       - name: Checkout
@@ -30,13 +30,21 @@ jobs:
       - name: Configure (Release)
         run: |
           conan install . -of build/Release -s build_type=Release
-          cmake --preset conan-release -DSPIDA_TEST=ON
+          cmake --preset conan-release -DSPIDA_TEST=ON -DSPIDA_WORKER=ON
 
       - name: Build
         run: cmake --build --preset conan-release --parallel
 
       - name: Test
         run: ctest --preset conan-release --output-on-failure
+
+      - name: Worker smoke test
+        # --describe constructs no grid/model/solver -- it only proves the
+        # binary that was just built actually links and runs on this
+        # platform (catches a build-only-on-some-platforms class of bug the
+        # rest of this job's build+test steps can't, since none of them
+        # touch worker/ at all without -DSPIDA_WORKER=ON above).
+        run: build/Release/worker/spida-worker --describe > /dev/null
 
       - name: Package test (conan create + test_package)
         run: conan create . -s build_type=Release
@@ -64,13 +72,22 @@ jobs:
         run: choco install ninja -y
 
       - name: Configure (Release)
-        run: cmake -S . -B build/Release -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPIDA_TEST=ON
+        run: cmake -S . -B build/Release -G Ninja -DCMAKE_BUILD_TYPE=Release -DSPIDA_TEST=ON -DSPIDA_WORKER=ON
 
       - name: Build
         run: cmake --build build/Release --parallel
 
       - name: Test
         run: ctest --test-dir build/Release --output-on-failure
+
+      - name: Worker smoke test
+        # Ninja is a single-config generator, so the executable lands
+        # directly under build/Release/worker/ -- no per-configuration
+        # subdirectory the way an MSVC-generator build would add. GitHub's
+        # Windows runners default `run:` steps to PowerShell, not cmd.exe --
+        # $null, not NUL, is the redirect target that's actually correct
+        # there.
+        run: build/Release/worker/spida-worker.exe --describe > $null
 
   # -------------------------
   # macOS (native)
@@ -102,13 +119,21 @@ jobs:
       - name: Configure (Release)
         run: |
           conan install . -of build/Release --build=missing -s build_type=Release
-          cmake --preset conan-release -DSPIDA_TEST=ON
+          cmake --preset conan-release -DSPIDA_TEST=ON -DSPIDA_WORKER=ON
 
       - name: Build
         run: cmake --build --preset conan-release --parallel
 
       - name: Test
         run: ctest --preset conan-release --output-on-failure
+
+      - name: Worker smoke test
+        # --describe constructs no grid/model/solver -- it only proves the
+        # binary that was just built actually links and runs on this
+        # platform. This is the exact check that would have caught the
+        # ETDAS.h std::vector<bool> build failure on macOS/libc++ as a red
+        # CI run instead of a manually-pasted log.
+        run: build/Release/worker/spida-worker --describe > /dev/null
 
       - name: Package test (conan create + test_package)
         run: conan create . --build=missing -s build_type=Release

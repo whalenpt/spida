@@ -1,0 +1,649 @@
+openapi: 3.1.0
+info:
+  title: SPIDA Console job-service API
+  version: 0.1.0-draft
+  description: >
+    Contract for the SPIDA Console job-service's REST surface. Not
+    implemented — no api-server exists yet (a separate `spida-console` repo;
+    see docs/adr/0003-transport-and-live-events.md for the recommended
+    transport it should implement against). Written ahead of any server
+    code, so a frontend can generate types and build against a mock server
+    without waiting on it.
+
+    Config/grid/solver schemas below are sourced field-for-field from the
+    actual C++ types in this repo (spida::config::SimulationConfig et al.,
+    see include/spida/config/simulationconfig.h and
+    include/spida/config/modelregistry.h) rather than re-derived, so the
+    wire format and the C++ struct can never quietly drift apart. All six
+    ModelKind values are wired end to end as of
+    docs/adr/0002-worker-model-coverage-and-config-registry.md; where a
+    schema still describes something broader than what's implemented (e.g.
+    GridKind's "cheb_x", not yet wired to any model), that's called out
+    explicitly in the schema description.
+
+servers:
+  - url: /api/v1
+
+paths:
+  /capabilities:
+    get:
+      summary: What this deployment's spida-worker build actually supports
+      description: >
+        Not implemented — no api-server exists yet. Proposed to be backed
+        directly by `spida-worker --describe`'s JSON output (see
+        include/spida/config/capabilities.h), so ConfigurePage/ModelPicker
+        can render only what's actually wired instead of a hand-maintained
+        TS enum drifting from the real worker — see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md for the
+        modelregistry.h decision this reads from, and the real mu-default
+        drift it closed.
+      operationId: getCapabilities
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Capabilities' }
+
+  /configs:
+    post:
+      summary: Save a reusable SimulationConfig
+      operationId: createConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SimulationConfig' }
+      responses:
+        '201':
+          description: Config saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SimulationConfig' }
+        '400':
+          description: config_validation failure
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      summary: List saved configs
+      operationId: listConfigs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SimulationConfig' }
+
+  /configs/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ConfigId'
+    get:
+      summary: Fetch one saved config
+      operationId: getConfig
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SimulationConfig' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      summary: Edit a saved config
+      operationId: updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SimulationConfig' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SimulationConfig' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      summary: Remove a saved config
+      operationId: deleteConfig
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /simulations:
+    post:
+      summary: Create and enqueue a run from a config
+      operationId: createSimulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [configId]
+              properties:
+                configId: { type: string }
+                tags:
+                  type: array
+                  items: { type: string }
+      responses:
+        '201':
+          description: Queued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Simulation' }
+        '400':
+          description: config_validation failure — rejected before queuing
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      summary: List runs — paginated, filter by model / status / tag
+      operationId: listSimulations
+      parameters:
+        - name: model
+          in: query
+          schema: { $ref: '#/components/schemas/ModelKind' }
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/SimulationStatus' }
+        - name: tag
+          in: query
+          schema: { type: string }
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/SimulationSummary' }
+                  nextCursor: { type: string, nullable: true }
+
+  /simulations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SimulationId'
+    get:
+      summary: Full detail including current ProgressSnapshot
+      operationId: getSimulation
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Simulation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      summary: Delete a terminal run and its artifacts
+      operationId: deleteSimulation
+      responses:
+        '204': { description: Deleted }
+        '409':
+          description: Run is not in a terminal state (see SimulationStatus)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /simulations/{id}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/SimulationId'
+    post:
+      summary: Request cooperative cancellation
+      description: >
+        Maps to spida::BasePropagator::requestCancel() on the worker side
+        (see docs/adr/0001-library-extension-seams.md) — takes effect at
+        the run's next stepUpdate() checkpoint, not immediately. Moves
+        status to "cancelling", not "cancelled".
+      operationId: cancelSimulation
+      responses:
+        '202':
+          description: Cancellation requested
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Simulation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /simulations/{id}/events:
+    parameters:
+      - $ref: '#/components/parameters/SimulationId'
+    get:
+      summary: Paginated log/progress replay, for WS reconnect gap-fill
+      description: See docs/api/events.schema.json for the SimulationEvent shape.
+      operationId: getSimulationEvents
+      parameters:
+        - name: since
+          in: query
+          description: Cursor (event id) to replay from, exclusive.
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/SimulationEvent' }
+                  nextCursor: { type: string, nullable: true }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /simulations/{id}/results:
+    parameters:
+      - $ref: '#/components/parameters/SimulationId'
+    get:
+      summary: Index of ResultSeriesDescriptor for this run
+      operationId: getSimulationResults
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ResultSeriesDescriptor' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /simulations/{id}/results/{series}/frames/{i}:
+    parameters:
+      - $ref: '#/components/parameters/SimulationId'
+      - name: series
+        in: path
+        required: true
+        schema: { type: string }
+        description: ResultSeriesDescriptor.name (e.g. "X", "SX")
+      - name: i
+        in: path
+        required: true
+        schema: { type: integer, minimum: 0 }
+    get:
+      summary: One frame, binary
+      description: See docs/api/binary-frame-spec.md for the wire format.
+      operationId: getResultFrame
+      responses:
+        '200':
+          description: Binary frame (length-prefixed JSON header + Float64Array payload)
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  parameters:
+    ConfigId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    SimulationId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    # ---- config schemas: field-for-field mirrors of
+    # include/spida/config/simulationconfig.h, including the
+    # NLOHMANN_DEFINE_TYPE_..._WITH_DEFAULT default values. -------------------
+
+    ModelKind:
+      type: string
+      enum: [burgers, kdv_cv, kdv_rv, ks, nls_r, nls_rt]
+      description: >
+        Mirrors spida::config::ModelKind exactly. All six values are now
+        wired end to end by SimulationRun and spida-worker: "burgers"/
+        "kdv_rv"/"ks" (GridKind "uniform_rvx"), "kdv_cv" (GridKind
+        "uniform_cvx" — the same PDE as "kdv_rv", solved on a full-complex-
+        FFT grid instead), "nls_r" (GridKind "bessel_root_r"), and "nls_rt"
+        (GridKind "bessel_root_r" for `grid` AND GridKind "uniform_cvt" for
+        `gridT` simultaneously — see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md for full
+        per-model grid/gridT wiring).
+        Requesting a wired model with the wrong GridKind/gridT (e.g.
+        "nls_r" with "uniform_rvx", or "nls_rt" missing `gridT`) fails
+        FailureReason "config_validation" — see ValidationError.
+
+    GridKind:
+      type: string
+      enum: [uniform_rvx, uniform_rvt, uniform_cvx, uniform_cvt, bessel_root_r, cheb_x]
+      description: >
+        Mirrors spida::config::GridKind exactly. "uniform_cvx"/"uniform_cvt"
+        are NOT in the architecture proposal's own domain.ts GridKind union
+        — added because "kdv_cv" and "nls_rt" (both IN the proposal's
+        ModelKind list) need grid types the proposal never enumerated — see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md. All
+        GridKinds except "cheb_x" are
+        wired today, each required by a specific ModelKind (or pair, for
+        "nls_rt") — see ModelKind's own description.
+
+    SolverKind:
+      type: string
+      enum: [etd35, etd34, if34, if45dp]
+      description: Mirrors spida::config::SolverKind exactly.
+
+    GridConfig:
+      type: object
+      description: >
+        Mirrors spida::config::GridConfig. n/a/b are UniformGridRVX/
+        UniformGridCVX/UniformGridCVT-shaped (used when kind is
+        uniform_rvx/uniform_cvx/uniform_cvt respectively — all three take
+        the same (n, min, max) constructor signature); rMax is
+        BesselRootGridR-shaped (used when kind == bessel_root_r — see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md).
+        cheb_x's own params remain
+        intentionally not yet defined — add them here when that grid kind
+        is wired.
+      properties:
+        kind: { $ref: '#/components/schemas/GridKind', default: uniform_rvx }
+        n: { type: integer, minimum: 1, default: 256 }
+        a: { type: number, default: 0.0 }
+        b: { type: number, default: 1.0 }
+        rMax: { type: number, default: 5.0 }
+
+    SolverConfig:
+      type: object
+      description: Mirrors spida::config::SolverConfig. logFrequency lives
+        on ReportingConfig, not here.
+      properties:
+        kind: { $ref: '#/components/schemas/SolverKind', default: etd35 }
+        epsRel: { type: number, default: 1.0e-8 }
+        t0: { type: number, default: 0.0 }
+        tf: { type: number, default: 1.0 }
+        hInit: { type: number, default: 0.01 }
+        logProgress: { type: boolean, default: false }
+
+    ModelParams:
+      type: object
+      description: >
+        Mirrors spida::config::SimulationConfig.modelParams — a generic
+        object whose shape depends on "model", not a per-model typed schema
+        — see docs/adr/0002-worker-model-coverage-and-config-registry.md for
+        why this replaced an earlier BurgersParams-only design.
+        {"mu": number} for "burgers" (default 0.0005); {"solitonSpeed":
+        number} for "kdv_rv" (default 1.0); {} for "ks" (no free coefficient);
+        {} for "kdv_cv" (fixed 5-soliton initial condition, no free params);
+        {"gamma": number, "amplitude": number} for "nls_r" (both default 2.0)
+        and "nls_rt" (gamma default 2.0, amplitude default 4.0).
+      additionalProperties: true
+
+    ReportingConfig:
+      type: object
+      description: >
+        Mirrors spida::config::ReportingConfig. stepsPerOutput2D/
+        maxReports2D are now exercised for real by "nls_rt" (see
+        docs/adr/0002-worker-model-coverage-and-config-registry.md) —
+        present in this schema from the start, ahead of nls_rt's own
+        wiring, exactly for this. stepsPerOutputTrack remains defaulted/unused; no wired
+        model reports track data yet.
+      properties:
+        stepsPerOutput1D: { type: integer, minimum: 1, default: 5 }
+        stepsPerOutput2D: { type: integer, minimum: 1, default: 1 }
+        stepsPerOutputTrack: { type: integer, minimum: 1, default: 1 }
+        maxReports1D: { type: integer, minimum: 1, default: 500 }
+        maxReports2D: { type: integer, minimum: 1, default: 200 }
+        logFrequency: { type: integer, minimum: 1, default: 200 }
+
+    SimulationConfig:
+      type: object
+      description: Mirrors spida::config::SimulationConfig exactly.
+      properties:
+        id: { type: string, description: Set once saved via POST /configs. }
+        name: { type: string, default: run }
+        model: { $ref: '#/components/schemas/ModelKind', default: burgers }
+        grid: { $ref: '#/components/schemas/GridConfig' }
+        gridT:
+          allOf: [{ $ref: '#/components/schemas/GridConfig' }]
+          description: >
+            A second, independent grid dimension — only meaningful for
+            "nls_rt" (kind must be "uniform_cvt"). Absent/default for
+            every other model. Not in the proposal's own domain.ts at all
+            — see docs/adr/0002-worker-model-coverage-and-config-registry.md
+            for why this is a sibling field rather than turning `grid`
+            itself into an array.
+        solver: { $ref: '#/components/schemas/SolverConfig' }
+        modelParams: { $ref: '#/components/schemas/ModelParams' }
+        reporting: { $ref: '#/components/schemas/ReportingConfig' }
+        tags:
+          type: array
+          items: { type: string }
+
+    # ---- run / progress / event schemas --------------------------------------
+
+    SimulationStatus:
+      type: string
+      enum: [draft, queued, running, cancelling, completed, failed, cancelled]
+      description: >
+        Job-service-level lifecycle state (proposal §9). Not itself a C++
+        type — derived from spida::StopReason + SolverCV::evolve()'s bool
+        return once a run finishes: evolve()==false -> failed
+        (runtime_exception); StopReason::Diverged -> failed (divergence);
+        StopReason::CancelRequested -> cancelled; StopReason::
+        MaxReportsReached or StopReason::None with evolve()==true ->
+        completed.
+
+    FailureReason:
+      type: string
+      enum: [config_validation, runtime_exception, divergence, timeout, worker_crash]
+      description: >
+        Proposal §1 error taxonomy. config_validation/runtime_exception/
+        divergence/timeout are all actually produced by spida-worker today
+        (timeout via an optional operator wall-clock cap passed on argv,
+        NOT part of SimulationConfig — see worker/README.md). worker_crash
+        is NOT producible by the worker itself (a crashed process can't
+        write its own status.json) — it's the future api-server detecting
+        a dead process, out of scope for this repo.
+
+    ProgressSnapshot:
+      type: object
+      description: >
+        Mirrors spida::ProgressSnapshot exactly (field names included) —
+        see include/spida/propagator/propagator.h.
+      required: [t, stepsTaken]
+      properties:
+        t: { type: number }
+        tf: { type: number, nullable: true, description: Unset unless setFinalTime() was called. }
+        stepsTaken: { type: integer, minimum: 0 }
+        currentStepSize: { type: number, nullable: true, description: Unset unless reported via the stepUpdate(t, dt) overload. }
+
+    SimulationSummary:
+      type: object
+      required: [id, name, model, status, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        model: { $ref: '#/components/schemas/ModelKind' }
+        status: { $ref: '#/components/schemas/SimulationStatus' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        progress: { $ref: '#/components/schemas/ProgressSnapshot' }
+
+    Simulation:
+      allOf:
+        - $ref: '#/components/schemas/SimulationSummary'
+        - type: object
+          required: [config]
+          properties:
+            config: { $ref: '#/components/schemas/SimulationConfig' }
+            failureReason: { $ref: '#/components/schemas/FailureReason' }
+            failureDetail: { type: string }
+            validationErrors:
+              type: array
+              items: { $ref: '#/components/schemas/ValidationError' }
+              description: Present when failureReason == config_validation.
+
+    SimulationEvent:
+      type: object
+      description: See docs/api/events.schema.json for the canonical schema.
+      required: [id, simulationId, at, kind]
+      properties:
+        id: { type: string }
+        simulationId: { type: string }
+        at: { type: string, format: date-time }
+        kind: { type: string, enum: [log, progress, status, report] }
+        level: { type: string, enum: [info, warn, error] }
+        message: { type: string }
+        progress: { $ref: '#/components/schemas/ProgressSnapshot' }
+        status: { $ref: '#/components/schemas/SimulationStatus' }
+        seriesName:
+          type: string
+          description: 'Only meaningful when kind == "report" — matches ResultSeriesDescriptor.name.'
+        frameIndex:
+          type: integer
+          minimum: 0
+          description: >
+            Only meaningful when kind == "report" — 0-based; GET
+            /simulations/:id/results/:series/frames/:i is now servable for this (series, i) pair.
+
+    SeriesKind:
+      type: string
+      enum: [field1d, field2d, track]
+
+    ValueType:
+      type: string
+      enum: [real, complex]
+
+    ResultSeriesDescriptor:
+      type: object
+      required: [name, kind, valueType, frameCount, gridCoords]
+      properties:
+        name: { type: string, description: 'Matches the report label, e.g. "X", "SX", "RT".' }
+        kind: { $ref: '#/components/schemas/SeriesKind' }
+        valueType: { $ref: '#/components/schemas/ValueType' }
+        frameCount: { type: integer, minimum: 1 }
+        gridCoords:
+          type: array
+          items: { type: number }
+          description: >
+            Explicit coordinates for the x axis — never assumed uniform
+            (Bessel-root/Chebyshev grids are not). For kind == "field2d"
+            this is specifically the x axis; see gridCoordsY for the
+            second axis.
+        gridCoordsY:
+          type: array
+          items: { type: number }
+          description: >
+            Explicit coordinates for the y axis. Present (and required) only
+            when kind == "field2d" — e.g. nls_rt's "RT" series has non-
+            uniform r (gridCoords) and uniform t (gridCoordsY) as its two
+            independent axes. Absent for field1d/track. See
+            docs/api/binary-frame-spec.md's "2D frames" section.
+
+    ValidationError:
+      type: object
+      description: >
+        Mirrors spida::config::ValidationError (include/spida/config/
+        validation.h) exactly. Lets a config form highlight the specific
+        field that was wrong instead of only showing one free-text message
+        — see docs/adr/0002-worker-model-coverage-and-config-registry.md.
+      required: [field, message]
+      properties:
+        field: { type: string, description: 'Dotted path into SimulationConfig, e.g. "solver.epsRel".' }
+        message: { type: string }
+
+    Error:
+      type: object
+      required: [reason, message]
+      properties:
+        reason: { $ref: '#/components/schemas/FailureReason' }
+        message: { type: string }
+        validationErrors:
+          type: array
+          items: { $ref: '#/components/schemas/ValidationError' }
+          description: Present when reason == config_validation.
+
+    Capabilities:
+      type: object
+      description: >
+        Mirrors spida::config::describeCapabilities() (include/spida/
+        config/capabilities.h) exactly — what a given spida-worker build
+        actually supports, sourced from `spida-worker --describe` rather
+        than hand-maintained here, so this never has to be kept in sync by
+        hand a second time. Serialized directly from
+        include/spida/config/modelregistry.h's ModelDescriptor table —
+        the same single source of truth validate() and SimulationRun read
+        — rather than a second hand-written literal, closing a real drift
+        (capabilities.h and simulationbuilder.h had independently
+        hardcoded the same modelParams default twice) rather than just
+        documenting the risk of it.
+      required: [schemaVersion, models, solvers]
+      properties:
+        schemaVersion: { type: integer }
+        models:
+          type: array
+          items:
+            type: object
+            required:
+              [model, description, grids, modelParams, defaultGrid, defaultSolver,
+               defaultReporting, series]
+            properties:
+              model: { $ref: '#/components/schemas/ModelKind' }
+              description:
+                type: string
+                description: Human-readable one-line summary of the PDE/model (for ModelPicker copy).
+              grids:
+                type: array
+                items: { $ref: '#/components/schemas/GridKind' }
+              gridT:
+                type: array
+                items: { $ref: '#/components/schemas/GridKind' }
+                description: Present only for models needing a second grid dimension (nls_rt).
+              modelParams:
+                type: array
+                items:
+                  type: object
+                  required: [name, type, default, description]
+                  properties:
+                    name: { type: string }
+                    type: { type: string }
+                    default: {}
+                    description:
+                      type: string
+                      description: Human-readable meaning of this parameter (for a config form's help text).
+              defaultGrid:
+                allOf: [{ $ref: '#/components/schemas/GridConfig' }]
+                description: >
+                  A numerically-sensible starting point for this model, sourced from
+                  worker/README.md's own verified worked examples — NOT GridConfig's generic
+                  struct default (a=0, b=1), which is numerically wrong for most wired models
+                  (e.g. a soliton needs room to translate without periodic wraparound).
+              defaultGridT:
+                allOf: [{ $ref: '#/components/schemas/GridConfig' }]
+                description: Present only for models needing a second grid dimension (nls_rt).
+              defaultSolver: { $ref: '#/components/schemas/SolverConfig' }
+              defaultReporting: { $ref: '#/components/schemas/ReportingConfig' }
+              series:
+                type: array
+                description: The report series (name/kind/valueType) this model actually registers.
+                items:
+                  type: object
+                  required: [name, kind, valueType, description]
+                  properties:
+                    name: { type: string, description: 'Matches ResultSeriesDescriptor.name once a run exists, e.g. "X", "SX".' }
+                    kind: { $ref: '#/components/schemas/SeriesKind' }
+                    valueType: { $ref: '#/components/schemas/ValueType' }
+                    description: { type: string }
+        solvers:
+          type: array
+          items: { $ref: '#/components/schemas/SolverKind' }

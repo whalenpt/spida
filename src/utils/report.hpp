@@ -103,7 +103,7 @@ public:
         os.open(path());
         if (!os.is_open())
             throw std::runtime_error("Failed to open data file for output stream");
-        reportImplement(os);
+        os << toJson().dump(2);
         os.close();
     }
 
@@ -115,8 +115,16 @@ public:
         os.open(path(static_cast<int>(rep_num)));
         if (!os.is_open())
             throw std::runtime_error("Failed to open data file for output stream");
-        reportImplement(os);
+        os << toJson().dump(2);
         os.close();
+    }
+
+    /// The same JSON object report(std::ofstream&, ...) writes to disk,
+    /// exposed directly so a caller (e.g. ReportHandler's optional sink,
+    /// see reporthandler.h) can consume it without a filesystem round-trip.
+    [[nodiscard]] nlohmann::json toJson() const
+    {
+        return this->buildJson();
     }
 
     friend std::ofstream& operator<<(std::ofstream& os, const ReportBase& r)
@@ -208,7 +216,7 @@ private:
     detail::metadataMap m_metadata_map;
     std::string m_extension{"json"};
     std::filesystem::path m_dirpath{"outfolder"};
-    virtual void reportImplement(std::ofstream& os) const = 0;
+    [[nodiscard]] virtual nlohmann::json buildJson() const = 0;
 };
 
 class ReportData1D : public ReportBase {
@@ -287,14 +295,14 @@ private:
     const std::vector<Tx>& m_x;
     const std::vector<Ty>& m_y;
 
-    void reportImplement(std::ofstream& os) const override
+    [[nodiscard]] nlohmann::json buildJson() const override
     {
         nlohmann::json j;
         j["type"] = "xy";
         j["meta"] = detail::buildMeta(getMetadata());
         j["x"] = m_x;
         j["y"] = m_y;
-        os << j.dump(2);
+        return j;
     }
 };
 
@@ -339,7 +347,7 @@ private:
     const std::vector<std::complex<Ty>>& m_y;
     bool m_power{false};
 
-    void reportPower(std::ofstream& os) const
+    [[nodiscard]] nlohmann::json buildPower() const
     {
         std::vector<Ty> pow_y(m_y.size());
         for (std::size_t i = 0; i < m_y.size(); i++)
@@ -350,10 +358,10 @@ private:
         j["meta"]["field"] = "power";
         j["x"] = m_x;
         j["y"] = pow_y;
-        os << j.dump(2);
+        return j;
     }
 
-    void reportComplex(std::ofstream& os) const
+    [[nodiscard]] nlohmann::json buildComplex() const
     {
         std::vector<Ty> yr(m_y.size()), yi(m_y.size());
         for (std::size_t i = 0; i < m_y.size(); i++) {
@@ -366,15 +374,12 @@ private:
         j["x"] = m_x;
         j["yr"] = yr;
         j["yi"] = yi;
-        os << j.dump(2);
+        return j;
     }
 
-    void reportImplement(std::ofstream& os) const override
+    [[nodiscard]] nlohmann::json buildJson() const override
     {
-        if (m_power)
-            reportPower(os);
-        else
-            reportComplex(os);
+        return m_power ? buildPower() : buildComplex();
     }
 };
 
@@ -399,7 +404,7 @@ private:
     const std::vector<Ty>& m_y;
     const std::vector<Tz>& m_z;
 
-    void reportImplement(std::ofstream& os) const override
+    [[nodiscard]] nlohmann::json buildJson() const override
     {
         assert(m_y.size() == 0 || m_z.size() / m_y.size() == m_x.size());
         std::size_t sx = getStrideX(), sy = getStrideY();
@@ -424,7 +429,7 @@ private:
         j["x"] = xs;
         j["y"] = ys;
         j["z"] = zj;
-        os << j.dump(2);
+        return j;
     }
 };
 
@@ -477,7 +482,7 @@ private:
             ys.push_back(m_y[j]);
     }
 
-    void reportPower(std::ofstream& os) const
+    [[nodiscard]] nlohmann::json buildPower() const
     {
         std::size_t sx = getStrideX(), sy = getStrideY();
         std::vector<Tx> xs;
@@ -497,10 +502,10 @@ private:
         j["x"] = xs;
         j["y"] = ys;
         j["z"] = zj;
-        os << j.dump(2);
+        return j;
     }
 
-    void reportComplex(std::ofstream& os) const
+    [[nodiscard]] nlohmann::json buildComplex() const
     {
         std::size_t sx = getStrideX(), sy = getStrideY();
         std::vector<Tx> xs;
@@ -526,16 +531,13 @@ private:
         j["y"] = ys;
         j["zr"] = zrj;
         j["zi"] = zij;
-        os << j.dump(2);
+        return j;
     }
 
-    void reportImplement(std::ofstream& os) const override
+    [[nodiscard]] nlohmann::json buildJson() const override
     {
         assert(m_y.size() == 0 || m_z.size() / m_y.size() == m_x.size());
-        if (m_power)
-            reportPower(os);
-        else
-            reportComplex(os);
+        return m_power ? buildPower() : buildComplex();
     }
 };
 
@@ -572,7 +574,7 @@ private:
     std::vector<double> m_t;
     std::vector<T> m_vals;
 
-    void reportImplement(std::ofstream& os) const override
+    [[nodiscard]] nlohmann::json buildJson() const override
     {
         nlohmann::json j;
         j["type"] = "xy";
@@ -580,7 +582,7 @@ private:
         j["meta"]["track"] = (getTrackType() == TrackType::Max) ? "max" : "min";
         j["x"] = m_t;
         j["y"] = m_vals;
-        os << j.dump(2);
+        return j;
     }
 };
 
@@ -611,7 +613,7 @@ private:
     std::vector<double> m_t;
     std::vector<T> m_vals;
 
-    void reportImplement(std::ofstream& os) const override
+    [[nodiscard]] nlohmann::json buildJson() const override
     {
         nlohmann::json j;
         j["type"] = "xy";
@@ -619,7 +621,7 @@ private:
         j["meta"]["track"] = (getTrackType() == TrackType::Max) ? "max_power" : "min_power";
         j["x"] = m_t;
         j["y"] = m_vals;
-        os << j.dump(2);
+        return j;
     }
 };
 

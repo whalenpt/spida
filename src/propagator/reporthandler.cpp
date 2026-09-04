@@ -40,19 +40,23 @@ void ReportHandler::report1D(const std::filesystem::path& dir_path, std::size_t 
 {
     for (auto const& def : this->m_defs_1D) {
         def->setDirPath(dir_path);
-        std::ofstream os;
-        try {
-            def->report(os, static_cast<unsigned>(rep_num));
+        if (this->m_write_files) {
+            std::ofstream os;
+            try {
+                def->report(os, static_cast<unsigned>(rep_num));
+            }
+            catch (const std::exception& e) {
+                std::cerr << std::format("Failed to report file: {} — {}\n",
+                                         def->path(static_cast<int>(rep_num)).string(),
+                                         e.what());
+            }
+            catch (...) {
+                std::cerr << std::format("Failed to report file: {} — unknown error\n",
+                                         def->path(static_cast<int>(rep_num)).string());
+            }
         }
-        catch (const std::exception& e) {
-            std::cerr << std::format("Failed to report file: {} — {}\n",
-                                     def->path(static_cast<int>(rep_num)).string(),
-                                     e.what());
-        }
-        catch (...) {
-            std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                                     def->path(static_cast<int>(rep_num)).string());
-        }
+        if (this->m_sink)
+            this->m_sink(def->getName(), def->toJson());
     }
 }
 
@@ -60,19 +64,23 @@ void ReportHandler::report2D(const std::filesystem::path& dir_path, std::size_t 
 {
     for (auto const& def : this->m_defs_2D) {
         def->setDirPath(dir_path);
-        std::ofstream os;
-        try {
-            def->report(os, static_cast<unsigned>(rep_num));
+        if (this->m_write_files) {
+            std::ofstream os;
+            try {
+                def->report(os, static_cast<unsigned>(rep_num));
+            }
+            catch (const std::exception& e) {
+                std::cerr << std::format("Failed to report file: {} — {}\n",
+                                         def->path(static_cast<int>(rep_num)).string(),
+                                         e.what());
+            }
+            catch (...) {
+                std::cerr << std::format("Failed to report file: {} — unknown error\n",
+                                         def->path(static_cast<int>(rep_num)).string());
+            }
         }
-        catch (const std::exception& e) {
-            std::cerr << std::format("Failed to report file: {} — {}\n",
-                                     def->path(static_cast<int>(rep_num)).string(),
-                                     e.what());
-        }
-        catch (...) {
-            std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                                     def->path(static_cast<int>(rep_num)).string());
-        }
+        if (this->m_sink)
+            this->m_sink(def->getName(), def->toJson());
     }
 }
 
@@ -81,18 +89,22 @@ void ReportHandler::reportTrack(const std::filesystem::path& dir_path, double t)
     for (auto const& def : this->m_tracker_defs) {
         def->setDirPath(dir_path);
         def->updateTracker(t);
-        std::ofstream os;
-        try {
-            def->report(os);
+        if (this->m_write_files) {
+            std::ofstream os;
+            try {
+                def->report(os);
+            }
+            catch (const std::exception& e) {
+                std::cerr << std::format(
+                    "Failed to report file: {} — {}\n", def->path().string(), e.what());
+            }
+            catch (...) {
+                std::cerr << std::format("Failed to report file: {} — unknown error\n",
+                                         def->path().string());
+            }
         }
-        catch (const std::exception& e) {
-            std::cerr << std::format(
-                "Failed to report file: {} — {}\n", def->path().string(), e.what());
-        }
-        catch (...) {
-            std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                                     def->path().string());
-        }
+        if (this->m_sink)
+            this->m_sink(def->getName(), def->toJson());
     }
 }
 

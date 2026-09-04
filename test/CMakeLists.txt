@@ -34,6 +34,7 @@ set(NAYUKI_FILES nayuki_tests.cpp)
 set(INTERP_FILES interp_tests.cpp)
 set(SOLVER_FILES solver_tests.cpp)
 set(PROPAGATOR_FILES propagator_tests.cpp)
+set(CONFIG_FILES config_tests.cpp)
 
 # ------------------------------------------------------------------------------
 # Helper function to reduce repetition
@@ -92,3 +93,4 @@ add_spida_test(interptest ${INTERP_FILES})
 add_spida_test(solvertest ${SOLVER_FILES})
 add_spida_test(propagatortest ${PROPAGATOR_FILES})
 add_spida_test(utilstest utils_tests.cpp)
+add_spida_test(configtest ${CONFIG_FILES})

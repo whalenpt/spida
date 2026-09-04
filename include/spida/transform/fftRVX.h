@@ -28,6 +28,13 @@ public:
     FFTRVX() = delete;
     FFTRVX(const FFTRVX& sp) = delete;
     FFTRVX& operator=(const FFTRVX& sp) = delete;
+    // Move is suppressed too, not just implicitly left unavailable by the
+    // deleted copy ops above -- m_rcfg_forward/m_rcfg_reverse are raw
+    // owning handles freed in the destructor, and a moved-from instance's
+    // destructor would double-free them without an explicit transfer this
+    // class doesn't implement.
+    FFTRVX(FFTRVX&& sp) = delete;
+    FFTRVX& operator=(FFTRVX&& sp) = delete;
 
     void X_To_SX(const std::vector<double>& in, std::vector<dcmplx>& out) noexcept;
     void SX_To_X(const std::vector<dcmplx>& in, std::vector<double>& out) noexcept;

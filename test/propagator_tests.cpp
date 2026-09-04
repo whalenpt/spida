@@ -560,3 +560,146 @@ TEST_F(PropagatorTest, REPORT_2D_NOOP_WHEN_NO_2D_REPORTS_ADDED_DIRECT_CALL)
     EXPECT_NO_THROW(prop.report2D(0.0));
     EXPECT_TRUE(fs::is_empty(m_dir));
 }
+
+// ============================================================
+//  Cooperative cancellation (StopReason::CancelRequested)
+// ============================================================
+
+TEST_F(PropagatorTest, CANCEL_NOT_REQUESTED_BY_DEFAULT)
+{
+    TestPropagatorCV prop(m_dir);
+    EXPECT_FALSE(prop.cancelRequested());
+    EXPECT_EQ(prop.stopReason(), spida::StopReason::None);
+}
+
+TEST_F(PropagatorTest, REQUEST_CANCEL_STOPS_NEXT_STEP_UPDATE)
+{
+    TestPropagatorCV prop(m_dir);
+    EXPECT_TRUE(prop.stepUpdate(0.0));
+    prop.requestCancel();
+    EXPECT_TRUE(prop.cancelRequested());
+    EXPECT_FALSE(prop.stepUpdate(1.0));
+    EXPECT_EQ(prop.stopReason(), spida::StopReason::CancelRequested);
+}
+
+TEST_F(PropagatorTest, MAX_REPORTS_REACHED_SETS_STOP_REASON)
+{
+    std::vector<double> x{0.0, 1.0};
+    std::vector<double> y{0.0, 1.0};
+    TestPropagatorCV prop(m_dir);
+    prop.addReport(make1DReport("u", x, y));
+    prop.setMaxReports1D(1);
+
+    EXPECT_FALSE(prop.stepUpdate(0.0));
+    EXPECT_EQ(prop.stopReason(), spida::StopReason::MaxReportsReached);
+}
+
+// ============================================================
+//  Divergence detection (StopReason::Diverged)
+// ============================================================
+
+class DivergingPropagatorCV : public spida::PropagatorCV {
+public:
+    explicit DivergingPropagatorCV(const fs::path& path, unsigned sz = 4)
+        : PropagatorCV(path), m_field(sz, dcmplx(1.0))
+    {
+    }
+
+    void updateFields(double) override {}
+    std::vector<dcmplx>& propagator() override { return m_field; }
+
+    bool checkDiverged(double) override { return m_diverge_now; }
+    void setDivergeNow(bool val) { m_diverge_now = val; }
+
+private:
+    std::vector<dcmplx> m_field;
+    bool m_diverge_now{false};
+};
+
+TEST_F(PropagatorTest, CHECK_DIVERGED_DEFAULT_FALSE)
+{
+    TestPropagatorCV prop(m_dir);
+    EXPECT_FALSE(prop.checkDiverged(0.0));
+}
+
+TEST_F(PropagatorTest, DIVERGED_PROPAGATOR_STOPS_STEP_UPDATE)
+{
+    std::vector<double> x{0.0, 1.0};
+    std::vector<double> y{0.0, 1.0};
+    DivergingPropagatorCV prop(m_dir);
+    prop.addReport(make1DReport("u", x, y)); // steps_per_out1D=1 so updateFields runs every step
+
+    EXPECT_TRUE(prop.stepUpdate(0.0));
+    prop.setDivergeNow(true);
+    EXPECT_FALSE(prop.stepUpdate(1.0));
+    EXPECT_EQ(prop.stopReason(), spida::StopReason::Diverged);
+}
+
+// ============================================================
+//  Progress observer (ProgressSnapshot)
+// ============================================================
+
+TEST_F(PropagatorTest, PROGRESS_OBSERVER_NOT_CALLED_WHEN_UNSET)
+{
+    TestPropagatorCV prop(m_dir);
+    EXPECT_NO_THROW((void) prop.stepUpdate(0.0));
+}
+
+TEST_F(PropagatorTest, PROGRESS_OBSERVER_RECEIVES_SNAPSHOT_EACH_STEP)
+{
+    TestPropagatorCV prop(m_dir);
+    prop.setFinalTime(5.0);
+    std::vector<spida::ProgressSnapshot> seen;
+    prop.setProgressObserver([&seen](const spida::ProgressSnapshot& s) { seen.push_back(s); });
+
+    (void) prop.stepUpdate(1.0);
+    (void) prop.stepUpdate(2.0);
+
+    ASSERT_EQ(seen.size(), 2u);
+    EXPECT_DOUBLE_EQ(seen[0].t, 1.0);
+    ASSERT_TRUE(seen[0].tf.has_value());
+    EXPECT_DOUBLE_EQ(*seen[0].tf, 5.0);
+    EXPECT_EQ(seen[0].stepsTaken, 1u);
+    EXPECT_FALSE(seen[0].currentStepSize.has_value()); // single-arg stepUpdate leaves it unset
+    EXPECT_EQ(seen[1].stepsTaken, 2u);
+}
+
+// ============================================================
+//  ReportHandler sink (docs/adr/0001-library-extension-seams.md)
+// ============================================================
+
+TEST_F(PropagatorTest, REPORT_SINK_RECEIVES_1D_PAYLOAD)
+{
+    std::vector<double> x{0.0, 1.0};
+    std::vector<double> y{2.0, 3.0};
+    TestPropagatorCV prop(m_dir);
+    prop.addReport(make1DReport("u", x, y));
+
+    std::vector<std::string> names;
+    prop.setReportSink([&names](std::string_view name, const nlohmann::json& j) {
+        names.emplace_back(name);
+        EXPECT_EQ(j.at("type"), "xy");
+    });
+
+    prop.report1D(0.0);
+    ASSERT_EQ(names.size(), 1u);
+    EXPECT_EQ(names[0], "u");
+    // default behavior unchanged: file still written alongside the sink call
+    EXPECT_FALSE(fs::is_empty(m_dir));
+}
+
+TEST_F(PropagatorTest, SET_WRITE_REPORT_FILES_FALSE_SKIPS_DISK_WRITE)
+{
+    std::vector<double> x{0.0, 1.0};
+    std::vector<double> y{2.0, 3.0};
+    TestPropagatorCV prop(m_dir);
+    prop.addReport(make1DReport("u", x, y));
+    prop.setWriteReportFiles(false);
+
+    int sink_calls = 0;
+    prop.setReportSink([&sink_calls](std::string_view, const nlohmann::json&) { sink_calls++; });
+
+    prop.report1D(0.0);
+    EXPECT_EQ(sink_calls, 1);
+    EXPECT_TRUE(fs::is_empty(m_dir));
+}

@@ -4,6 +4,11 @@
 #include "spida/helper/constants.h"
 #include "spida/rkstiff/solver.h"
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <vector>
+
 namespace spida {
 
 class SolverAS_ETD : public SolverCV_AS {
@@ -84,7 +89,7 @@ private:
 class ETD35 : public SolverAS_ETD {
 public:
     ETD35(const LinOp& Lop, const NLfunc& NL, bool use_refs = false);
-    ~ETD35() override = default;
+    ~ETD35() override;
 
 private:
     void updateCoefficients(double dt) noexcept override;
@@ -139,6 +144,40 @@ private:
                        std::vector<dcmplx>& errVec,
                        int sti,
                        int endi);
+
+    // ---- Persistent stage-worker pool --------------------------------------
+    // updateStages() runs once per attempted adaptive step (possibly several
+    // times per accepted step, under SolverCV_AS::step()'s rejection loop),
+    // each call dispatching 6 stages across the solver's threads. Originally
+    // each stage spawned and joined a fresh std::thread per call -- up to
+    // 6*(nthreads-1) thread creations per attempted step, expensive next to
+    // the per-mode arithmetic each thread actually does. This pool (built
+    // lazily, once, on the first updateStages() call, mirroring
+    // HankelFFTRRVT's persistent-pool pattern in
+    // src/transform/hankelfftRRVT.cpp) is signaled through a stage index
+    // instead of respawned per stage/per step.
+    //
+    // Assumes the thread count is fixed before the first updateStages() call
+    // -- true at every call site in this codebase today (setNumThreads() is
+    // always called once, before evolve() begins) and asserted in debug
+    // builds; setNumThreads() has no defined effect on an ETD35 mid-solve.
+    enum class StageState { Wait, Stage2, Stage3, Stage4, Stage5, Stage6, Stage7, Done };
+    void ensureStagePool(unsigned nthreads);
+    void setStageState(StageState state);
+    void stageWorkerThread(unsigned pid);
+    void stageWorkerWait(unsigned pid);
+
+    std::vector<std::thread> m_pool;
+    std::vector<unsigned> m_bounds;
+    StageState m_stageState{StageState::Wait};
+    unsigned m_stageThreadsProcessed{0};
+    std::vector<bool> m_stageReady;
+    bool m_stageProcessed{true};
+    std::mutex m_stageMut;
+    std::condition_variable m_stageCv;
+    const std::vector<dcmplx>* m_stageIn{nullptr};
+    std::vector<dcmplx>* m_stageYnew{nullptr};
+    std::vector<dcmplx>* m_stageErrVec{nullptr};
 };
 
 } // namespace spida

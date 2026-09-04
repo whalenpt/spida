@@ -27,6 +27,11 @@ Non-diagonal methods are not implemented as of yet (see [rkstiff](https://github
 
 A detailed discussion of these solvers is provided in the journal article [*Exponential time-differencing with embedded Runge–Kutta adaptive step control*](https://www.sciencedirect.com/science/article/pii/S0021999114006743).
 
+This repo also builds `spida-worker` (see `worker/`), a CLI that runs one
+config-driven simulation and exits — the compute backend for a planned browser
+frontend, **SPIDA Console** (a separate, not-yet-existing `spida-console` repo). See
+`worker/README.md` and `CLAUDE.md`'s "SPIDA Console Backend" section for the design.
+
 
 ## Dependencies
 

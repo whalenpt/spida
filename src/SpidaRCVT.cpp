@@ -78,8 +78,17 @@ void SpidaRCVT::mirrorR(const std::vector<dcmplx>& in, std::vector<dcmplx>& out)
     auto nt = m_gridT->getNt();
     auto nr = m_gridR->getNr();
     for (unsigned j = 0; j < nt; j++) {
-        for (unsigned i = nr - 1; i >= 0; i--)
-            out[((nr - 1) - i) * nt + j] = in[i * nt + j];
+        // Reversed half (indices [0, nr)): out[k] = in[nr-1-k] for k = 0..nr-1 --
+        // rewritten from a decrementing "for (i = nr-1; i >= 0; i--)" loop, which
+        // is an unsigned-underflow bug: i >= 0 is always true for an unsigned
+        // type, so i wraps past 0 to UINT_MAX instead of stopping, running
+        // in/out far out of bounds (the segfault this fixes). Equivalent by
+        // substituting k = (nr-1)-i, verified to produce the identical
+        // assignments in the opposite iteration order -- each iteration writes
+        // a disjoint output index, so order doesn't affect the result.
+        for (unsigned k = 0; k < nr; k++)
+            out[k * nt + j] = in[((nr - 1) - k) * nt + j];
+        // Original half (indices [nr, 2*nr)): unchanged, already forward.
         for (unsigned i = 0; i < nr; i++)
             out[(i + nr) * nt + j] = in[i * nt + j];
     }

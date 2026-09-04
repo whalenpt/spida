@@ -93,16 +93,48 @@ RUN apt-get update && \
         cmake \
         curl \
         gdb \
+        gh \
         git \
         gnupg \
         lcov \
         less \
         ninja-build \
+        openssh-client \
         pkg-config \
         python3 \
         python3-pip \
         ripgrep \
+        tree \
         valgrind && \
+    rm -rf /var/lib/apt/lists/*
+
+# -----------------------------
+# Node.js
+#
+# Not from the Ubuntu archive: its `nodejs` package omits npm entirely, and
+# its separate `npm` package drags in node-gyp -> libnode-dev -> libssl-dev,
+# which is unsatisfiable under the SNAPSHOT pin. NodeSource's nodejs bundles
+# npm and corepack and has no such dependency graph.
+#
+# Added via manual key+source-list steps rather than their curl-|-bash setup
+# script — same reasoning and pattern as the Claude Code repo below.
+#
+# The Pin-Priority is load-bearing: both repos sit at 500 by default and the
+# archive's nodejs would otherwise outrank NodeSource's. 1001 rather than
+# 990 so the pin also permits a downgrade if a rebuild ever sees the archive
+# version installed first.
+# -----------------------------
+ARG NODE_MAJOR=22
+RUN set -eux; \
+    install -d -m 0755 /etc/apt/keyrings; \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+        | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" \
+        > /etc/apt/sources.list.d/nodesource.list; \
+    printf 'Package: nodejs\nPin: origin deb.nodesource.com\nPin-Priority: 1001\n' \
+        > /etc/apt/preferences.d/nodesource; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends nodejs; \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------
@@ -211,13 +243,18 @@ RUN conan install . \
 # Smoke test
 #
 # Fail at build time rather than mid-session if a launcher is broken.
+# The Node major is asserted because a silently-losing apt pin is exactly
+# how the archive's npm-less nodejs would get in.
 # -----------------------------
 RUN set -eux; \
     claude --version; \
     conan --version; \
     cmake --version; \
     gdb --version; \
-    valgrind --version
+    valgrind --version; \
+    node --version; \
+    npm --version; \
+    test "$(node -p 'process.versions.node.split(".")[0]')" = "${NODE_MAJOR}"
 
 # -----------------------------
 # Final workspace

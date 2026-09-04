@@ -1,6 +1,8 @@
 
 #include "spida/rkstiff/ETDAS.h"
 
+#include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <thread>
 
@@ -177,6 +179,14 @@ ETD35::ETD35(const LinOp& Lop, const NLfunc& NL, bool use_refs)
 {
     statCenter().setHeader("ETD35 STATS");
     statCenter().addCounter("Nonlinear Function Evaluations");
+}
+
+ETD35::~ETD35()
+{
+    setStageState(StageState::Done);
+    for (auto& thread : m_pool)
+        thread.join();
+    m_pool.clear();
 }
 
 void ETD35::worker_coeff(double ds, int tid)
@@ -358,6 +368,110 @@ void ETD35::worker_stage7(const std::vector<dcmplx>& in,
     }
 }
 
+// ---- Persistent stage-worker pool -----------------------------------------
+// See ETDAS.h's own comment on these members for the "why". Pool thread
+// `pid` (0-indexed, pid in [0, nthreads-2]) always handles the fixed chunk
+// m_bounds[pid]..m_bounds[pid+1] -- the same partitioning updateStages() used
+// to hand a freshly-spawned thread every call, just no longer re-spawned.
+// The calling thread itself always handles the LAST chunk,
+// m_bounds[nthreads-1]..m_bounds[nthreads], exactly as it did before.
+void ETD35::ensureStagePool(unsigned nthreads)
+{
+    if (!m_pool.empty() || nthreads <= 1)
+        return;
+    m_bounds = SolverCV::threadManager().getBounds(m_sz);
+    m_stageReady.assign(nthreads - 1, false);
+    for (unsigned pid = 0; pid < nthreads - 1; pid++)
+        m_pool.push_back(std::thread(&ETD35::stageWorkerThread, this, pid));
+}
+
+void ETD35::stageWorkerThread(unsigned pid)
+{
+    bool done = false;
+    while (!done) {
+        StageState state;
+        {
+            std::unique_lock lock{m_stageMut};
+            m_stageCv.wait(lock, [this, pid] { return m_stageReady[pid]; });
+            state = m_stageState;
+        }
+        const unsigned sti = m_bounds[pid];
+        const unsigned endi = m_bounds[pid + 1];
+        switch (state) {
+        case StageState::Stage2:
+            worker_stage2(*m_stageIn, sti, endi);
+            stageWorkerWait(pid);
+            break;
+        case StageState::Stage3:
+            worker_stage3(*m_stageIn, sti, endi);
+            stageWorkerWait(pid);
+            break;
+        case StageState::Stage4:
+            worker_stage4(*m_stageIn, sti, endi);
+            stageWorkerWait(pid);
+            break;
+        case StageState::Stage5:
+            worker_stage5(*m_stageIn, sti, endi);
+            stageWorkerWait(pid);
+            break;
+        case StageState::Stage6:
+            worker_stage6(*m_stageIn, sti, endi);
+            stageWorkerWait(pid);
+            break;
+        case StageState::Stage7:
+            worker_stage7(*m_stageIn, *m_stageYnew, *m_stageErrVec, sti, endi);
+            stageWorkerWait(pid);
+            break;
+        case StageState::Wait:
+            continue;
+        case StageState::Done:
+            done = true;
+            break;
+        }
+    }
+}
+
+void ETD35::stageWorkerWait(unsigned pid)
+{
+    std::scoped_lock lock{m_stageMut};
+    m_stageReady[pid] = false;
+    m_stageThreadsProcessed++;
+    if (m_stageThreadsProcessed == m_pool.size()) {
+        m_stageThreadsProcessed = 0;
+        m_stageState = StageState::Wait;
+        m_stageProcessed = true;
+        m_stageCv.notify_all();
+    }
+}
+
+void ETD35::setStageState(StageState state)
+{
+    if (m_pool.empty())
+        return;
+    if (state == StageState::Wait) {
+        std::unique_lock lock{m_stageMut};
+        m_stageCv.wait(lock, [this] { return m_stageProcessed; });
+    }
+    else if (state == StageState::Done) {
+        {
+            std::scoped_lock lock{m_stageMut};
+            m_stageState = state;
+            m_stageProcessed = true;
+            std::fill(m_stageReady.begin(), m_stageReady.end(), true);
+        }
+        m_stageCv.notify_all();
+    }
+    else {
+        {
+            std::scoped_lock lock{m_stageMut};
+            m_stageState = state;
+            m_stageProcessed = false;
+            std::fill(m_stageReady.begin(), m_stageReady.end(), true);
+        }
+        m_stageCv.notify_all();
+    }
+}
+
 void ETD35::updateStages(const std::vector<dcmplx>& in,
                          std::vector<dcmplx>& ynew,
                          std::vector<dcmplx>& errVec) noexcept
@@ -371,71 +485,49 @@ void ETD35::updateStages(const std::vector<dcmplx>& in,
         SolverCV::NL()(ynew, N1);
         statCenter().incrementCounter("Nonlinear Function Evaluations", 1);
     }
-    auto nthreads = SolverCV::threadManager().getNumThreads();
-    std::vector<unsigned> bounds = SolverCV::threadManager().getBounds(m_sz);
-    std::vector<std::thread> threads;
 
-    for (unsigned i = 0; i < nthreads - 1; i++)
-        threads.push_back(
-            std::thread(&ETD35::worker_stage2, this, std::ref(in), bounds[i], bounds[i + 1]));
-    worker_stage2(in, bounds[nthreads - 1], bounds[nthreads]);
-    for (auto& thread : threads)
-        thread.join();
-    threads.clear();
+    const auto nthreads = SolverCV::threadManager().getNumThreads();
+    ensureStagePool(nthreads);
+    // Debug-only guard: the pool is sized once, from whatever nthreads was
+    // at the first updateStages() call -- see ETDAS.h's comment on why that's
+    // safe given every call site in this codebase today.
+    assert(m_pool.empty() ? nthreads <= 1 : m_pool.size() == nthreads - 1);
 
+    m_stageIn = &in;
+    m_stageYnew = &ynew;
+    m_stageErrVec = &errVec;
+    const unsigned lastSti = m_pool.empty() ? 0 : m_bounds[nthreads - 1];
+    const unsigned lastEndi = m_pool.empty() ? m_sz : m_bounds[nthreads];
+
+    setStageState(StageState::Stage2);
+    worker_stage2(in, lastSti, lastEndi);
+    setStageState(StageState::Wait);
     SolverCV::NL()(tempK, N2);
 
-    for (unsigned i = 0; i < nthreads - 1; i++)
-        threads.push_back(
-            std::thread(&ETD35::worker_stage3, this, std::ref(in), bounds[i], bounds[i + 1]));
-    worker_stage3(in, bounds[nthreads - 1], bounds[nthreads]);
-    for (auto& thread : threads)
-        thread.join();
-    threads.clear();
-
+    setStageState(StageState::Stage3);
+    worker_stage3(in, lastSti, lastEndi);
+    setStageState(StageState::Wait);
     SolverCV::NL()(tempK, N3);
 
-    for (unsigned i = 0; i < nthreads - 1; i++)
-        threads.push_back(
-            std::thread(&ETD35::worker_stage4, this, std::ref(in), bounds[i], bounds[i + 1]));
-    worker_stage4(in, bounds[nthreads - 1], bounds[nthreads]);
-    for (auto& thread : threads)
-        thread.join();
-    threads.clear();
-
+    setStageState(StageState::Stage4);
+    worker_stage4(in, lastSti, lastEndi);
+    setStageState(StageState::Wait);
     SolverCV::NL()(tempK, N4);
-    for (unsigned i = 0; i < nthreads - 1; i++)
-        threads.push_back(
-            std::thread(&ETD35::worker_stage5, this, std::ref(in), bounds[i], bounds[i + 1]));
-    worker_stage5(in, bounds[nthreads - 1], bounds[nthreads]);
-    for (auto& thread : threads)
-        thread.join();
-    threads.clear();
 
+    setStageState(StageState::Stage5);
+    worker_stage5(in, lastSti, lastEndi);
+    setStageState(StageState::Wait);
     SolverCV::NL()(tempK, N5);
 
-    for (unsigned i = 0; i < nthreads - 1; i++)
-        threads.push_back(
-            std::thread(&ETD35::worker_stage6, this, std::ref(in), bounds[i], bounds[i + 1]));
-    worker_stage6(in, bounds[nthreads - 1], bounds[nthreads]);
-    for (auto& thread : threads)
-        thread.join();
-    threads.clear();
-
+    setStageState(StageState::Stage6);
+    worker_stage6(in, lastSti, lastEndi);
+    setStageState(StageState::Wait);
     SolverCV::NL()(tempK, N6);
 
-    for (unsigned i = 0; i < nthreads - 1; i++)
-        threads.push_back(std::thread(&ETD35::worker_stage7,
-                                      this,
-                                      std::ref(in),
-                                      std::ref(ynew),
-                                      std::ref(errVec),
-                                      bounds[i],
-                                      bounds[i + 1]));
-    worker_stage7(in, ynew, errVec, bounds[nthreads - 1], bounds[nthreads]);
-    for (auto& thread : threads)
-        thread.join();
-    threads.clear();
+    setStageState(StageState::Stage7);
+    worker_stage7(in, ynew, errVec, lastSti, lastEndi);
+    setStageState(StageState::Wait);
+
     statCenter().incrementCounter("Nonlinear Function Evaluations", 5);
 }
 
