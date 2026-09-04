@@ -96,8 +96,16 @@ jobs:
             conan-windows-
 
       - name: Configure (Release)
+        # compiler.cppstd is pinned to 17 here because conan profile detect
+        # --force's default for this MSVC toolchain is cppstd=14, which
+        # made gtest/1.17.0 resolve as an Invalid binary (its own recipe
+        # rejects cppstd<17) before the build ever started -- caught while
+        # fixing the msys2/lockfile failure below, not yet hit by CI itself.
+        # 17 matches what Linux's container image and macOS's `conan
+        # profile detect --force` already resolve to (gnu17/appleclang
+        # default) on the other two jobs.
         run: |
-          conan install . -of build/Release --build=missing -s build_type=Release
+          conan install . -of build/Release --build=missing -s build_type=Release -s compiler.cppstd=17
           cmake --preset conan-release -DSPIDA_TEST=ON -DSPIDA_WORKER=ON
 
       - name: Build
@@ -110,7 +118,10 @@ jobs:
         run: build/Release/worker/spida-worker.exe --describe > $null
 
       - name: Package test (conan create + test_package)
-        run: conan create . --build=missing -s build_type=Release
+        # Same cppstd=17 pin as the Configure step above -- conan create
+        # resolves its own dependency graph independently and would
+        # otherwise fall back to this MSVC profile's cppstd=14 default.
+        run: conan create . --build=missing -s build_type=Release -s compiler.cppstd=17
 
       - name: Upload test logs on failure
         if: failure()
