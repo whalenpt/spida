@@ -70,6 +70,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+
 #include <chrono>
 #include <csignal>
 #include <ctime>
@@ -403,6 +406,8 @@ public:
 
 int main(int argc, char** argv)
 {
+    spdlog::set_default_logger(spdlog::stderr_color_mt("spida-worker"));
+
     if (argc == 2 && std::string_view(argv[1]) == "--describe") {
         std::cout << spida::config::describeCapabilities().dump(2) << "\n";
         return 0;
@@ -420,17 +425,20 @@ int main(int argc, char** argv)
             timeoutSeconds = std::stod(argv[3]);
         }
         catch (const std::exception&) {
-            std::cerr << "invalid timeout-seconds: " << argv[3] << "\n";
+            spdlog::error("invalid timeout-seconds: {}", argv[3]);
             return 2;
         }
     }
+
+    spdlog::info("starting job: config={} outDir={} timeoutSeconds={}", configPath.string(),
+                 outDir.string(), timeoutSeconds);
     fs::create_directories(outDir);
 
     json configJson;
     {
         std::ifstream is(configPath);
         if (!is) {
-            std::cerr << "cannot open config: " << configPath << "\n";
+            spdlog::error("cannot open config: {}", configPath.string());
             return 2;
         }
         is >> configJson;
@@ -449,6 +457,7 @@ int main(int argc, char** argv)
 
     try {
         auto cfg = configJson.get<spida::config::SimulationConfig>();
+        spdlog::debug("config parsed successfully");
 
         // Backfill modelParams with this model's own registry defaults for
         // any key the caller's config.json omitted, BEFORE anything reads
@@ -488,6 +497,7 @@ int main(int argc, char** argv)
                          {"validationErrors", errors},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            spdlog::error("config validation failed: {} error(s)", errors.size());
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -503,6 +513,7 @@ int main(int argc, char** argv)
         writeStatus(outDir,
                     {{"status", "running"}, {"config", cfg}, {"startedAt", nowIso8601()}});
         events.status("running");
+        spdlog::info("run started: config={}", json(cfg).dump());
 
         spida::config::SimulationRun run(cfg, outDir);
         // Known, accepted gap: SIGTERM sent to this process BEFORE this
@@ -547,6 +558,8 @@ int main(int argc, char** argv)
                             .count();
                     if (elapsed >= timeoutSeconds) {
                         timedOut = true;
+                        spdlog::warn("wall-clock timeout of {}s exceeded at step {}", timeoutSeconds,
+                                     s.stepsTaken);
                         g_propagator->requestCancel();
                     }
                 }
@@ -588,6 +601,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            spdlog::error("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -603,6 +617,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            spdlog::error("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -626,6 +641,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            spdlog::error("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -643,6 +659,7 @@ int main(int argc, char** argv)
                      {"stopReason", stopReasonToString(reason)},
                      {"config", cfg},
                      {"finishedAt", nowIso8601()}});
+        spdlog::info("run completed: stopReason={}", stopReasonToString(reason));
         events.status("completed");
         return 0;
     }
@@ -652,6 +669,7 @@ int main(int argc, char** argv)
                      {"failureReason", "config_validation"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        spdlog::error("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;
@@ -662,6 +680,7 @@ int main(int argc, char** argv)
                      {"failureReason", "config_validation"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        spdlog::error("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;
@@ -672,6 +691,7 @@ int main(int argc, char** argv)
                      {"failureReason", "runtime_exception"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        spdlog::error("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;
