@@ -66,6 +66,19 @@ jobs:
       - name: Install Ninja
         run: choco install ninja -y
 
+      - name: Set up MSVC dev environment
+        # Ninja (unlike the multi-config Visual Studio generator we just
+        # moved off of) doesn't locate cl.exe/link.exe itself -- it expects
+        # them already on PATH, which normally only happens inside a
+        # "Developer Command Prompt" that's run vcvarsall.bat. Conan's own
+        # generated conanvcvars.bat handles this automatically for each
+        # dependency's own from-source build (that's why boost/spdlog/etc.
+        # above already compiled fine), but our own `cmake --preset
+        # conan-release` call below is a separate step/process that never
+        # sources it. This action sets up the same environment for every
+        # later step in this job.
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Set up Python
         # Needed so the conan console-script pip installs below actually
         # lands on PATH for later steps -- windows-latest's pre-installed
