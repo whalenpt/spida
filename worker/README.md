@@ -115,6 +115,48 @@ cmake --build --preset conan-release --parallel
 
 Binary lands at `build/Release/worker/spida-worker`.
 
+### Building as an external consumer (e.g. spida-console)
+
+The sequence above assumes a checkout you're already contributing to — the
+mandated build in CLAUDE.md, which builds the whole preset (library, tests,
+demos, worker) and exists to keep local verification consistent for anyone
+working in this repo. A consumer that isn't part of this repo (spida-
+console's api-server image is the motivating case) wants something
+narrower: just the one binary, from a pinned release, with nothing else
+compiled.
+
+`worker/` isn't part of the source tarball this repo publishes on GitHub
+Releases for each `vN.N.N` tag — that tarball is scoped to Conan library
+consumers (`CMakeLists.txt cmake include src external/nayukidct` only, see
+`.github/workflows/release.yml`), since it exists for `conanfile.py`'s
+`source()` fallback, not for building the worker. A pinned git clone gets
+the whole tree instead:
+
+```bash
+git clone --branch v0.1.1 --depth 1 --recurse-submodules \
+    https://github.com/whalenpt/spida.git
+cd spida
+conan install . -of build/Release --build=missing -s build_type=Release
+cmake --preset conan-release -DSPIDA_WORKER=ON
+cmake --build --preset conan-release --target spida-worker --parallel
+```
+
+Two differences from the mandated sequence, both specific to this
+"external consumer building only the binary" case rather than a relaxation
+of it: `-DSPIDA_WORKER=ON` is required (off by default), and
+`--target spida-worker` builds only that executable instead of the whole
+preset — a real time savings when nothing else in the preset (tests,
+demos, the library's own test suite) is needed. The result is one static
+binary at `build/Release/worker/spida-worker` — `BUILD_SHARED_LIBS` is
+forced `OFF` repo-wide, so there's nothing else to copy alongside it and no
+shared-library version to match at the runtime end, e.g. a `COPY --from=`
+in a Docker multi-stage build.
+
+Pin to a real tag, not a floating branch. The wire-contract docs this
+binary implements (`docs/api/*`, this README) travel with that exact
+commit — pinning is what keeps a consumer's understanding of the contract
+from silently drifting out from under it as this repo moves.
+
 ## Usage
 
 ```bash
