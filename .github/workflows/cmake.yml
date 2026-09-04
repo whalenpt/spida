@@ -104,8 +104,19 @@ jobs:
         # 17 matches what Linux's container image and macOS's `conan
         # profile detect --force` already resolve to (gnu17/appleclang
         # default) on the other two jobs.
+        #
+        # -c tools.cmake.cmaketoolchain:generator=Ninja: without this, Conan
+        # falls back to its own default generator resolution for MSVC on
+        # Windows, which is the multi-config "Visual Studio 18 2026"
+        # generator -- and CMakeToolchain names its preset "conan-default"
+        # for multi-config generators, not "conan-release" (that naming is
+        # single-config-generator-only, e.g. Ninja/Makefiles), so the
+        # `cmake --preset conan-release` below would fail to find it. Ninja
+        # is already installed by the step above; this just tells Conan to
+        # actually use it, matching the single-config preset naming the
+        # rest of this job (and the Linux/macOS jobs) already assume.
         run: |
-          conan install . -of build/Release --build=missing -s build_type=Release -s compiler.cppstd=17
+          conan install . -of build/Release --build=missing -s build_type=Release -s compiler.cppstd=17 -c tools.cmake.cmaketoolchain:generator=Ninja
           cmake --preset conan-release -DSPIDA_TEST=ON -DSPIDA_WORKER=ON
 
       - name: Build
@@ -118,10 +129,10 @@ jobs:
         run: build/Release/worker/spida-worker.exe --describe > $null
 
       - name: Package test (conan create + test_package)
-        # Same cppstd=17 pin as the Configure step above -- conan create
-        # resolves its own dependency graph independently and would
-        # otherwise fall back to this MSVC profile's cppstd=14 default.
-        run: conan create . --build=missing -s build_type=Release -s compiler.cppstd=17
+        # Same cppstd=17 pin and Ninja generator override as the Configure
+        # step above -- conan create resolves and builds its own graph
+        # independently of the earlier steps.
+        run: conan create . --build=missing -s build_type=Release -s compiler.cppstd=17 -c tools.cmake.cmaketoolchain:generator=Ninja
 
       - name: Upload test logs on failure
         if: failure()
