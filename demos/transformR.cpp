@@ -12,7 +12,8 @@
 
 #include <fstream>
 #include <iomanip>
-#include <iostream>
+
+#include <spdlog/spdlog.h>
 
 #include <spida/grid/besselR.h>
 #include <spida/shape/shapeR.h>
@@ -49,8 +50,8 @@ int main()
     os << in_report;
     os << out_report;
 
-    std::cout << in_report.path().string() << std::endl;
-    std::cout << out_report.path().string() << std::endl;
+    spdlog::info("{}", in_report.path().string());
+    spdlog::info("{}", out_report.path().string());
 
     using spida::dcmplx;
     std::vector<dcmplx> ucmplx(nr);
@@ -61,7 +62,7 @@ int main()
     transform.R_To_SR(ucmplx,vcmplx);
     spida::ReportComplex1D<double, double> cmplx_report("SRcmplx", gridR.getSR(), vcmplx);
     cmplx_report.setItem("xlabel","kr");
-    std::cout << cmplx_report.path() << std::endl;
+    spdlog::info("{}", cmplx_report.path().string());
     os << cmplx_report;
     os.close();
 
