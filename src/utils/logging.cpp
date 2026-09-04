@@ -1,5 +1,6 @@
 #include "utils/logging.h"
 
+#if SPIDA_HAS_SPDLOG
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace detail {
@@ -14,3 +15,4 @@ std::shared_ptr<spdlog::logger>& spidaLogger()
 }
 
 } // namespace detail
+#endif
