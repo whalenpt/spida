@@ -125,12 +125,29 @@ console's api-server image is the motivating case) wants something
 narrower: just the one binary, from a pinned release, with nothing else
 compiled.
 
-`worker/` isn't part of the source tarball this repo publishes on GitHub
-Releases for each `vN.N.N` tag — that tarball is scoped to Conan library
-consumers (`CMakeLists.txt cmake include src external/nayukidct` only, see
-`.github/workflows/release.yml`), since it exists for `conanfile.py`'s
-`source()` fallback, not for building the worker. A pinned git clone gets
-the whole tree instead:
+The release tarball this repo publishes on GitHub Releases for each
+`vN.N.N` tag now includes `worker/` alongside the library sources
+(`CMakeLists.txt cmake include src external/nayukidct worker` — see
+`.github/workflows/release.yml`), so a plain download-and-extract, with no
+git at all, is enough:
+
+```bash
+curl -fsSL -o spida-src.tar.gz \
+    https://github.com/whalenpt/spida/releases/download/v0.1.1/spida-0.1.1-src.tar.gz
+tar xzf spida-src.tar.gz && cd spida-0.1.1
+conan install . -of build/Release --build=missing -s build_type=Release
+cmake --preset conan-release -DSPIDA_WORKER=ON
+cmake --build --preset conan-release --target spida-worker --parallel
+```
+
+Note this is broader than what `conanfile.py`'s own `exports_sources`
+bundles for a Conan package build (see that file's comment) — the tarball
+serves both audiences, but a plain Conan library consumer never sees
+`worker/` show up in their own build, since `conan create`'s packaging step
+never installs it.
+
+A pinned git clone works too, and is the better choice if the full repo is
+useful for other reasons (contributing, running the test suite, `demos/`):
 
 ```bash
 git clone --branch v0.1.1 --depth 1 --recurse-submodules \
@@ -141,18 +158,18 @@ cmake --preset conan-release -DSPIDA_WORKER=ON
 cmake --build --preset conan-release --target spida-worker --parallel
 ```
 
-Two differences from the mandated sequence, both specific to this
-"external consumer building only the binary" case rather than a relaxation
-of it: `-DSPIDA_WORKER=ON` is required (off by default), and
-`--target spida-worker` builds only that executable instead of the whole
-preset — a real time savings when nothing else in the preset (tests,
+Either way, two differences from the mandated in-repo sequence, both
+specific to this "external consumer building only the binary" case rather
+than a relaxation of it: `-DSPIDA_WORKER=ON` is required (off by default),
+and `--target spida-worker` builds only that executable instead of the
+whole preset — a real time savings when nothing else in the preset (tests,
 demos, the library's own test suite) is needed. The result is one static
 binary at `build/Release/worker/spida-worker` — `BUILD_SHARED_LIBS` is
 forced `OFF` repo-wide, so there's nothing else to copy alongside it and no
 shared-library version to match at the runtime end, e.g. a `COPY --from=`
 in a Docker multi-stage build.
 
-Pin to a real tag, not a floating branch. The wire-contract docs this
+Pin to a real tag (tarball or clone), not a floating branch. The wire-contract docs this
 binary implements (`docs/api/*`, this README) travel with that exact
 commit — pinning is what keeps a consumer's understanding of the contract
 from silently drifting out from under it as this repo moves.
