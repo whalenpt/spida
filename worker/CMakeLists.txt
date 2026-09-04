@@ -7,3 +7,7 @@
 add_executable(spida-worker src/main.cpp)
 target_link_libraries(spida-worker PRIVATE SPIDA::spida)
 target_compile_features(spida-worker PRIVATE cxx_std_23)
+
+if(TARGET spdlog::spdlog)
+    target_link_libraries(spida-worker PRIVATE spdlog::spdlog)
+endif()

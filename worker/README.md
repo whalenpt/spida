@@ -295,6 +295,17 @@ one producer, so the two can never drift apart:
   partial-write races that come with tailing a file mid-append) — just
   read a line, forward it (e.g. as one SSE frame per line to a browser).
 
+**stderr carries operator diagnostics, separately.** `spida-worker` also
+logs lifecycle/diagnostic messages (job start, config parse, validation
+failures, run start/completion, timeouts, worker-level exceptions) via
+spdlog to **stderr only**, using spdlog's default logger pattern
+(unmodified — no custom format string). This is for process supervisors
+and operator-facing logs (e.g. `journalctl`, a container's log driver),
+entirely independent of the stdout NDJSON `SimulationEvent` channel
+described above: nothing is ever written to stdout except that wire
+protocol, so the two streams never interleave and a caller reading
+`spida-worker`'s stdout as the live event pipe is unaffected by this.
+
 Recommended full transport shape, browser included: plain HTTP for
 commands/queries (`POST /simulations`, `POST /simulations/:id/cancel`,
 `GET /simulations/:id`); this stdout NDJSON pipe for worker→api-server;

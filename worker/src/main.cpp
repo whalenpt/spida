@@ -70,6 +70,33 @@
 
 #include <nlohmann/json.hpp>
 
+// spdlog is unavailable on the native, Conan-less Windows CI job (see
+// .github/workflows/cmake.yml's "Windows (native — submodules, no Conan)"
+// job — it configures straight cmake/Ninja with no `conan install` step, so
+// find_package(spdlog CONFIG QUIET) in the top-level CMakeLists.txt never
+// finds it and `if(TARGET spdlog::spdlog)` never links it here). Every
+// other build (local dev per CLAUDE.md's mandatory sequence, Linux/macOS
+// CI) goes through Conan, where spdlog is a hard requirement (conanfile.py)
+// and this branch is always taken. __has_include lets the same source
+// compile either way instead of hard-failing on the Windows job.
+#if __has_include(<spdlog/spdlog.h>)
+#define SPIDA_WORKER_HAS_SPDLOG 1
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#define SPIDA_LOG_INIT() spdlog::set_default_logger(spdlog::stderr_color_mt("spida-worker"))
+#define SPIDA_LOG_INFO(...) spdlog::info(__VA_ARGS__)
+#define SPIDA_LOG_DEBUG(...) spdlog::debug(__VA_ARGS__)
+#define SPIDA_LOG_WARN(...) spdlog::warn(__VA_ARGS__)
+#define SPIDA_LOG_ERROR(...) spdlog::error(__VA_ARGS__)
+#else
+#define SPIDA_WORKER_HAS_SPDLOG 0
+#define SPIDA_LOG_INIT() ((void)0)
+#define SPIDA_LOG_INFO(...) ((void)0)
+#define SPIDA_LOG_DEBUG(...) ((void)0)
+#define SPIDA_LOG_WARN(...) ((void)0)
+#define SPIDA_LOG_ERROR(...) ((void)0)
+#endif
+
 #include <chrono>
 #include <csignal>
 #include <ctime>
@@ -403,6 +430,8 @@ public:
 
 int main(int argc, char** argv)
 {
+    SPIDA_LOG_INIT();
+
     if (argc == 2 && std::string_view(argv[1]) == "--describe") {
         std::cout << spida::config::describeCapabilities().dump(2) << "\n";
         return 0;
@@ -420,17 +449,20 @@ int main(int argc, char** argv)
             timeoutSeconds = std::stod(argv[3]);
         }
         catch (const std::exception&) {
-            std::cerr << "invalid timeout-seconds: " << argv[3] << "\n";
+            SPIDA_LOG_ERROR("invalid timeout-seconds: {}", argv[3]);
             return 2;
         }
     }
+
+    SPIDA_LOG_INFO("starting job: config={} outDir={} timeoutSeconds={}", configPath.string(),
+                 outDir.string(), timeoutSeconds);
     fs::create_directories(outDir);
 
     json configJson;
     {
         std::ifstream is(configPath);
         if (!is) {
-            std::cerr << "cannot open config: " << configPath << "\n";
+            SPIDA_LOG_ERROR("cannot open config: {}", configPath.string());
             return 2;
         }
         is >> configJson;
@@ -449,6 +481,7 @@ int main(int argc, char** argv)
 
     try {
         auto cfg = configJson.get<spida::config::SimulationConfig>();
+        SPIDA_LOG_DEBUG("config parsed successfully");
 
         // Backfill modelParams with this model's own registry defaults for
         // any key the caller's config.json omitted, BEFORE anything reads
@@ -488,6 +521,7 @@ int main(int argc, char** argv)
                          {"validationErrors", errors},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            SPIDA_LOG_ERROR("config validation failed: {} error(s)", errors.size());
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -503,6 +537,7 @@ int main(int argc, char** argv)
         writeStatus(outDir,
                     {{"status", "running"}, {"config", cfg}, {"startedAt", nowIso8601()}});
         events.status("running");
+        SPIDA_LOG_INFO("run started: config={}", json(cfg).dump());
 
         spida::config::SimulationRun run(cfg, outDir);
         // Known, accepted gap: SIGTERM sent to this process BEFORE this
@@ -547,6 +582,8 @@ int main(int argc, char** argv)
                             .count();
                     if (elapsed >= timeoutSeconds) {
                         timedOut = true;
+                        SPIDA_LOG_WARN("wall-clock timeout of {}s exceeded at step {}", timeoutSeconds,
+                                     s.stepsTaken);
                         g_propagator->requestCancel();
                     }
                 }
@@ -588,6 +625,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            SPIDA_LOG_ERROR("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -603,6 +641,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            SPIDA_LOG_ERROR("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -626,6 +665,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            SPIDA_LOG_ERROR("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -643,6 +683,7 @@ int main(int argc, char** argv)
                      {"stopReason", stopReasonToString(reason)},
                      {"config", cfg},
                      {"finishedAt", nowIso8601()}});
+        SPIDA_LOG_INFO("run completed: stopReason={}", stopReasonToString(reason));
         events.status("completed");
         return 0;
     }
@@ -652,6 +693,7 @@ int main(int argc, char** argv)
                      {"failureReason", "config_validation"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        SPIDA_LOG_ERROR("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;
@@ -662,6 +704,7 @@ int main(int argc, char** argv)
                      {"failureReason", "config_validation"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        SPIDA_LOG_ERROR("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;
@@ -672,6 +715,7 @@ int main(int argc, char** argv)
                      {"failureReason", "runtime_exception"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        SPIDA_LOG_ERROR("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;
