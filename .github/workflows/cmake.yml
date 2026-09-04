@@ -66,10 +66,23 @@ jobs:
       - name: Install Ninja
         run: choco install ninja -y
 
+      - name: Set up Python
+        # Needed so the conan console-script pip installs below actually
+        # lands on PATH for later steps -- windows-latest's pre-installed
+        # `py` launcher resolves to a Python whose Scripts dir isn't
+        # guaranteed to be on PATH, which is what made `conan` unrecognized
+        # in the next step even though `py -m pip install conan` itself
+        # succeeded. setup-python prepends its own interpreter + Scripts
+        # dir to PATH for the rest of this job, same effect the macOS job
+        # gets for free from its already-on-PATH pip3.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       - name: Install Conan
         run: |
-          py -m pip install --upgrade pip
-          py -m pip install "conan>=2,<3"
+          python -m pip install --upgrade pip
+          python -m pip install "conan>=2,<3"
 
       - name: Conan profile
         run: conan profile detect --force
