@@ -39,5 +39,8 @@ foreach(target IN LISTS DEMO_TARGETS)
     target_link_libraries(${target} PUBLIC SPIDA::spida)
 endforeach()
 
-
-
+if(TARGET spdlog::spdlog)
+    foreach(target IN ITEMS grid hankel transformR transformRT kdvRV)
+        target_link_libraries(${target} PRIVATE spdlog::spdlog)
+    endforeach()
+endif()

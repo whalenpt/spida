@@ -2,6 +2,7 @@
 # Source files
 # -----------------------------
 set(SRC_FILES
+    utils/logging.cpp
     utils/math.cpp
     utils/stats.cpp
     utils/strings.cpp

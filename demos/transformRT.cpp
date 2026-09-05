@@ -14,7 +14,8 @@
 #include <cmath>
 #include <fstream>
 #include <iomanip>
-#include <iostream>
+
+#include <spdlog/spdlog.h>
 
 #include <spida/grid/besselR.h>
 #include <spida/grid/uniformRVT.h>
@@ -62,7 +63,7 @@ int main()
     in_report.setItem("ylabel","t");
 
     std::ofstream os;
-    std::cout << in_report.path() << std::endl;
+    spdlog::info("{}", in_report.path().string());
     os << in_report;
 
     spida::Report1D r_rpd{"R", gridR.getR(), u0r};
@@ -85,14 +86,14 @@ int main()
     out_report.setItem("xlabel","kr");
     out_report.setItem("ylabel","omega");
 
-    std::cout << out_report.path() << std::endl;
+    spdlog::info("{}", out_report.path().string());
     os << out_report;
 
     spida::Report2D rinop{"RTb", gridR.getR(), gridT.getT(), uop};
     rinop.setItem("xlabel","r");
     rinop.setItem("ylabel","t");
 
-    std::cout << rinop.path() << std::endl;
+    spdlog::info("{}", rinop.path().string());
     os << rinop;
 
     std::vector<dcmplx> w(nr*nst);
@@ -108,14 +109,14 @@ int main()
     spida::ReportComplex2D rst_report{"RST", gridR.getR(), gridT.getST(), w};
     rst_report.setItem("xlabel","r");
     rst_report.setItem("ylabel","omega");
-    std::cout << rst_report.path() << std::endl;
+    spdlog::info("{}", rst_report.path().string());
     os << rst_report;
 
     spida::Report2D srt_report{"SRT", gridR.getSR(), gridT.getT(), zeta};
 
     srt_report.setItem("xlabel","kr");
     srt_report.setItem("ylabel","t");
-    std::cout << srt_report.path() << std::endl;
+    spdlog::info("{}", srt_report.path().string());
     os << srt_report;
 
     spida::ReportComplex2D rst_report2{"RSTb", gridR.getR(), gridT.getST(), w2};
@@ -153,15 +154,13 @@ int main()
     }
 
     for(unsigned threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelFFTRRVT RT_To_SRST duration with " << threads << " thread(s): "\
-                  << rt_srst_timings[threads] << "us" << std::endl;
+        spdlog::info("HankelFFTRRVT RT_To_SRST duration with {} thread(s): {}us", threads, rt_srst_timings[threads]);
     }
-    std::cout << std::endl;
+    spdlog::info("");
     for(unsigned threads = 1; threads < MAX_THREADS; threads++){
-        std::cout << "HankelFFTRRVT SRST_To_RT duration with " << threads << " thread(s): "\
-                  << srst_rt_timings[threads] << "us" << std::endl;
+        spdlog::info("HankelFFTRRVT SRST_To_RT duration with {} thread(s): {}us", threads, srst_rt_timings[threads]);
     }
-    std::cout << std::endl;
+    spdlog::info("");
 
     return 0;
 }

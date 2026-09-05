@@ -8,8 +8,9 @@
 ------------------------------------------------------------------------------*/
 
 #include <cmath>
-#include <iostream>
 #include <vector>
+
+#include <spdlog/spdlog.h>
 
 #include <spida/grid/uniformRVX.h>
 #include <spida/helper/constants.h>
@@ -38,8 +39,7 @@ int main()
     std::vector<double> roundtrip(grid.getNx());
     spi.SX_To_X(spectral, roundtrip);
 
-    std::cout << "SPIDA is installed and working (Nx=" << grid.getNx()
-              << ", roundtrip[0]=" << roundtrip[0] << ")\n";
+    spdlog::info("SPIDA is installed and working (Nx={}, roundtrip[0]={})", grid.getNx(), roundtrip[0]);
 
     return 0;
 }
