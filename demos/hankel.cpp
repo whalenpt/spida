@@ -13,7 +13,7 @@
 #include <spida/grid/besselR.h>
 #include <spida/transform/hankelR.h>
 #include <cmath>
-#include <iostream>
+#include <spdlog/spdlog.h>
 
 //------------------------------------------------------------------------------
 
@@ -33,9 +33,9 @@ int main()
     const std::vector<double>& r = grid.getR();
     const std::vector<double>& kr = grid.getSR();
 
-    std::cout << "jN : " << grid.getjN() << std::endl;
-    std::cout << "maxR : " << grid.getMaxR() << std::endl;
-    std::cout << "maxSR : " << grid.getMaxSR() << std::endl;
+    spdlog::info("jN : {}", grid.getjN());
+    spdlog::info("maxR : {}", grid.getMaxR());
+    spdlog::info("maxSR : {}", grid.getMaxSR());
 
     double a = 5.0;
     for(unsigned i = 0; i < N; i++)
@@ -48,10 +48,10 @@ int main()
     transform.SR_To_R(out,in2);
 
     for(unsigned i = 0; i < N; i++)
-        std::cout << "OUT: " << out[i] << " - " << "EXPECT: " << exact[i] << std::endl;
+        spdlog::info("OUT: {} - EXPECT: {}", out[i], exact[i]);
 
     for(unsigned i = 0; i < N; i++)
-        std::cout << "IN: " << in[i] << " - " << "IN2: " << in2[i] << std::endl;
+        spdlog::info("IN: {} - IN2: {}", in[i], in2[i]);
 
     N = 256;
     rmax = 32.0;
@@ -78,7 +78,7 @@ int main()
     transform2.R_To_SR(in,out);
 
     for(unsigned i = 0; i < N; i++)
-        std::cout << "OUT: " << out[i] << " - " << "EXPECT: " << exact[i] << std::endl;
+        spdlog::info("OUT: {} - EXPECT: {}", out[i], exact[i]);
 
     return 0;
 }

@@ -12,25 +12,27 @@
 
 #include <spida/grid/besselR.h>
 #include <spida/grid/uniformRVT.h>
-#include <iostream>
+#include <spdlog/spdlog.h>
 
 //------------------------------------------------------------------------------
 
 
 int main()
 {
-    std::cout << std::endl << "BesselRootGridR..." << std::endl;
+    spdlog::info("");
+    spdlog::info("BesselRootGridR...");
     unsigned N = 8;
     spida::BesselRootGridR grid(N,1.0);
-    std::cout << "Bessel Root Grid: " << std::endl;
+    spdlog::info("Bessel Root Grid: ");
     for(const auto& item : grid.getR())
-        std::cout << item << std::endl;
-    std::cout << "Bessel Root Grid Zeros: " << std::endl;
+        spdlog::info("{}", item);
+    spdlog::info("Bessel Root Grid Zeros: ");
     for(const auto& item : grid.getBesselRoots())
-        std::cout << item << std::endl;
+        spdlog::info("{}", item);
 
 
-    std::cout << std::endl << "UniformGridT..." << std::endl;
+    spdlog::info("");
+    spdlog::info("UniformGridT...");
     unsigned nt = 1024;
     double tp = 5.0e-15;
     double minT = -10*tp;
@@ -41,20 +43,22 @@ int main()
     spida::UniformGridRVT gridT(nt,minT,maxT,minST,maxST);
     const std::vector<double>& t = gridT.getT();
     const std::vector<double>& st = gridT.getST();
-    std::cout << "MinT: " << gridT.getMinT() << std::endl;
-    std::cout << "MaxT: " << gridT.getMaxT() << std::endl;
-    std::cout << "MinT: " << t[0] << std::endl;
-    std::cout << "MaxT: " << t.back() << std::endl;
-    std::cout << "MinST: " << gridT.getMinST() << std::endl;
-    std::cout << "MaxST: " << gridT.getMaxST() << std::endl;
-    std::cout << "MinST: " << st[0] << std::endl;
-    std::cout << "MaxST: " << st.back() << std::endl;
-    std::cout << std::endl << "T-grid:" << std::endl;
+    spdlog::info("MinT: {}", gridT.getMinT());
+    spdlog::info("MaxT: {}", gridT.getMaxT());
+    spdlog::info("MinT: {}", t[0]);
+    spdlog::info("MaxT: {}", t.back());
+    spdlog::info("MinST: {}", gridT.getMinST());
+    spdlog::info("MaxST: {}", gridT.getMaxST());
+    spdlog::info("MinST: {}", st[0]);
+    spdlog::info("MaxST: {}", st.back());
+    spdlog::info("");
+    spdlog::info("T-grid:");
     for(unsigned i = 0; i < nt; i+=nt/10)
-        std::cout << t[i] << std::endl;
-    std::cout << std::endl << "ST-grid:" << std::endl;
+        spdlog::info("{}", t[i]);
+    spdlog::info("");
+    spdlog::info("ST-grid:");
     for(unsigned i = 0; i < st.size(); i+=st.size()/10)
-        std::cout << st[i] << std::endl;
+        spdlog::info("{}", st[i]);
 
     return 0;
 }

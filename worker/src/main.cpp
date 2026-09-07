@@ -62,17 +62,43 @@
 // captured once from the report sink instead of requiring a caller to
 // open and re-parse a report file to get them.
 
+#include <nlohmann/json.hpp>
 #include <spida/config/capabilities.h>
 #include <spida/config/modelregistry.h>
 #include <spida/config/simulationbuilder.h>
 #include <spida/config/simulationconfig.h>
 #include <spida/config/validation.h>
+#include <utils/isotime.hpp>
 
-#include <nlohmann/json.hpp>
+// spdlog is unavailable on the native, Conan-less Windows CI job (see
+// .github/workflows/cmake.yml's "Windows (native — submodules, no Conan)"
+// job — it configures straight cmake/Ninja with no `conan install` step, so
+// find_package(spdlog CONFIG QUIET) in the top-level CMakeLists.txt never
+// finds it and `if(TARGET spdlog::spdlog)` never links it here). Every
+// other build (local dev per CLAUDE.md's mandatory sequence, Linux/macOS
+// CI) goes through Conan, where spdlog is a hard requirement (conanfile.py)
+// and this branch is always taken. __has_include lets the same source
+// compile either way instead of hard-failing on the Windows job.
+#if __has_include(<spdlog/spdlog.h>)
+#define SPIDA_WORKER_HAS_SPDLOG 1
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#define SPIDA_LOG_INIT() spdlog::set_default_logger(spdlog::stderr_color_mt("spida-worker"))
+#define SPIDA_LOG_INFO(...) spdlog::info(__VA_ARGS__)
+#define SPIDA_LOG_DEBUG(...) spdlog::debug(__VA_ARGS__)
+#define SPIDA_LOG_WARN(...) spdlog::warn(__VA_ARGS__)
+#define SPIDA_LOG_ERROR(...) spdlog::error(__VA_ARGS__)
+#else
+#define SPIDA_WORKER_HAS_SPDLOG 0
+#define SPIDA_LOG_INIT() ((void)0)
+#define SPIDA_LOG_INFO(...) ((void)0)
+#define SPIDA_LOG_DEBUG(...) ((void)0)
+#define SPIDA_LOG_WARN(...) ((void)0)
+#define SPIDA_LOG_ERROR(...) ((void)0)
+#endif
 
 #include <chrono>
 #include <csignal>
-#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -87,24 +113,16 @@ using json = nlohmann::json;
 
 namespace {
 
+// Delegates to the library's own detail::nowIso8601Utc() (src/utils/
+// isotime.hpp) rather than re-deriving the same gmtime_r/gmtime_s
+// portability fork a second time here -- this file used to carry its own
+// copy (see git history) until report.hpp needed the identical formatter
+// for the new per-frame "generatedAt" metadata field, at which point having
+// both places hand-roll it independently became exactly the kind of drift
+// risk modelregistry.h's own header comment warns about.
 std::string nowIso8601()
 {
-    auto now = std::chrono::system_clock::now();
-    auto t = std::chrono::system_clock::to_time_t(now);
-    std::tm tm{};
-    // gmtime_r is POSIX-only -- MinGW/MSVC provide the thread-safe
-    // equivalent as gmtime_s instead, with the arguments reversed
-    // (tm* first, time_t* second) and an errno_t return instead of a
-    // tm* return. Caught by CI's new -DSPIDA_WORKER=ON Windows build
-    // (see cmake.yml) the first time this file was ever compiled there.
-#if defined(_WIN32)
-    gmtime_s(&tm, &t);
-#else
-    gmtime_r(&t, &tm);
-#endif
-    char buf[32];
-    std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &tm);
-    return buf;
+    return detail::nowIso8601Utc();
 }
 
 void writeStatus(const fs::path& dir, const json& status)
@@ -292,6 +310,21 @@ private:
 // kind called it — flagged here rather than silently assumed away.
 class ManifestBuilder {
 public:
+    // `descriptor` is the ModelDescriptor for the run's own ModelKind
+    // (spida::config::describe(cfg.model), already known non-null by this
+    // point -- validate() rejects any unwired model before a ManifestBuilder
+    // is ever constructed). Held as a pointer, not copied: modelRegistry()
+    // returns a reference to a function-local static array that lives for
+    // the whole process, so this stays valid for this ManifestBuilder's
+    // entire lifetime. Used by build() to attach each series' static
+    // axes/valueLabel/valueUnits/evolution metadata (docs/adr/0004) --
+    // facts no per-frame report JSON carries, so they can't be recovered
+    // from observe()'s own argument the way gridCoords/kind/valueType are.
+    explicit ManifestBuilder(const spida::config::ModelDescriptor* descriptor)
+        : m_descriptor(descriptor)
+    {
+    }
+
     // Returns the series' new frameCount (i.e. 1-based count including the
     // just-observed frame) so a caller can derive that frame's 0-based file
     // index (frameCount - 1) without duplicating any counting of its own --
@@ -338,6 +371,7 @@ public:
             };
             if (s.kind == "field2d")
                 entry["gridCoordsY"] = s.gridCoordsY;
+            attachStaticMetadata(name, entry);
             out.push_back(std::move(entry));
         }
         return out;
@@ -352,6 +386,58 @@ private:
         json gridCoordsY = json::array();
     };
     std::map<std::string, Series> m_series;
+    const spida::config::ModelDescriptor* m_descriptor;
+
+    // Merges in the registry's static axes/valueLabel/valueUnits (matched
+    // by series name) and evolution (same for every series in this run) --
+    // none of it derivable from a report frame's own JSON, which is the
+    // whole point of docs/adr/0004. m_descriptor is null only if this
+    // ManifestBuilder were ever constructed for an unwired model, which
+    // can't happen past validate() -- guarded anyway rather than assumed.
+    void attachStaticMetadata(const std::string& name, json& entry) const
+    {
+        if (m_descriptor == nullptr)
+            return;
+        for (auto const& s : m_descriptor->series) {
+            if (s.name != name)
+                continue;
+            if (!s.axes.empty()) {
+                json axes = json::array();
+                for (auto const& a : s.axes) {
+                    json aEntry = json::object();
+                    if (!a.label.empty())
+                        aEntry["label"] = a.label;
+                    if (!a.units.empty())
+                        aEntry["units"] = a.units;
+                    if (!a.quantity.empty())
+                        aEntry["quantity"] = a.quantity;
+                    if (a.coordinate.has_value())
+                        aEntry["coordinate"] = *a.coordinate;
+                    if (a.spacing.has_value())
+                        aEntry["spacing"] = *a.spacing;
+                    if (a.transform.has_value())
+                        aEntry["transform"] = *a.transform;
+                    if (a.ordering.has_value())
+                        aEntry["ordering"] = *a.ordering;
+                    axes.push_back(std::move(aEntry));
+                }
+                entry["axes"] = std::move(axes);
+            }
+            if (!s.valueLabel.empty())
+                entry["valueLabel"] = s.valueLabel;
+            if (!s.valueUnits.empty())
+                entry["valueUnits"] = s.valueUnits;
+            break;
+        }
+        if (m_descriptor->evolution.has_value()) {
+            json evo = {{"quantity", m_descriptor->evolution->quantity}};
+            if (!m_descriptor->evolution->label.empty())
+                evo["label"] = m_descriptor->evolution->label;
+            if (!m_descriptor->evolution->units.empty())
+                evo["units"] = m_descriptor->evolution->units;
+            entry["evolution"] = std::move(evo);
+        }
+    }
 };
 
 // ---- SIGTERM -> cooperative cancel ---------------------------------------
@@ -403,6 +489,8 @@ public:
 
 int main(int argc, char** argv)
 {
+    SPIDA_LOG_INIT();
+
     if (argc == 2 && std::string_view(argv[1]) == "--describe") {
         std::cout << spida::config::describeCapabilities().dump(2) << "\n";
         return 0;
@@ -420,17 +508,20 @@ int main(int argc, char** argv)
             timeoutSeconds = std::stod(argv[3]);
         }
         catch (const std::exception&) {
-            std::cerr << "invalid timeout-seconds: " << argv[3] << "\n";
+            SPIDA_LOG_ERROR("invalid timeout-seconds: {}", argv[3]);
             return 2;
         }
     }
+
+    SPIDA_LOG_INFO("starting job: config={} outDir={} timeoutSeconds={}", configPath.string(),
+                 outDir.string(), timeoutSeconds);
     fs::create_directories(outDir);
 
     json configJson;
     {
         std::ifstream is(configPath);
         if (!is) {
-            std::cerr << "cannot open config: " << configPath << "\n";
+            SPIDA_LOG_ERROR("cannot open config: {}", configPath.string());
             return 2;
         }
         is >> configJson;
@@ -449,6 +540,7 @@ int main(int argc, char** argv)
 
     try {
         auto cfg = configJson.get<spida::config::SimulationConfig>();
+        SPIDA_LOG_DEBUG("config parsed successfully");
 
         // Backfill modelParams with this model's own registry defaults for
         // any key the caller's config.json omitted, BEFORE anything reads
@@ -488,6 +580,7 @@ int main(int argc, char** argv)
                          {"validationErrors", errors},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            SPIDA_LOG_ERROR("config validation failed: {} error(s)", errors.size());
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -503,6 +596,7 @@ int main(int argc, char** argv)
         writeStatus(outDir,
                     {{"status", "running"}, {"config", cfg}, {"startedAt", nowIso8601()}});
         events.status("running");
+        SPIDA_LOG_INFO("run started: config={}", json(cfg).dump());
 
         spida::config::SimulationRun run(cfg, outDir);
         // Known, accepted gap: SIGTERM sent to this process BEFORE this
@@ -547,6 +641,8 @@ int main(int argc, char** argv)
                             .count();
                     if (elapsed >= timeoutSeconds) {
                         timedOut = true;
+                        SPIDA_LOG_WARN("wall-clock timeout of {}s exceeded at step {}", timeoutSeconds,
+                                     s.stepsTaken);
                         g_propagator->requestCancel();
                     }
                 }
@@ -562,7 +658,10 @@ int main(int argc, char** argv)
         // event fires alongside it -- both derived from the same observe()
         // call, so a live subscriber and a GET /results poller can never
         // see mutually inconsistent states.
-        ManifestBuilder manifest;
+        // Known non-null: validate() (above) already rejected any unwired
+        // ModelKind before this point, and cfg.model hasn't changed since.
+        const auto* modelDescriptor = spida::config::describe(cfg.model);
+        ManifestBuilder manifest(modelDescriptor);
         run.propagator().setReportSink([&manifest, &outDir, &simId, &events](std::string_view name,
                                                                              const json& j) {
             const std::size_t frameCount = manifest.observe(name, j);
@@ -588,6 +687,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            SPIDA_LOG_ERROR("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -603,6 +703,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            SPIDA_LOG_ERROR("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -626,6 +727,7 @@ int main(int argc, char** argv)
                          {"failureDetail", detail},
                          {"config", cfg},
                          {"finishedAt", nowIso8601()}});
+            SPIDA_LOG_ERROR("run failed: {}", detail);
             events.log("error", detail);
             events.status("failed");
             return 1;
@@ -643,6 +745,7 @@ int main(int argc, char** argv)
                      {"stopReason", stopReasonToString(reason)},
                      {"config", cfg},
                      {"finishedAt", nowIso8601()}});
+        SPIDA_LOG_INFO("run completed: stopReason={}", stopReasonToString(reason));
         events.status("completed");
         return 0;
     }
@@ -652,6 +755,7 @@ int main(int argc, char** argv)
                      {"failureReason", "config_validation"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        SPIDA_LOG_ERROR("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;
@@ -662,6 +766,7 @@ int main(int argc, char** argv)
                      {"failureReason", "config_validation"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        SPIDA_LOG_ERROR("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;
@@ -672,6 +777,7 @@ int main(int argc, char** argv)
                      {"failureReason", "runtime_exception"},
                      {"failureDetail", e.what()},
                      {"finishedAt", nowIso8601()}});
+        SPIDA_LOG_ERROR("worker failed: {}", e.what());
         events.log("error", e.what());
         events.status("failed");
         return 1;

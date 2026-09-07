@@ -5,8 +5,10 @@
 
 #include <filesystem>
 #include <format>
+#include <sstream>
 #include <stdexcept>
 
+#include <utils/logging.h>
 #include <utils/report.hpp>
 #include <utils/stats.h>
 
@@ -156,11 +158,13 @@ bool BasePropagator::stepUpdate(double t, double dt)
         this->updateFields(t);
         if (this->checkDiverged(t)) {
             this->m_stop_reason = StopReason::Diverged;
+            detail::spidaLogger()->debug("propagator stopped: diverged at t={}", t);
             return false;
         }
     }
     if (this->cancelRequested()) {
         this->m_stop_reason = StopReason::CancelRequested;
+        detail::spidaLogger()->debug("propagator stopped: cancel requested at step {}", step);
         return false;
     }
     if (this->ready1D(step))
@@ -183,6 +187,7 @@ bool BasePropagator::stepUpdate(double t, double dt)
     this->m_steps_taken = step;
     if (this->maxReportReached()) {
         this->m_stop_reason = StopReason::MaxReportsReached;
+        detail::spidaLogger()->debug("propagator stopped: max reports reached at step {}", step);
         return false;
     }
     return true;
@@ -190,7 +195,9 @@ bool BasePropagator::stepUpdate(double t, double dt)
 
 void BasePropagator::reportStats() const
 {
-    this->m_stat->report();
+    std::ostringstream oss;
+    this->m_stat->report(oss);
+    detail::spidaLogger()->info(oss.str());
 }
 
 void BasePropagator::report(double t)

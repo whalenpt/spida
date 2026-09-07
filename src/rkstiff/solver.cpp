@@ -6,12 +6,13 @@
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include <thread>
 
 #include <utils/except.h>
+#include <utils/logging.h>
 #include <utils/stats.h>
 #include <utils/threads.h>
 
@@ -93,7 +94,9 @@ void SolverCV::fileReportStats(const std::filesystem::path& dirpath) const
 
 void SolverCV::reportStats() const
 {
-    m_stat->report(std::cout);
+    std::ostringstream oss;
+    m_stat->report(oss);
+    detail::spidaLogger()->info(oss.str());
 }
 
 SolverCV_AS::SolverCV_AS(const LinOp& L, const NLfunc& NL, double sf, double qv, bool use_refs)
@@ -154,7 +157,7 @@ void SolverCV_AS::logEndStepTime()
 void SolverCV_AS::logStepRejected(double s)
 {
     if (SolverCV::logProgress()) {
-        std::cout << "Step rejected with s = " << s << std::endl;
+        detail::spidaLogger()->debug("Step rejected with s = {}", s);
         SolverCV::statCenter().incrementCounter("Step Size Reductions");
     }
 }
@@ -162,7 +165,7 @@ void SolverCV_AS::logStepRejected(double s)
 void SolverCV_AS::logStepSizeIncreased(double s)
 {
     if (SolverCV::logProgress()) {
-        std::cout << "step increased with s = " << s << std::endl;
+        detail::spidaLogger()->debug("step increased with s = {}", s);
         SolverCV::statCenter().incrementCounter("Step Size Increases");
     }
 }

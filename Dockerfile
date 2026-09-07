@@ -104,8 +104,10 @@ RUN apt-get update && \
         python3 \
         python3-pip \
         ripgrep \
+        sudo \
         tree \
-        valgrind && \
+        valgrind \
+        vim && \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------
@@ -181,6 +183,18 @@ ARG GID=1000
 RUN if [ "$UID" != "1000" ] || [ "$GID" != "1000" ]; then \
         groupmod -g "$GID" ubuntu && usermod -u "$UID" -g "$GID" ubuntu; \
     fi
+
+# -----------------------------
+# Passwordless sudo for ubuntu
+#
+# This is a dev/build image, not a production one — the point of running as
+# a non-root user (above) is host file ownership via UID/GID matching, not a
+# security boundary inside the container. Without this, any ad-hoc
+# `apt-get install` (e.g. a missing editor, a debug tool) needs a full image
+# rebuild instead of a one-line fix in a running container.
+# -----------------------------
+RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu && \
+    chmod 0440 /etc/sudoers.d/ubuntu
 
 # -----------------------------
 # Conan home at a neutral, user-independent path

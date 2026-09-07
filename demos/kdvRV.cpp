@@ -13,6 +13,8 @@
 #include <fstream>
 #include <iomanip>
 
+#include <spdlog/spdlog.h>
+
 #include <spida/grid/uniformRVX.h>
 #include <spida/helper/constants.h>
 #include <spida/rkstiff/ETDAS.h>
@@ -116,12 +118,12 @@ int main()
     spida::Report1D report{"X_0", x, uphys};
     report.setDirPath(outdir);
     report.setItem("t",t0);
-    std::cout << "First physical space report file location: " << report.path() << std::endl;
+    spdlog::info("First physical space report file location: {}", report.path().string());
 
 	// report initial spectral field
     spida::Report1D reportS{"SX_0", grid.getSX(), usp};
     reportS.setDirPath(outdir);
-    std::cout << "First spectral space report file location: " << reportS.path() << std::endl;
+    spdlog::info("First spectral space report file location: {}", reportS.path().string());
 
     std::ofstream os;
     os << report;
@@ -135,7 +137,7 @@ int main()
     while(t < tf){
 
         if(!solver.step(usp,h,h_next)){ // propagate unless solver fails
-            std::cout << "Step failed." << std::endl;
+            spdlog::info("Step failed.");
             return 1;
         }
 

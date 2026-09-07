@@ -1,9 +1,8 @@
 #include "propagator/reporthandler.h"
 
-#include <format>
 #include <fstream>
-#include <iostream>
 
+#include <utils/logging.h>
 #include <utils/report.hpp>
 #include <utils/stats.h>
 
@@ -46,13 +45,13 @@ void ReportHandler::report1D(const std::filesystem::path& dir_path, std::size_t 
                 def->report(os, static_cast<unsigned>(rep_num));
             }
             catch (const std::exception& e) {
-                std::cerr << std::format("Failed to report file: {} — {}\n",
-                                         def->path(static_cast<int>(rep_num)).string(),
-                                         e.what());
+                detail::spidaLogger()->error("Failed to report file: {} — {}",
+                                             def->path(static_cast<int>(rep_num)).string(),
+                                             e.what());
             }
             catch (...) {
-                std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                                         def->path(static_cast<int>(rep_num)).string());
+                detail::spidaLogger()->error("Failed to report file: {} — unknown error",
+                                             def->path(static_cast<int>(rep_num)).string());
             }
         }
         if (this->m_sink)
@@ -70,13 +69,13 @@ void ReportHandler::report2D(const std::filesystem::path& dir_path, std::size_t 
                 def->report(os, static_cast<unsigned>(rep_num));
             }
             catch (const std::exception& e) {
-                std::cerr << std::format("Failed to report file: {} — {}\n",
-                                         def->path(static_cast<int>(rep_num)).string(),
-                                         e.what());
+                detail::spidaLogger()->error("Failed to report file: {} — {}",
+                                             def->path(static_cast<int>(rep_num)).string(),
+                                             e.what());
             }
             catch (...) {
-                std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                                         def->path(static_cast<int>(rep_num)).string());
+                detail::spidaLogger()->error("Failed to report file: {} — unknown error",
+                                             def->path(static_cast<int>(rep_num)).string());
             }
         }
         if (this->m_sink)
@@ -95,12 +94,12 @@ void ReportHandler::reportTrack(const std::filesystem::path& dir_path, double t)
                 def->report(os);
             }
             catch (const std::exception& e) {
-                std::cerr << std::format(
-                    "Failed to report file: {} — {}\n", def->path().string(), e.what());
+                detail::spidaLogger()->error(
+                    "Failed to report file: {} — {}", def->path().string(), e.what());
             }
             catch (...) {
-                std::cerr << std::format("Failed to report file: {} — unknown error\n",
-                                         def->path().string());
+                detail::spidaLogger()->error("Failed to report file: {} — unknown error",
+                                             def->path().string());
             }
         }
         if (this->m_sink)

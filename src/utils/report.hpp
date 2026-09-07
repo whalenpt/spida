@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils/defs.h"
+#include "utils/isotime.hpp"
 #include "utils/math.hpp"
 
 #include <cassert>
@@ -78,6 +79,17 @@ inline nlohmann::json buildMeta(const metadataMap& meta)
             j[k] = v;
         }
     }
+    // Wall-clock time this frame's JSON was built, distinct from "t"/"z"
+    // above (simulation time/propagation distance, a metadataMap entry set
+    // by the caller). Every buildJson() override funnels through this one
+    // function, so stamping it here covers Report1D/ReportComplex1D/
+    // Report2D/ReportComplex2D/Track/TrackComplex uniformly without a
+    // per-class edit. Note ReportHandler::report1D()/report2D()/
+    // reportTrack() call toJson() twice per checkpoint -- once for the
+    // file write, once for the sink -- so the on-disk file and the
+    // sink-observed copy of the same frame carry microsecond-apart
+    // generatedAt values; cosmetic, not a correctness issue.
+    j["generatedAt"] = detail::nowIso8601Utc();
     return j;
 }
 
