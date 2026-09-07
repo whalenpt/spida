@@ -94,6 +94,23 @@ fully-resolved `SimulationConfig` (every field defaulted, not just what
 the caller's `config.json` actually set) — e.g. the real `mu` a run used
 even if the caller never set one.
 
+Since `docs/adr/0004-self-describing-result-metadata.md`, each
+`manifest.json` series entry also carries optional `axes` (per-axis
+label/units/quantity/coordinate/spacing/transform/ordering — e.g.
+`nls_r`'s `"R"` series' single axis is `{"coordinate": "radial", "spacing":
+"nonuniform"}`, and `kdv_cv`'s `"SX"` is `{"transform": "fourier",
+"ordering": "fftNatural"}` since it's a full-complex FFT that wraps rather
+than ascends), `valueLabel`/`valueUnits`, and `evolution`
+(`{"label": "t"|"z", "quantity": "time"|"space"}` — the marching
+coordinate, `"z"`/`"space"` for `nls_r`/`nls_rt`, `"t"`/`"time"` for every
+other wired model). Sourced from `include/spida/config/modelregistry.h`'s
+`ModelDescriptor`/`SeriesSpec` — the same table `--describe` reads — and
+identical between the two (`spida-worker --describe`'s
+`Capabilities.models[].series[]` carries the same fields; schema version
+bumped `2 → 3`, additive). Every report frame's own `meta` object now also
+carries `generatedAt`, an ISO-8601 UTC wall-clock timestamp of when that
+frame's JSON was built, alongside the existing simulation-time `"t"`.
+
 Construction goes through `spida::config::SimulationRun`
 (`include/spida/config/simulationbuilder.h`), which also means any of the
 four `SolverKind`s (`etd35`/`etd34`/`if34`/`if45dp`) works via

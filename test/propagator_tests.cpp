@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <regex>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -282,6 +283,26 @@ TEST_F(PropagatorTest, REPORT_1D_CREATES_FILE)
     // spida::Report1D writes to <dir>/<name>_<repNum>.json
     fs::path expected = m_dir / "field_0.json";
     EXPECT_TRUE(fs::exists(expected));
+}
+
+TEST_F(PropagatorTest, REPORT_1D_META_HAS_GENERATED_AT_TIMESTAMP)
+{
+    // docs/adr/0004-self-describing-result-metadata.md: every report
+    // frame's meta carries a wall-clock "generatedAt" ISO-8601 UTC string,
+    // distinct from the simulation-time "t"/"z" set via setItem(). Added
+    // once in detail::buildMeta() (src/utils/report.hpp), so exercising it
+    // through Report1D::toJson() covers every buildJson() override alike.
+    std::vector<double> x{0.0, 1.0};
+    std::vector<double> y{0.0, 1.0};
+    auto report = make1DReport("field", x, y);
+
+    auto j = report->toJson();
+
+    ASSERT_TRUE(j.contains("meta"));
+    ASSERT_TRUE(j["meta"].contains("generatedAt"));
+    const std::string ts = j["meta"]["generatedAt"].get<std::string>();
+    static const std::regex iso8601(R"(^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$)");
+    EXPECT_TRUE(std::regex_match(ts, iso8601)) << "got: " << ts;
 }
 
 TEST_F(PropagatorTest, REPORT_TRACK_CREATES_FILE)
