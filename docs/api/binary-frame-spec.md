@@ -33,6 +33,14 @@ not require changing anything in `report.hpp` itself:
   `ResultSeriesDescriptor.gridCoords` (`GET /simulations/:id/results`).
 - `y` (real) or `yr`/`yi` (complex) become the Float64Array payload below.
 
+As of `docs/adr/0004-self-describing-result-metadata.md`,
+`ResultSeriesDescriptor` also carries optional `axes`/`valueLabel`/
+`valueUnits`/`evolution` — static, per-series semantics (axis geometry,
+spectral-transform/ordering, the plotted quantity's label, and the
+marching coordinate's label/quantity) that this binary format's own header
+doesn't need to repeat per frame, for the same reason `gridCoords` isn't
+repeated: fetch it once from the manifest, not from every frame.
+
 ## Wire format
 
 ```
@@ -59,7 +67,14 @@ padding — the payload ends at the end of the HTTP body.
 |---|---|---|
 | `valueType` | `"real"` \| `"complex"` | Matches `ResultSeriesDescriptor.valueType` for this series. |
 | `count` | integer | Number of grid points `N` (matches `ResultSeriesDescriptor.gridCoords.length`). |
-| `t` | number | The simulation time this frame was reported at (from the report's `"t"` metadata item — see `ReportHandler::setItem`). |
+| `t` | number | The simulation time this frame was reported at (from the report's `"t"` metadata item — see `ReportHandler::setItem`). Label it per `ResultSeriesDescriptor.evolution` — for a space-marching model this is propagation distance, not time, even though the JSON key is still literally `"t"`. |
+
+The underlying report JSON's `meta` also carries `generatedAt` (ISO-8601
+UTC wall-clock time the frame's JSON was built — see
+`docs/adr/0004-self-describing-result-metadata.md`), distinct from `t`
+above. Not included in the header JSON here since nothing downstream reads
+it yet; left as an open call for whoever builds the API server whether to
+forward it through.
 
 ### Payload
 

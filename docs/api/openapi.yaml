@@ -524,6 +524,74 @@ components:
       type: string
       enum: [real, complex]
 
+    AxisCoordinate:
+      type: string
+      enum: [cartesian, radial, spectral]
+      description: Geometry/domain of one axis. See docs/adr/0004-self-describing-result-metadata.md.
+
+    AxisSpacing:
+      type: string
+      enum: [uniform, nonuniform]
+      description: Whether an axis's grid points are evenly spaced (Bessel-root/Chebyshev grids are not).
+
+    AxisTransform:
+      type: string
+      enum: [fourier, hankel]
+      description: >
+        Only meaningful when coordinate == "spectral" -- which integral
+        transform produced the axis. Orthogonal to AxisOrdering: a
+        real-optimized half-spectrum FFT is "fourier" AND "ascending"
+        (burgers'/kdv_rv's/ks's "SX"); a full-complex FFT is "fourier" AND
+        "fftNatural" (kdv_cv's "SX"); a Hankel transform is "hankel" AND
+        always "ascending" (nls_r/nls_rt's "SR").
+
+    AxisOrdering:
+      type: string
+      enum: [ascending, fftNatural]
+      description: >
+        Whether a spectral axis's wire values are already sorted ascending,
+        or arrive in an FFT's *natural* order (0, dk, ..., kNyquist,
+        -kNyquist, ..., -dk), which wraps from the most positive value
+        straight to the most negative partway through the array. Only a
+        full-complex FFT (uniform_cvx/uniform_cvt grids) does this. A line
+        renderer requiring ascending x (e.g. uPlot) needs "fftNatural" to
+        know it must reorder the axis (and its per-point data, in lockstep)
+        before plotting -- exactly a numpy.fft.fftshift. Defaults to
+        "ascending" behavior when absent.
+
+    AxisMeta:
+      type: object
+      description: >
+        Describes one axis of one series. Every field is optional/best-
+        effort and omitted entirely (not emitted null) when a series
+        doesn't set it.
+      properties:
+        label: { type: string, description: 'Display label, e.g. "r", "x", "kx".' }
+        units: { type: string, description: 'e.g. "um", "1/um"; omitted when dimensionless.' }
+        quantity: { type: string, description: 'e.g. "radius", "position", "wavenumber".' }
+        coordinate: { $ref: '#/components/schemas/AxisCoordinate' }
+        spacing: { $ref: '#/components/schemas/AxisSpacing' }
+        transform: { $ref: '#/components/schemas/AxisTransform' }
+        ordering: { $ref: '#/components/schemas/AxisOrdering' }
+
+    EvolutionKind:
+      type: string
+      enum: [time, space]
+      description: >
+        The scrubbed coordinate a model marches along. spida propagates
+        some PDE models in time (t) and others in propagation distance
+        (z); the on-wire report meta key is always literally "t" either
+        way -- EvolutionMeta.label is what tells a caller to display it
+        as "z" instead.
+
+    EvolutionMeta:
+      type: object
+      required: [quantity]
+      properties:
+        label: { type: string, description: '"t" or "z".' }
+        units: { type: string }
+        quantity: { $ref: '#/components/schemas/EvolutionKind' }
+
     ResultSeriesDescriptor:
       type: object
       required: [name, kind, valueType, frameCount, gridCoords]
@@ -549,6 +617,18 @@ components:
             uniform r (gridCoords) and uniform t (gridCoordsY) as its two
             independent axes. Absent for field1d/track. See
             docs/api/binary-frame-spec.md's "2D frames" section.
+        axes:
+          type: array
+          items: { $ref: '#/components/schemas/AxisMeta' }
+          description: >
+            [x] for kind == "field1d"/"track"; [x, y] for kind ==
+            "field2d" -- same order as gridCoords/gridCoordsY. Optional;
+            see docs/adr/0004-self-describing-result-metadata.md.
+        valueLabel: { type: string, description: 'Label for the plotted quantity, e.g. "u", "A".' }
+        valueUnits: { type: string }
+        evolution:
+          allOf: [{ $ref: '#/components/schemas/EvolutionMeta' }]
+          description: Same for every series produced by one run; see docs/adr/0004.
 
     ValidationError:
       type: object
@@ -644,6 +724,18 @@ components:
                     kind: { $ref: '#/components/schemas/SeriesKind' }
                     valueType: { $ref: '#/components/schemas/ValueType' }
                     description: { type: string }
+                    axes:
+                      type: array
+                      items: { $ref: '#/components/schemas/AxisMeta' }
+                      description: Same shape/meaning as ResultSeriesDescriptor.axes; optional.
+                    valueLabel: { type: string }
+                    valueUnits: { type: string }
+              evolution:
+                allOf: [{ $ref: '#/components/schemas/EvolutionMeta' }]
+                description: >
+                  Same shape/meaning as ResultSeriesDescriptor.evolution;
+                  optional, present once this model marches a scrubbed
+                  coordinate (docs/adr/0004-self-describing-result-metadata.md).
         solvers:
           type: array
           items: { $ref: '#/components/schemas/SolverKind' }

@@ -697,6 +697,57 @@ TEST(MODEL_REGISTRY_TEST, DESCRIBE_FINDS_EVERY_WIRED_MODEL)
     }
 }
 
+TEST(MODEL_REGISTRY_TEST, EVOLUTION_QUANTITY_MATCHES_MARCHING_COORDINATE)
+{
+    // docs/adr/0004-self-describing-result-metadata.md: nls_r/nls_rt march
+    // in propagation distance (z), every other wired model in time (t) --
+    // even though the on-wire report meta key is always literally "t"
+    // either way (BasePropagator hardcodes that key name).
+    for (auto const& d : modelRegistry()) {
+        ASSERT_TRUE(d.evolution.has_value()) << "model has no evolution metadata";
+        const bool isSpaceMarching = (d.model == ModelKind::nls_r || d.model == ModelKind::nls_rt);
+        EXPECT_EQ(d.evolution->quantity,
+                  isSpaceMarching ? EvolutionKind::space : EvolutionKind::time);
+        EXPECT_EQ(d.evolution->label, isSpaceMarching ? "z" : "t");
+    }
+}
+
+TEST(MODEL_REGISTRY_TEST, ONLY_KDV_CV_SX_AXIS_IS_FFT_NATURAL_ORDERING)
+{
+    // The bug this ADR exists to fix: kdv_cv's "SX" is a full-complex FFT
+    // (uniform_cvx) and wraps (fftNatural); burgers'/kdv_rv's/ks's "SX" is
+    // a real-optimized half-spectrum FFT and is already ascending.
+    for (auto const& d : modelRegistry()) {
+        for (auto const& s : d.series) {
+            if (s.name != "SX")
+                continue;
+            ASSERT_EQ(s.axes.size(), 1u);
+            ASSERT_TRUE(s.axes[0].ordering.has_value());
+            const auto expected =
+                (d.model == ModelKind::kdv_cv) ? AxisOrdering::fftNatural : AxisOrdering::ascending;
+            EXPECT_EQ(*s.axes[0].ordering, expected) << "model=" << static_cast<int>(d.model);
+        }
+    }
+}
+
+TEST(MODEL_REGISTRY_TEST, NLS_R_AXES_ARE_RADIAL_AND_HANKEL)
+{
+    const auto* desc = describe(ModelKind::nls_r);
+    ASSERT_NE(desc, nullptr);
+    for (auto const& s : desc->series) {
+        ASSERT_EQ(s.axes.size(), 1u);
+        if (s.name == "R") {
+            EXPECT_EQ(*s.axes[0].coordinate, AxisCoordinate::radial);
+            EXPECT_EQ(*s.axes[0].spacing, AxisSpacing::nonuniform);
+        }
+        else if (s.name == "SR") {
+            EXPECT_EQ(*s.axes[0].coordinate, AxisCoordinate::spectral);
+            EXPECT_EQ(*s.axes[0].transform, AxisTransform::hankel);
+            EXPECT_EQ(*s.axes[0].ordering, AxisOrdering::ascending);
+        }
+    }
+}
+
 TEST(MODEL_REGISTRY_TEST, PARAM_DEFAULT_MATCHES_CAPABILITIES_JSON)
 {
     // Cross-checks two independent readers of the same ModelDescriptor
@@ -893,4 +944,34 @@ TEST(CAPABILITIES_TEST, INCLUDES_SERIES_AND_DEFAULTS_FROM_REGISTRY)
         }
     }
     EXPECT_TRUE(checkedNlsRt);
+}
+
+TEST(CAPABILITIES_TEST, INCLUDES_AXES_VALUE_LABEL_AND_EVOLUTION)
+{
+    // docs/adr/0004-self-describing-result-metadata.md. kdv_cv is the
+    // motivating case: its "SX" axis must serialize as fftNatural, not
+    // just "spectral" -- the distinction the ADR's Context traces to a
+    // real, reproduced rendering bug.
+    auto caps = spida::config::describeCapabilities();
+    EXPECT_EQ(caps.at("schemaVersion").get<int>(), 3);
+
+    bool checkedKdvCv = false;
+    for (auto const& m : caps.at("models")) {
+        if (m.at("model").get<std::string>() != "kdv_cv")
+            continue;
+        ASSERT_TRUE(m.contains("evolution"));
+        EXPECT_EQ(m.at("evolution").at("quantity").get<std::string>(), "time");
+        EXPECT_EQ(m.at("evolution").at("label").get<std::string>(), "t");
+        for (auto const& s : m.at("series")) {
+            if (s.at("name").get<std::string>() != "SX")
+                continue;
+            ASSERT_TRUE(s.contains("axes"));
+            ASSERT_EQ(s.at("axes").size(), 1u);
+            EXPECT_EQ(s.at("axes")[0].at("ordering").get<std::string>(), "fftNatural");
+            EXPECT_EQ(s.at("axes")[0].at("transform").get<std::string>(), "fourier");
+            EXPECT_EQ(s.at("valueLabel").get<std::string>(), "SX");
+            checkedKdvCv = true;
+        }
+    }
+    EXPECT_TRUE(checkedKdvCv);
 }
